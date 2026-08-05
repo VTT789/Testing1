@@ -40,7 +40,7 @@ def format_rate(rate):
     return f"+{rate}%"
 
 # =========================
-# SHEET DATA PROXY (CSV method)
+# SHEET DATA PROXY (IMPROVED COLUMN DETECTION)
 # =========================
 SHEET_ID = os.environ.get("SHEET_ID")
 if not SHEET_ID:
@@ -48,23 +48,45 @@ if not SHEET_ID:
     print("   Set it in Render dashboard: Key=SHEET_ID, Value=your_sheet_id")
 
 def fetch_sheet_as_csv(sheet_id):
-    """Fetch sheet data as CSV using Google Sheets export URL"""
     csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
     resp = requests.get(csv_url)
     resp.raise_for_status()
-    # Parse CSV
     content = resp.content.decode('utf-8')
     reader = csv.DictReader(io.StringIO(content))
+    
+    headers = reader.fieldnames
+    print("📋 CSV Headers found:", headers)
+
+    def find_column(possible_names):
+        for name in possible_names:
+            for header in headers:
+                if header.strip().lower() == name.lower():
+                    return header
+        for name in possible_names:
+            for header in headers:
+                if name.lower() in header.lower():
+                    return header
+        return None
+
+    khmer_col = find_column(['khmer', 'km', 'ភាសា', 'ខ្មែរ'])
+    chinese_col = find_column(['chinese', 'zh', '中文', 'chinese (zh)'])
+
+    if not khmer_col and len(headers) >= 2:
+        khmer_col = headers[1]
+        chinese_col = headers[0]
+        print("⚠️  Using fallback: Chinese =", chinese_col, "Khmer =", khmer_col)
+    elif not khmer_col or not chinese_col:
+        raise Exception("Could not find Khmer or Chinese columns. Please check your sheet headers.")
+
     rows = []
     for row in reader:
-        # Skip rows where both Khmer and Chinese are empty
-        khmer = row.get('Khmer', '').strip() or row.get('km', '').strip() or row.get('ភាសា', '').strip()
-        chinese = row.get('Chinese', '').strip() or row.get('zh', '').strip() or row.get('中文', '').strip()
+        khmer = row.get(khmer_col, '').strip()
+        chinese = row.get(chinese_col, '').strip()
         if khmer or chinese:
             rows.append({
                 'khmer': khmer,
                 'chinese': chinese,
-                'sheetRow': len(rows) + 2  # +2 because row 1 is header, but we start at 2
+                'sheetRow': len(rows) + 2
             })
     return rows
 
@@ -83,11 +105,10 @@ def sheet_data():
         return jsonify({"error": str(e)}), 500
 
 # =========================
-# SERVE STATIC FILES (fonts, images)
+# SERVE STATIC FILES
 # =========================
 @app.route('/static/<path:path>')
 def serve_static(path):
-    # Try both folders
     if os.path.exists(os.path.join('static', path)):
         return send_from_directory('static', path)
     elif os.path.exists(os.path.join('public', 'static', path)):
@@ -107,10 +128,10 @@ def home():
         with open('public/index.html', encoding='utf-8') as f:
             return f.read()
     else:
-        return "index.html not found. Please ensure it's in the root or public/ folder.", 404
+        return "index.html not found.", 404
 
 # =========================
-# TTS GENERATE
+# TTS GENERATE (unchanged)
 # =========================
 async def generate_tts(text, voice, rate, file_path):
     communicate = edge_tts.Communicate(
@@ -139,10 +160,7 @@ def speak():
         filename = f"{uuid.uuid4().hex}.mp3"
         file_path = os.path.join(temp_dir, filename)
 
-        print(f"🔵 Voice={voice}")
-        print(f"🔵 Rate={rate}")
-        print(f"🔵 Text={text[:50]}")
-
+        print(f"🔵 Voice={voice}, Rate={rate}, Text={text[:50]}")
         run_async(generate_tts(text, voice, rate, file_path))
 
         if not os.path.exists(file_path) or os.path.getsize(file_path) < 1000:
