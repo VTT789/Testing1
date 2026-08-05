@@ -3491,6 +3491,82 @@
             if (t >= e.length && (t = e.length - 1), e[t]) { loadWordByMode(vocabList.findIndex((n => n === e[t])), !0) }
         }
 
+        // ---- WAKE LOCK for auto mode ----
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            if (!('wakeLock' in navigator)) {
+                console.log('Wake Lock API not supported');
+                return;
+            }
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', () => {
+                    console.log('Wake Lock released');
+                });
+                console.log('Wake Lock acquired');
+            } catch (err) {
+                console.warn('Wake Lock request failed:', err);
+            }
+        }
+
+        async function releaseWakeLock() {
+            if (wakeLock) {
+                try {
+                    await wakeLock.release();
+                    wakeLock = null;
+                    console.log('Wake Lock released manually');
+                } catch (err) {
+                    console.warn('Wake Lock release error:', err);
+                    wakeLock = null;
+                }
+            }
+        }
+
+        // ---- visibility change: re-request wake lock if auto is active and page becomes visible ----
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && autoActive) {
+                // If wake lock was released due to background, re-request it
+                if (!wakeLock) {
+                    await requestWakeLock();
+                }
+            }
+        });
+
+        // ---- FIXED toggleAuto with wake lock integration ----
+        const originalToggleAuto = toggleAuto;
+        toggleAuto = function() {
+            autoActive = !autoActive;
+            const e = document.getElementById("autoBtn");
+            if (autoActive) {
+                e.classList.remove("off");
+                e.classList.add("active");
+                e.innerText = "AUTO: ON";
+                requestWakeLock();
+                pickRandom();
+            } else {
+                e.classList.remove("active");
+                e.classList.add("off");
+                e.innerText = "AUTO: OFF";
+                autoTimer && (clearTimeout(autoTimer), autoTimer = null);
+                killAllSpeech();
+                releaseWakeLock();
+            }
+        };
+
+        function startAutoCycle() {
+            if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), autoActive) {
+                // Ensure wake lock is still active
+                if (!wakeLock) {
+                    requestWakeLock();
+                }
+                const e = 1e3 * parseInt(document.getElementById("autoDelay").value);
+                autoTimer = setTimeout((() => { autoActive && pickRandom(), autoTimer = null }), e)
+            }
+        }
+
+        // ---- end Wake Lock integration ----
+
         function toggleAppMode() {
             autoTimer && (clearTimeout(autoTimer), autoTimer = null);
             const e = document.getElementById("modeToggleBtn");
@@ -3526,29 +3602,6 @@
                 n = document.getElementById("modeNormalIconHeader");
             t && n && ("random" === appMode ? (t.classList.add("active"), n.classList.remove("active")) : (n.classList.add(
                 "active"), t.classList.remove("active"))), renderSidebarUI()
-        }
-
-        function toggleAuto() {
-            autoActive = !autoActive;
-            const e = document.getElementById("autoBtn");
-            if (autoActive) {
-                e.classList.remove("off");
-                e.classList.add("active");
-                e.innerText = "AUTO: ON";
-                pickRandom();
-            } else {
-                e.classList.remove("active");
-                e.classList.add("off");
-                e.innerText = "AUTO: OFF";
-                autoTimer && (clearTimeout(autoTimer), autoTimer = null);
-                killAllSpeech();
-            }
-        }
-
-        function startAutoCycle() {
-            if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), autoActive) { const e = 1e3 * parseInt(document
-                    .getElementById("autoDelay").value);
-                autoTimer = setTimeout((() => { autoActive && pickRandom(), autoTimer = null }), e) }
         }
 
         function toggleSidebar() {
