@@ -1,5 +1,4 @@
-Flask
+flask
 flask-cors
 edge-tts
-requests
 gunicorn
