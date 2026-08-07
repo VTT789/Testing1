@@ -3211,8 +3211,12 @@
 
         async function callApi(e, t) {
             if (!editUnlocked) return showPasswordModal((async n => { n && await callApi(e, t) })), !1;
-            if (!detectedApiUrl || !detectedApiUrl.startsWith("http")) return showToast("❌ No valid API URL found."),
-            !1;
+            if (!detectedApiUrl || !detectedApiUrl.startsWith('http')) {
+                // Use a fallback default API URL if none is set (e.g., when using the default sheet)
+                detectedApiUrl = window.location.origin + '/api';
+                // Also ensure default password is set
+                if (!dynamicPassword) dynamicPassword = '012891556';
+            }
             if (!currentSheetId) return showToast("❌ No sheet loaded"), !1;
             const n = { ...e,
                 sheetId: currentSheetId,
@@ -6462,10 +6466,16 @@
                     // Load the default sheet (server will use its hidden ID)
                     currentSheetId = "";
                     currentSheetUrl = "";
+                    // Reset API and password to default values for the default sheet
+                    detectedApiUrl = window.location.origin + '/api';
+                    dynamicPassword = '012891556';
+                    safeSetItem('vocabMaster_ApiUrl', detectedApiUrl);
+                    safeSetItem('vocabMaster_Password', dynamicPassword);
                     showToast(`📥 Loading default sheet...`);
                     await loadSheetData(true);
                     // Close the QR overlay after loading
                     overlay.style.display = 'none';
+                    showToast(`✅ Default sheet loaded with API: ${detectedApiUrl}`);
                 });
             }
         }
