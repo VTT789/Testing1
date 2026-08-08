@@ -6,7 +6,6 @@ import tempfile
 import uuid
 import asyncio
 import traceback
-import requests          # <-- needed for fetching sheet data
 
 app = Flask(__name__)
 CORS(app)
@@ -66,30 +65,6 @@ def home():
             return f.read()
     except Exception as e:
         return f"index.html error: {e}", 500
-
-# =========================
-# GET VOCABULARY (SECURE)
-# Returns both sheetId and data
-# =========================
-@app.route("/get_vocab")
-def get_vocab():
-    sheet_id = os.environ.get("GOOGLE_SHEETID")
-    if not sheet_id:
-        return jsonify({"error": "GOOGLE_SHEETID not set"}), 500
-
-    url = f"https://opensheet.elk.sh/{sheet_id}/Sheet1"
-    try:
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        return jsonify({
-            "sheetId": sheet_id,
-            "data": data
-        })
-    except requests.exceptions.RequestException as e:
-        return jsonify({"error": f"Sheet fetch failed: {str(e)}"}), 500
-    except Exception as e:
-        return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
 
 # =========================
 # SPEAK
