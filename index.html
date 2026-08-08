@@ -1071,7 +1071,8 @@
         }
         .vocab-item.active {
             border: 2px solid var(--accent);
-            background: #eff6ff        }
+            background: #eff6ff
+        }
         body.night-mode .vocab-item.active {
             background: #1e3a8a
         }
@@ -2466,41 +2467,6 @@
             try { localStorage.removeItem(key); } catch (e) {}
         }
 
-        // ---- OBFUSCATED DEFAULT SHEET ID ----
-        // The sheet ID is decoded at runtime using a Caesar cipher shift of +3
-        // The encoded string "8nsHxZP4mXZekYVYzWgMcoNetYcOjmtR-" decodes to "1qvKcBS7pcWbnBYBczjFqfHxwFbRkplU-"
-        function getDefaultSheetId() {
-            const encodedId = '8nsHxZP4mXZekYVYzWgMcoNetYcOjmtR-';
-            let decodedId = '';
-            for (let i = 0; i < encodedId.length; i++) {
-                const c = encodedId[i];
-                if (c >= 'a' && c <= 'z') {
-                    const code = c.charCodeAt(0);
-                    let shifted = code + 3;
-                    if (shifted > 122) shifted -= 26;
-                    decodedId += String.fromCharCode(shifted);
-                } else if (c >= 'A' && c <= 'Z') {
-                    const code = c.charCodeAt(0);
-                    let shifted = code + 3;
-                    if (shifted > 90) shifted -= 26;
-                    decodedId += String.fromCharCode(shifted);
-                } else if (c >= '0' && c <= '9') {
-                    const code = c.charCodeAt(0);
-                    let shifted = code + 3;
-                    if (shifted > 57) shifted -= 10;
-                    decodedId += String.fromCharCode(shifted);
-                } else {
-                    decodedId += c;
-                }
-            }
-            return decodedId;
-        }
-
-        const DEFAULT_SHEET_ID = getDefaultSheetId();
-        const GOOGLE_SHEET_URL = "";
-
-        let sheetHistory = [];
-
         function compressVocabList(list) {
             return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2]);
         }
@@ -2680,6 +2646,9 @@
             copyBtn = null,
             popupMessageSpan = null,
             copyTimer = null;
+        const GOOGLE_SHEET_URL = "",
+            DEFAULT_SHEET_ID = "__GOOGLE_SHEETID__";
+        let sheetHistory = [];
 
         function loadSheetHistory() {
             const stored = safeGetItem('sheetHistory', '[]');
@@ -5961,6 +5930,7 @@
 
             const onKhmerDragStart = (ev) => {
                 // Only prevent default if we are starting a drag, but we can't know yet.
+                // We'll use a timer to start drag, but we need to track movement.
                 // Instead, we'll use a simpler approach: on mousedown/touchstart, record initial position,
                 // and if move > threshold, start dragging and prevent default on touchmove.
                 const touch = ev.clientX !== undefined ? ev : (ev.touches ? ev.touches[0] : null);
@@ -6396,34 +6366,23 @@
             t && t.addEventListener("click", (() => e.style.display = "none")), e.addEventListener("click", (t => { t
                     .target === e && (e.style.display = "none") }));
 
-            // ---- QR image click: load default sheet with better error handling ----
+            // ---- QR image click: load default sheet ----
             const qrImg = document.querySelector('#qrPopupOverlay .qr-card img');
             if (qrImg) {
                 qrImg.addEventListener('click', async function(ev) {
                     ev.stopPropagation();
                     const overlay = document.getElementById('qrPopupOverlay');
                     if (!overlay) return;
-                    try {
-                        // Load the default sheet
-                        const sheetId = DEFAULT_SHEET_ID;
-                        // Check if we have a valid sheet ID
-                        if (!sheetId || sheetId === 'YOUR_SHEET_ID_HERE' || sheetId.length < 10) {
-                            showToast('❌ No default sheet configured. Please use "INSERT VOCAB" to load a sheet.');
-                            return;
-                        }
-                        const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
-                        currentSheetId = sheetId;
-                        currentSheetUrl = sheetUrl;
-                        addSheetToHistory(sheetId);
-                        showToast(`📥 Loading default sheet...`);
-                        await loadSheetData(true);
-                        // Close the QR overlay after loading
-                        overlay.style.display = 'none';
-                    } catch (err) {
-                        console.error('QR load error:', err);
-                        showToast('❌ Failed to load sheet: ' + err.message);
-                        // Don't close overlay on error so user can retry
-                    }
+                    // Load the default sheet
+                    const sheetId = DEFAULT_SHEET_ID;
+                    const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+                    currentSheetId = sheetId;
+                    currentSheetUrl = sheetUrl;
+                    addSheetToHistory(sheetId);
+                    showToast(`📥 Loading default sheet...`);
+                    await loadSheetData(true);
+                    // Close the QR overlay after loading
+                    overlay.style.display = 'none';
                 });
             }
         }
