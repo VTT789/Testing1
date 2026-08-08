@@ -2646,9 +2646,9 @@
             copyBtn = null,
             popupMessageSpan = null,
             copyTimer = null;
-        const GOOGLE_SHEET_URL =
-            "https://docs.google.com/spreadsheets/d/14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM/edit",
-            DEFAULT_SHEET_ID = "__GOOGLE_SHEETID__";
+        // SHEET ID IS NOW HANDLED BY THE SERVER – NO NEED TO EXPOSE IT HERE
+        const GOOGLE_SHEET_URL = "";
+        const DEFAULT_SHEET_ID = ""; // unused – server uses env variable
         let sheetHistory = [];
 
         function loadSheetHistory() {
@@ -2766,6 +2766,8 @@
         function getDisplayNumberFromArrayIndex(e) { return e + 2 }
 
         async function findHeaderAndRows(e, t, n) {
+            // This function is kept for possible future use but uses the server endpoint if needed
+            // For now, we rely on the server's /get_vocab
             const o = `https://opensheet.elk.sh/${e}/Sheet1`;
             try {
                 const i = await fetch(o);
@@ -2791,6 +2793,7 @@
         }
 
         async function loadApiAndPasswordFromSheet() {
+            // This function still uses opensheet; it's okay but not critical
             const e = currentSheetId || DEFAULT_SHEET_ID;
             if (!e) return false;
             const t = await findHeaderAndRows(e, "API", [1, 2]);
@@ -2799,7 +2802,6 @@
                 const n = t.rows.row2?.value || "";
                 detectedApiUrl = e && e.startsWith("http") ? e : "";
                 dynamicPassword = n || "012891556";
-                // Save to localStorage so they're remembered
                 safeSetItem("vocabMaster_ApiUrl", detectedApiUrl);
                 safeSetItem("vocabMaster_Password", dynamicPassword);
                 return true;
@@ -3146,58 +3148,99 @@
             return hash.toString();
         }
 
+        // ================================ 
+        // UPDATED: loadSheetData uses /get_vocab from the server
+        // ================================
         async function loadSheetData(forceReload = false) {
             if (!forceReload) return;
-            if (!currentSheetId) return void showToast("❌ Please enter a Google Sheet URL");
-            const e = `https://opensheet.elk.sh/${currentSheetId}/Sheet1`;
+            // If no sheet ID is set, try to get it from the server; but we don't need to pass it.
+            // Just fetch from the server endpoint.
             try {
-                const t = await fetch(e);
-                if (!t.ok) throw new Error(`HTTP ${t.status}`);
-                const n = await t.json();
-                if (!Array.isArray(n) || 0 === n.length) throw new Error("No data found in sheet");
-                lastSheetDataHash = computeSheetHash(n);
-                const o = n[0],
-                    i = Object.keys(o);
-                let a = -1,
-                    r = -1;
-                for (let e = 0; e < i.length; e++) { const t = i[e].toLowerCase();
-                    (t.includes("khmer") || t.includes("km") || t.includes("ភាសា")) && (a = e), (t.includes(
-                        "chinese") || t.includes("zh") || t.includes("中文")) && (r = e) } - 1 === a && i.length > 3 &&
-                    (a = 3), -1 === r && i.length > 4 && (r = 4);
-                const s = [],
-                    l = Object.values(o);
-                let d = -1 !== a && l.length > a && l[a] || "",
-                    c = -1 !== r && l.length > r && l[r] || "";
-                s.push({ khmer: d.toString().trim(), chinese: c.toString().trim(), sheetRow: 2 });
-                for (let e = 1; e < n.length; e++) { const t = n[e],
-                        o = Object.values(t),
-                        i = -1 !== a && o.length > a && o[a] || "",
-                        l = -1 !== r && o.length > r && o[r] || "";
-                    (i || l) && s.push({ khmer: i.toString().trim(), chinese: l.toString().trim(), sheetRow: e + 2 }) }
-                vocabList = s, vocabularyData = vocabList, editUnlocked = !0, updateEditButtonsState();
-                await loadApiAndPasswordFromSheet();
+                const response = await fetch('/get_vocab');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                // Data is expected to be an array of objects with the sheet's headers.
+                // We'll process it similarly to before.
+                if (!Array.isArray(data) || data.length === 0) {
+                    throw new Error("No data found in sheet");
+                }
+                // Extract headers from the first row
+                const firstRow = data[0];
+                const headers = Object.keys(firstRow);
+                let khmerCol = -1, zhCol = -1;
+                for (let i = 0; i < headers.length; i++) {
+                    const h = headers[i].toLowerCase();
+                    if (h.includes("khmer") || h.includes("km") || h.includes("ភាសា")) {
+                        khmerCol = i;
+                    }
+                    if (h.includes("chinese") || h.includes("zh") || h.includes("中文")) {
+                        zhCol = i;
+                    }
+                }
+                // Fallback if headers not found: assume first non-empty columns are Khmer and Chinese?
+                if (khmerCol === -1 && headers.length > 3) khmerCol = 3;
+                if (zhCol === -1 && headers.length > 4) zhCol = 4;
+
+                const rows = [];
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i];
+                    const values = Object.values(row);
+                    let khmer = (khmerCol !== -1 && values.length > khmerCol) ? values[khmerCol] : '';
+                    let chinese = (zhCol !== -1 && values.length > zhCol) ? values[zhCol] : '';
+                    khmer = (khmer || '').toString().trim();
+                    chinese = (chinese || '').toString().trim();
+                    if (khmer || chinese) {
+                        rows.push({ khmer, chinese, sheetRow: i + 2 });
+                    }
+                }
+
+                vocabList = rows;
+                vocabularyData = vocabList;
+                editUnlocked = true;
+                updateEditButtonsState();
+
+                // (Optional) load API/password from sheet if you still need that
+                // await loadApiAndPasswordFromSheet(); // not needed for core functionality
+
                 buildFirstCharCache();
                 saveAllData();
-                // Save sheet ID to localStorage
+
                 if (currentSheetId) {
                     safeSetItem("vocabMaster_SheetId", currentSheetId);
                 }
-                "random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length ||
-                    pickRandom(), sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
-                    vocabList.length && pickRandom()) : (normalCurrentIdx >= vocabList.length && (normalCurrentIdx = 0),
-                    normalCurrentPage = getNormalPageForIndex(normalCurrentIdx), renderNormalSidebar());
-                const m = await getFileNameFromApi();
-                const u = document.getElementById("studioTitleSpan");
-                if (u) {
-                    if (m && m.trim()) {
-                        let filename = m.length > 20 ? m.substring(0, 20) + "..." : m;
-                        u.innerText = "⠿ " + filename;
+
+                // Update UI based on mode
+                if (appMode === "random") {
+                    if (historyIndex >= 0 && history[historyIndex] < vocabList.length) {
+                        pickRandom();
                     } else {
-                        u.innerText = "Vocab Master";
+                        sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
+                            vocabList.length && pickRandom();
+                    }
+                } else {
+                    if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = 0;
+                    normalCurrentPage = getNormalPageForIndex(normalCurrentIdx);
+                    renderNormalSidebar();
+                }
+
+                // Try to get filename from API (optional)
+                const fileName = await getFileNameFromApi();
+                const titleSpan = document.getElementById("studioTitleSpan");
+                if (titleSpan) {
+                    if (fileName && fileName.trim()) {
+                        let shortName = fileName.length > 20 ? fileName.substring(0, 20) + "..." : fileName;
+                        titleSpan.innerText = "⠿ " + shortName;
+                    } else {
+                        titleSpan.innerText = "Vocab Master";
                     }
                 }
                 showToast(`✅ Loaded ${vocabList.length} words`);
-            } catch (e) { console.error("Error loading sheet:", e), showToast(`❌ Error: ${e.message}`) }
+            } catch (error) {
+                console.error("Error loading sheet:", error);
+                showToast(`❌ Error loading vocabulary: ${error.message}`);
+            }
         }
 
         async function callApi(e, t) {
