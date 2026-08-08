@@ -1071,8 +1071,7 @@
         }
         .vocab-item.active {
             border: 2px solid var(--accent);
-            background: #eff6ff
-        }
+            background: #eff6ff        }
         body.night-mode .vocab-item.active {
             background: #1e3a8a
         }
@@ -2468,69 +2467,10 @@
         }
 
         // ---- OBFUSCATED DEFAULT SHEET ID ----
-        // The sheet ID is split into parts and decoded at runtime
+        // The sheet ID is decoded at runtime using a Caesar cipher shift of +3
+        // The encoded string "8nsHxZP4mXZekYVYzWgMcoNetYcOjmtR-" decodes to "1qvKcBS7pcWbnBYBczjFqfHxwFbRkplU-"
         function getDefaultSheetId() {
-            // This string is a Base64-encoded version of the sheet ID
-            // Each character is shifted by +1 in the alphabet (a->b, b->c, etc.)
-            // and then stored in parts to make it harder to detect
-            const parts = [
-                '1qv', 'KcB', 'S7p', 'cWb', 'nBY', 'Bcz', 'jFq', 'fHx', 'wFb', 'Rkp', 'lU-', 'nBY', 'Bcz', 'jFq', 'fHx'
-            ];
-            // Actually, let's use a simpler approach: just a reversed and Base64-ish string
-            // The actual sheet ID: 1qvKcBS7pcWbnBYBczjFqfHxwFbRkplU-
-            // We'll reverse it and store it in a way that's not obvious
-            const encoded = '1qvKcBS7pcWbnBYBczjFqfHxwFbRkplU-';
-            // Reversed: -UlpkRbFwxHfqFjzcB YbnWcp7SBcKvq1
-            // Let's just store it as a simple encoded string
-            // We'll use a simple XOR-based encoding with a key
-            // Key: 42
-            let decoded = '';
-            for (let i = 0; i < encoded.length; i++) {
-                const charCode = encoded.charCodeAt(i);
-                // Simple XOR with 42, but keep it in printable range
-                let xored = charCode ^ 42;
-                // If it goes out of printable range, adjust
-                if (xored < 32 || xored > 126) {
-                    // Use a different operation: subtract 1 from each char code
-                    decoded += String.fromCharCode(charCode - 1);
-                } else {
-                    decoded += String.fromCharCode(xored);
-                }
-            }
-            // Actually this will produce gibberish. Let's just use a simple reversed + Base64 approach.
-            // The simplest: just use the encoded string as-is and decode at runtime with a simple shift.
-            // We'll use a Caesar cipher with shift 3.
-            const shift = 3;
-            let result = '';
-            for (let i = 0; i < encoded.length; i++) {
-                const c = encoded[i];
-                if (c >= 'a' && c <= 'z') {
-                    const code = c.charCodeAt(0);
-                    let shifted = code - shift;
-                    if (shifted < 97) shifted += 26;
-                    result += String.fromCharCode(shifted);
-                } else if (c >= 'A' && c <= 'Z') {
-                    const code = c.charCodeAt(0);
-                    let shifted = code - shift;
-                    if (shifted < 65) shifted += 26;
-                    result += String.fromCharCode(shifted);
-                } else if (c >= '0' && c <= '9') {
-                    const code = c.charCodeAt(0);
-                    let shifted = code - shift;
-                    if (shifted < 48) shifted += 10;
-                    result += String.fromCharCode(shifted);
-                } else {
-                    result += c;
-                }
-            }
-            // The result should be the decoded sheet ID: 1qvKcBS7pcWbnBYBczjFqfHxwFbRkplU-
-            // Wait, we encoded with shift -3, so decoding with shift 3 reverses it.
-            // Actually we need to encode the original with shift -3, then decode with shift 3.
-            // Let's just hardcode the encoded string and decode it.
-            // The original is 1qvKcBS7pcWbnBYBczjFqfHxwFbRkplU-
-            // Encoded with shift -3: 9nsHxZP4mXZekYVYzWgMcoNetYcOjmtR-
-            // Let's just use this encoded version and decode it.
-            const encodedId = '9nsHxZP4mXZekYVYzWgMcoNetYcOjmtR-';
+            const encodedId = '8nsHxZP4mXZekYVYzWgMcoNetYcOjmtR-';
             let decodedId = '';
             for (let i = 0; i < encodedId.length; i++) {
                 const c = encodedId[i];
@@ -2556,10 +2496,7 @@
             return decodedId;
         }
 
-        // Override DEFAULT_SHEET_ID at runtime
         const DEFAULT_SHEET_ID = getDefaultSheetId();
-
-        // For the GOOGLE_SHEET_URL constant, we use a similar approach
         const GOOGLE_SHEET_URL = "";
 
         let sheetHistory = [];
@@ -6024,7 +5961,6 @@
 
             const onKhmerDragStart = (ev) => {
                 // Only prevent default if we are starting a drag, but we can't know yet.
-                // We'll use a timer to start drag, but we need to track movement.
                 // Instead, we'll use a simpler approach: on mousedown/touchstart, record initial position,
                 // and if move > threshold, start dragging and prevent default on touchmove.
                 const touch = ev.clientX !== undefined ? ev : (ev.touches ? ev.touches[0] : null);
@@ -6460,23 +6396,34 @@
             t && t.addEventListener("click", (() => e.style.display = "none")), e.addEventListener("click", (t => { t
                     .target === e && (e.style.display = "none") }));
 
-            // ---- QR image click: load default sheet ----
+            // ---- QR image click: load default sheet with better error handling ----
             const qrImg = document.querySelector('#qrPopupOverlay .qr-card img');
             if (qrImg) {
                 qrImg.addEventListener('click', async function(ev) {
                     ev.stopPropagation();
                     const overlay = document.getElementById('qrPopupOverlay');
                     if (!overlay) return;
-                    // Load the default sheet
-                    const sheetId = DEFAULT_SHEET_ID;
-                    const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
-                    currentSheetId = sheetId;
-                    currentSheetUrl = sheetUrl;
-                    addSheetToHistory(sheetId);
-                    showToast(`📥 Loading default sheet...`);
-                    await loadSheetData(true);
-                    // Close the QR overlay after loading
-                    overlay.style.display = 'none';
+                    try {
+                        // Load the default sheet
+                        const sheetId = DEFAULT_SHEET_ID;
+                        // Check if we have a valid sheet ID
+                        if (!sheetId || sheetId === 'YOUR_SHEET_ID_HERE' || sheetId.length < 10) {
+                            showToast('❌ No default sheet configured. Please use "INSERT VOCAB" to load a sheet.');
+                            return;
+                        }
+                        const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+                        currentSheetId = sheetId;
+                        currentSheetUrl = sheetUrl;
+                        addSheetToHistory(sheetId);
+                        showToast(`📥 Loading default sheet...`);
+                        await loadSheetData(true);
+                        // Close the QR overlay after loading
+                        overlay.style.display = 'none';
+                    } catch (err) {
+                        console.error('QR load error:', err);
+                        showToast('❌ Failed to load sheet: ' + err.message);
+                        // Don't close overlay on error so user can retry
+                    }
                 });
             }
         }
