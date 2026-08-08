@@ -2646,7 +2646,9 @@
             copyBtn = null,
             popupMessageSpan = null,
             copyTimer = null;
-        // --- REMOVED hardcoded GOOGLE_SHEET_URL and DEFAULT_SHEET_ID ---
+        const GOOGLE_SHEET_URL =
+            "https://docs.google.com/spreadsheets/d/14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM/edit",
+            DEFAULT_SHEET_ID = "14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM";
         let sheetHistory = [];
 
         function loadSheetHistory() {
@@ -2789,8 +2791,7 @@
         }
 
         async function loadApiAndPasswordFromSheet() {
-            // Use currentSheetId if set, otherwise fallback to empty – server will use its default
-            const e = currentSheetId || '';
+            const e = currentSheetId || DEFAULT_SHEET_ID;
             if (!e) return false;
             const t = await findHeaderAndRows(e, "API", [1, 2]);
             if (t.success) {
@@ -3147,20 +3148,13 @@
 
         async function loadSheetData(forceReload = false) {
             if (!forceReload) return;
-            // Use the proxy endpoint – if currentSheetId is empty, server uses its default (hidden) ID.
-            const url = `/api/sheet-data${currentSheetId ? '?id=' + currentSheetId : ''}`;
+            if (!currentSheetId) return void showToast("❌ Please enter a Google Sheet URL");
+            const e = `https://opensheet.elk.sh/${currentSheetId}/Sheet1`;
             try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const n = await response.json();
+                const t = await fetch(e);
+                if (!t.ok) throw new Error(`HTTP ${t.status}`);
+                const n = await t.json();
                 if (!Array.isArray(n) || 0 === n.length) throw new Error("No data found in sheet");
-                // If currentSheetId is empty, we can't set a URL for the sheet; we only store the data.
-                // If currentSheetId is set, we can build the URL for opening.
-                if (currentSheetId) {
-                    currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`;
-                } else {
-                    currentSheetUrl = ""; // no URL for default hidden sheet
-                }
                 lastSheetDataHash = computeSheetHash(n);
                 const o = n[0],
                     i = Object.keys(o);
@@ -3181,15 +3175,12 @@
                         l = -1 !== r && o.length > r && o[r] || "";
                     (i || l) && s.push({ khmer: i.toString().trim(), chinese: l.toString().trim(), sheetRow: e + 2 }) }
                 vocabList = s, vocabularyData = vocabList, editUnlocked = !0, updateEditButtonsState();
-                // Attempt to load API/password only if we have a sheetId
-                if (currentSheetId) await loadApiAndPasswordFromSheet();
+                await loadApiAndPasswordFromSheet();
                 buildFirstCharCache();
                 saveAllData();
-                // Save sheet ID to localStorage only if it's a custom ID
+                // Save sheet ID to localStorage
                 if (currentSheetId) {
                     safeSetItem("vocabMaster_SheetId", currentSheetId);
-                } else {
-                    safeRemoveItem("vocabMaster_SheetId");
                 }
                 "random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length ||
                     pickRandom(), sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
@@ -3211,12 +3202,8 @@
 
         async function callApi(e, t) {
             if (!editUnlocked) return showPasswordModal((async n => { n && await callApi(e, t) })), !1;
-            if (!detectedApiUrl || !detectedApiUrl.startsWith('http')) {
-                // Use a fallback default API URL if none is set (e.g., when using the default sheet)
-                detectedApiUrl = window.location.origin + '/api';
-                // Also ensure default password is set
-                if (!dynamicPassword) dynamicPassword = '012891556';
-            }
+            if (!detectedApiUrl || !detectedApiUrl.startsWith("http")) return showToast("❌ No valid API URL found."),
+            !1;
             if (!currentSheetId) return showToast("❌ No sheet loaded"), !1;
             const n = { ...e,
                 sheetId: currentSheetId,
@@ -3342,15 +3329,7 @@
 
             n.onclick = async () => {
                 const n = t.value.trim();
-                if (!n) {
-                    // If empty, load the default sheet (server will use its hidden ID)
-                    currentSheetId = "";
-                    currentSheetUrl = "";
-                    showToast("📥 Loading default sheet...");
-                    await loadSheetData(true);
-                    e.remove();
-                    return;
-                }
+                if (!n) return void showToast("❌ Please enter a Google Sheet URL or ID", !0);
                 const o = extractSheetIdFromUrl(n);
                 if (o) {
                     currentSheetId = o;
@@ -3532,53 +3511,6 @@
                 "active"), t.classList.remove("active"))), renderSidebarUI()
         }
 
-        // ============================================================
-        //  WAKE LOCK: keep screen on during AUTO mode on mobile
-        // ============================================================
-        let wakeLock = null;
-
-        async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    wakeLock.addEventListener('release', () => {
-                        console.log('Wake Lock released');
-                    });
-                    console.log('Wake Lock acquired');
-                }
-            } catch (err) {
-                console.warn('Wake Lock not available:', err);
-            }
-        }
-
-        function releaseWakeLock() {
-            if (wakeLock) {
-                try {
-                    wakeLock.release();
-                    wakeLock = null;
-                    console.log('Wake Lock released');
-                } catch (err) {
-                    console.warn('Error releasing wake lock:', err);
-                }
-            }
-        }
-
-        // Re‑acquire wake lock if the page becomes visible again while AUTO is on
-        document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible' && autoActive) {
-                if (!wakeLock) {
-                    await requestWakeLock();
-                }
-            }
-        });
-
-        // Release wake lock on page unload
-        window.addEventListener('beforeunload', () => {
-            releaseWakeLock();
-        });
-
-        // ============================================================
-
         function toggleAuto() {
             autoActive = !autoActive;
             const e = document.getElementById("autoBtn");
@@ -3586,31 +3518,20 @@
                 e.classList.remove("off");
                 e.classList.add("active");
                 e.innerText = "AUTO: ON";
-                // Request wake lock to keep screen awake
-                requestWakeLock();
                 pickRandom();
             } else {
                 e.classList.remove("active");
                 e.classList.add("off");
                 e.innerText = "AUTO: OFF";
-                if (autoTimer) {
-                    clearTimeout(autoTimer);
-                    autoTimer = null;
-                }
+                autoTimer && (clearTimeout(autoTimer), autoTimer = null);
                 killAllSpeech();
-                // Release wake lock when AUTO is turned off
-                releaseWakeLock();
             }
         }
 
         function startAutoCycle() {
-            if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), autoActive) {
-                const e = 1e3 * parseInt(document.getElementById("autoDelay").value);
-                autoTimer = setTimeout(() => {
-                    autoActive && pickRandom();
-                    autoTimer = null
-                }, e)
-            }
+            if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), autoActive) { const e = 1e3 * parseInt(document
+                    .getElementById("autoDelay").value);
+                autoTimer = setTimeout((() => { autoActive && pickRandom(), autoTimer = null }), e) }
         }
 
         function toggleSidebar() {
@@ -4496,13 +4417,11 @@
             });
 
             document.getElementById("openGoogleSheetBtnModal").onclick = () => {
-                if (vocabList.length > 0 && currentSheetUrl) {
+                if (vocabList.length > 0) {
                     const lastRow = vocabList[vocabList.length - 1].sheetRow;
                     openSheetToKhmerColumn(lastRow);
                 } else if (currentSheetUrl) {
                     window.open(currentSheetUrl + "/edit#gid=0&range=D2", "_blank");
-                } else {
-                    showToast("No sheet loaded to open");
                 }
             };
 
@@ -4876,11 +4795,7 @@
             });
 
             document.getElementById("openSheetRowBtn").onclick = () => {
-                if (currentSheetId) {
-                    requestOpenSheetRow(window.currentEdit.row);
-                } else {
-                    showToast("No sheet loaded to open");
-                }
+                requestOpenSheetRow(window.currentEdit.row);
             };
 
             // ===== MODIFIED: confirmUpdate with optimistic update and retry (kept as original) =====
@@ -5476,11 +5391,7 @@
             const sheetId = safeGetItem("vocabMaster_SheetId", "");
             if (sheetId) {
                 currentSheetId = sheetId;
-                currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`;
                 console.log("🔑 Restored sheet ID:", sheetId);
-            } else {
-                currentSheetId = "";
-                currentSheetUrl = "";
             }
 
             const apiUrl = safeGetItem("vocabMaster_ApiUrl", "");
@@ -6463,19 +6374,16 @@
                     ev.stopPropagation();
                     const overlay = document.getElementById('qrPopupOverlay');
                     if (!overlay) return;
-                    // Load the default sheet (server will use its hidden ID)
-                    currentSheetId = "";
-                    currentSheetUrl = "";
-                    // Reset API and password to default values for the default sheet
-                    detectedApiUrl = window.location.origin + '/api';
-                    dynamicPassword = '012891556';
-                    safeSetItem('vocabMaster_ApiUrl', detectedApiUrl);
-                    safeSetItem('vocabMaster_Password', dynamicPassword);
+                    // Load the default sheet
+                    const sheetId = DEFAULT_SHEET_ID;
+                    const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+                    currentSheetId = sheetId;
+                    currentSheetUrl = sheetUrl;
+                    addSheetToHistory(sheetId);
                     showToast(`📥 Loading default sheet...`);
                     await loadSheetData(true);
                     // Close the QR overlay after loading
                     overlay.style.display = 'none';
-                    showToast(`✅ Default sheet loaded with API: ${detectedApiUrl}`);
                 });
             }
         }
@@ -6514,9 +6422,8 @@
         }
 
         async function initializeSheet() {
-            // Simply set currentSheetId to empty to use the server's default hidden ID
-            currentSheetId = "";
-            currentSheetUrl = "";
+            currentSheetId = DEFAULT_SHEET_ID;
+            currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`;
             await loadSheetData(true);
         }
 
@@ -6641,7 +6548,7 @@
             loadSettings();
             loadSheetHistory();
 
-            // 👇 If we have a sheet ID saved (from a custom load), refresh API/password
+            // 👇 If we have a sheet ID, fetch the API and password from the sheet (refresh from source)
             if (currentSheetId) {
                 try {
                     await loadApiAndPasswordFromSheet();
@@ -6662,8 +6569,11 @@
                 orderBtn.addEventListener('click', toggleSpeechOrder);
             }
 
-            // --- NO AUTO-LOAD on first visit. User must load a sheet via Insert Vocab or QR.
-            // If there is no vocabList, we show empty state.
+            // --- REMOVED auto-load: vocabList remains empty on first load ---
+            // if (vocabList.length === 0) {
+            //     await initializeSheet();
+            // }
+            // --- Instead, build cache and render empty state ---
             if (vocabList.length > 0) {
                 buildFirstCharCache();
                 if (appMode === "random") {
@@ -6891,6 +6801,92 @@
                 }
             }
         };
+    </script>
+    <!-- ===== NEW: Screen Wake Lock (keeps device awake when AUTO is ON) ===== -->
+    <script>
+        // Screen Wake Lock – keeps the device from sleeping when Auto is active
+        (function() {
+            let wakeLock = null;
+            let wakeLockSupported = false;
+
+            // Check if the Wake Lock API is available
+            if ('wakeLock' in navigator) {
+                wakeLockSupported = true;
+                console.log('✅ Wake Lock API supported');
+            } else {
+                console.warn('⚠️ Wake Lock API not supported, screen may sleep.');
+            }
+
+            // Request a screen wake lock
+            async function requestWakeLock() {
+                if (!wakeLockSupported) return;
+                if (wakeLock) {
+                    // Already have one – release it first to be safe (avoid multiple locks)
+                    try {
+                        await wakeLock.release();
+                        wakeLock = null;
+                    } catch (e) { /* ignore */ }
+                }
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('🔒 Wake Lock acquired');
+                    // Listen for release events (e.g., when tab becomes hidden)
+                    wakeLock.addEventListener('release', () => {
+                        console.log('🔓 Wake Lock released');
+                        wakeLock = null;
+                    });
+                } catch (err) {
+                    console.warn('Failed to acquire wake lock:', err);
+                }
+            }
+
+            // Release the wake lock
+            async function releaseWakeLock() {
+                if (!wakeLockSupported) return;
+                if (wakeLock) {
+                    try {
+                        await wakeLock.release();
+                        wakeLock = null;
+                        console.log('🔓 Wake Lock manually released');
+                    } catch (err) {
+                        console.warn('Failed to release wake lock:', err);
+                    }
+                }
+            }
+
+            // Whenever the page becomes visible again, re‑request if auto is ON
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && window.autoActive) {
+                    requestWakeLock();
+                }
+            });
+
+            // Patch toggleAuto to manage the wake lock
+            const origToggleAuto = window.toggleAuto;
+            window.toggleAuto = function() {
+                origToggleAuto();
+                // After toggling, autoActive reflects new state
+                if (window.autoActive) {
+                    requestWakeLock();
+                } else {
+                    releaseWakeLock();
+                }
+            };
+
+            // On page load, if auto was previously on (from settings), request lock
+            // We'll hook into the existing onload (which is already defined)
+            // We'll add a one-time check after the main onload runs.
+            // Since we can't easily extend the onload, we'll use a small timeout.
+            setTimeout(() => {
+                if (window.autoActive) {
+                    requestWakeLock();
+                }
+            }, 500);
+
+            // Expose functions globally for debugging (optional)
+            window.requestWakeLock = requestWakeLock;
+            window.releaseWakeLock = releaseWakeLock;
+        })();
     </script>
 </body>
 </html>
