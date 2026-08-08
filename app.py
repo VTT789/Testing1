@@ -6,9 +6,9 @@ import tempfile
 import uuid
 import asyncio
 import traceback
-import requests          # <-- NEW: for fetching sheet data
+import requests          # <-- needed for fetching sheet data
 
-app = Flask(name)
+app = Flask(__name__)
 CORS(app)
 
 # =========================
@@ -69,6 +69,7 @@ def home():
 
 # =========================
 # GET VOCABULARY (SECURE)
+# Returns both sheetId and data
 # =========================
 @app.route("/get_vocab")
 def get_vocab():
@@ -81,7 +82,10 @@ def get_vocab():
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         data = resp.json()
-        return jsonify(data)
+        return jsonify({
+            "sheetId": sheet_id,
+            "data": data
+        })
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Sheet fetch failed: {str(e)}"}), 500
     except Exception as e:
@@ -155,6 +159,7 @@ def test():
     return jsonify({
         "status": "healthy"
     })
+
 # =========================
 # DEBUG VOICES
 # =========================
@@ -176,7 +181,7 @@ def voices():
 # =========================
 # MAIN
 # =========================
-if name == "main":
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
 
     print(f"🚀 Running on port {port}")
