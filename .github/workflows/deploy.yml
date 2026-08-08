@@ -1,0 +1,26 @@
+name: Deploy with Sheet ID
+
+on:
+  push:
+    branches: [ main ]          # Change to 'master' if your default branch is master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Replace sheet ID placeholder with secret
+        run: |
+          sed -i "s/__GOOGLE_SHEETID__/${{ secrets.GOOGLE_SHEETID }}/g" index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
