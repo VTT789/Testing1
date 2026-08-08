@@ -8,7 +8,7 @@ import asyncio
 import traceback
 import requests          # <-- NEW: for fetching sheet data
 
-app = Flask(__name__)
+app = Flask(name)
 CORS(app)
 
 # =========================
@@ -75,19 +75,18 @@ def get_vocab():
     sheet_id = os.environ.get("GOOGLE_SHEETID")
     if not sheet_id:
         return jsonify({"error": "GOOGLE_SHEETID not set"}), 500
+
     url = f"https://opensheet.elk.sh/{sheet_id}/Sheet1"
     try:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         data = resp.json()
-        return jsonify({
-            "sheetId": sheet_id,
-            "data": data
-        })
+        return jsonify(data)
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Sheet fetch failed: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
 # =========================
 # SPEAK
 # =========================
@@ -156,7 +155,6 @@ def test():
     return jsonify({
         "status": "healthy"
     })
-
 # =========================
 # DEBUG VOICES
 # =========================
@@ -178,7 +176,7 @@ def voices():
 # =========================
 # MAIN
 # =========================
-if __name__ == "__main__":
+if name == "main":
     port = int(os.environ.get("PORT", 5000))
 
     print(f"🚀 Running on port {port}")
