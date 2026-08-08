@@ -75,18 +75,19 @@ def get_vocab():
     sheet_id = os.environ.get("GOOGLE_SHEETID")
     if not sheet_id:
         return jsonify({"error": "GOOGLE_SHEETID not set"}), 500
-
     url = f"https://opensheet.elk.sh/{sheet_id}/Sheet1"
     try:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         data = resp.json()
-        return jsonify(data)
+        return jsonify({
+            "sheetId": sheet_id,
+            "data": data
+        })
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Sheet fetch failed: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
-
 # =========================
 # SPEAK
 # =========================
