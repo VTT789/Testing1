@@ -2646,9 +2646,8 @@
             copyBtn = null,
             popupMessageSpan = null,
             copyTimer = null;
-        const GOOGLE_SHEET_URL =
-            "https://docs.google.com/spreadsheets/d/14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM/edit",
-            DEFAULT_SHEET_ID = "__GOOGLE_SHEETID__";
+        // Hardcoded sheet IDs are REMOVED – sheet ID is fetched from backend
+        const DEFAULT_SHEET_ID = "";  // will be set dynamically
         let sheetHistory = [];
 
         function loadSheetHistory() {
@@ -3147,18 +3146,27 @@
         }
 
         // ============================================================
-        // MODIFIED: loadSheetData uses secure backend endpoint /get_vocab
+        // MODIFIED: loadSheetData fetches sheetId from backend dynamically
         // ============================================================
         async function loadSheetData(forceReload = false) {
             if (!forceReload) return;
-            if (!currentSheetId) return void showToast("❌ Please enter a Google Sheet URL");
-            // Fetch from our own backend instead of opensheet.elk.sh
+            // Fetch from our own backend – it returns { sheetId, data }
             const url = '/get_vocab';
             try {
                 const t = await fetch(url);
                 if (!t.ok) throw new Error(`HTTP ${t.status}`);
-                const n = await t.json();
+                const response = await t.json();
+                // Response contains { sheetId, data }
+                const sheetId = response.sheetId;
+                const n = response.data;
                 if (!Array.isArray(n) || 0 === n.length) throw new Error("No data found in sheet");
+                // Set the sheet ID and URL from the backend response
+                if (sheetId) {
+                    currentSheetId = sheetId;
+                    currentSheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+                    safeSetItem("vocabMaster_SheetId", sheetId);
+                    addSheetToHistory(sheetId);
+                }
                 lastSheetDataHash = computeSheetHash(n);
                 const o = n[0],
                     i = Object.keys(o);
@@ -6378,15 +6386,8 @@
                     ev.stopPropagation();
                     const overlay = document.getElementById('qrPopupOverlay');
                     if (!overlay) return;
-                    // Load the default sheet
-                    const sheetId = DEFAULT_SHEET_ID;
-                    const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
-                    currentSheetId = sheetId;
-                    currentSheetUrl = sheetUrl;
-                    addSheetToHistory(sheetId);
-                    showToast(`📥 Loading default sheet...`);
+                    showToast("📥 Loading default sheet...");
                     await loadSheetData(true);
-                    // Close the QR overlay after loading
                     overlay.style.display = 'none';
                 });
             }
@@ -6426,8 +6427,6 @@
         }
 
         async function initializeSheet() {
-            currentSheetId = DEFAULT_SHEET_ID;
-            currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`;
             await loadSheetData(true);
         }
 
@@ -6573,11 +6572,11 @@
                 orderBtn.addEventListener('click', toggleSpeechOrder);
             }
 
-            // --- REMOVED auto-load: vocabList remains empty on first load ---
-            // if (vocabList.length === 0) {
-            //     await initializeSheet();
-            // }
-            // --- Instead, build cache and render empty state ---
+            // Load the default sheet on startup (via secure backend)
+            await initializeSheet();
+
+            // --- REMOVED auto-load: vocabList is loaded via initializeSheet ---
+            // --- Instead, build cache and render ---
             if (vocabList.length > 0) {
                 buildFirstCharCache();
                 if (appMode === "random") {
