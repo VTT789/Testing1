@@ -1275,13 +1275,21 @@
             text-align: center;
             color: rgba(255, 255, 255, .6)
         }
-        /* X Hei font for Chinese inputs */
+        /* X Hei font for Chinese inputs and search results */
         #addChineseInput,
         #editChineseInput,
         #vocabSearchResults .search-result-item .result-chinese,
         #vocabSearchResultsEdit .search-result-item .result-chinese,
         #vocabSearchResults .search-result-item strong,
-        #vocabSearchResultsEdit .search-result-item strong {
+        #vocabSearchResultsEdit .search-result-item strong,
+        #vocabSearchResults .result-item .result-chinese,
+        #vocabSearchResultsEdit .result-item .result-chinese,
+        #vocabSearchResults .result-item .result-khmer,
+        #vocabSearchResultsEdit .result-item .result-khmer,
+        #vocabSearchResults div,
+        #vocabSearchResultsEdit div,
+        #vocabSearchResults span,
+        #vocabSearchResultsEdit span {
             font-family: 'XHeiPinyin', 'PingFang SC', 'Microsoft YaHei', sans-serif !important;
         }
         /* White background for confirm add button */
@@ -3957,7 +3965,7 @@
         }
 
         // Perform search with limit and optimized loop, respecting pendingDeletions + SORTED
-        // Also shows ↪️ for items in recycle bin instead of 🗑️
+        // Shows ↪️ for recycle bin items, 🗑️ for active items
         function performSearch(query, container, isEdit = false) {
             const q = query.trim().toLowerCase();
             if (!q) { container.innerHTML = ""; return; }
@@ -3989,8 +3997,8 @@
                 const chineseJs = jsEscape(chineseEsc);
                 const khmerJs = jsEscape(khmerEsc);
                 const isDeleted = softDeletedIndices.has(idx);
-                // If in recycle bin, show ↪️ (restore) instead of 🗑️ (delete)
-                const actionIcon = isDeleted ? '↪️' : '🗑️';
+                // Show ↩️ for recycle bin items, 🗑️ for active items
+                const actionIcon = isDeleted ? '↩️' : '🗑️';
                 const actionFn = isDeleted ?
                     `window.restoreFromSearch(${idx}, '${jsEscape(q)}', ${isEdit})` :
                     (isEdit ?
@@ -4005,7 +4013,7 @@
                             data-chinese="${chineseJs}"
                             data-khmer="${khmerJs}"
                             >
-                            <span style="flex:1;"><strong>${chineseEsc}</strong> — ${khmerEsc}${delBadge}</span>
+                            <span style="flex:1; font-family:'XHeiPinyin','PingFang SC','Microsoft YaHei',sans-serif !important;"><strong>${chineseEsc}</strong> — ${khmerEsc}${delBadge}</span>
                             <span class="search-delete-btn" style="cursor:pointer; padding:4px 10px; font-size:1.2rem; border-radius:20px; background:${isDeleted ? 'rgba(34,197,94,0.2)' : 'rgba(255,0,0,0.2)'};" 
                                   onclick="event.stopPropagation(); ${actionFn}" 
                                   ontouchstart="event.preventDefault(); event.stopPropagation(); ${actionFn}">${actionIcon}</span>
@@ -4018,13 +4026,14 @@
         window.restoreFromSearch = function(idx, query, isEdit) {
             if (softDeletedIndices.has(idx)) {
                 restoreSoftDeleted(idx);
-                // Refresh search results
+                // Refresh search results - toggle icon will update automatically
                 const input = isEdit ? document.getElementById('editChineseInput') : document.getElementById('addChineseInput');
-                if (input && window.addModalPerformSearch) {
-                    window.addModalPerformSearch(input.value);
-                }
-                if (isEdit && window.editModalPerformSearch) {
-                    window.editModalPerformSearch(document.getElementById('editChineseInput')?.value || '');
+                if (input) {
+                    if (isEdit && window.editModalPerformSearch) {
+                        window.editModalPerformSearch(input.value);
+                    } else if (!isEdit && window.addModalPerformSearch) {
+                        window.addModalPerformSearch(input.value);
+                    }
                 }
                 renderSidebarUI();
             }
@@ -4143,7 +4152,7 @@
             }
         }
 
-        // ---- Batch actions (no confirm prompts for individual items) ----
+        // ---- Batch actions ----
         async function restoreAllSoftDeletedAndClose() {
             const count = softDeletedIndices.size;
             if (count === 0) {
@@ -4170,6 +4179,7 @@
                 }
             }
             saveAllData();
+            // Clean toast message - no " / "
             showToast(`↩️ Restored ${count} items`);
             // Close the modal immediately
             const modal = document.querySelector('.modal-overlay');
@@ -4214,7 +4224,7 @@
             }
             saveAllData();
             showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
-            // Close the modal immediately
+            // Close the modal immediately (no waiting)
             const modal = document.querySelector('.modal-overlay');
             if (modal) modal.remove();
         }
@@ -4259,50 +4269,53 @@
             closeBtn.onclick = () => overlay.remove();
 
             // Attach event listeners to restore and permanent delete buttons (individual)
-            overlay.querySelectorAll(".rb-restore").forEach(btn => {
-                btn.addEventListener("click", function(e) {
-                    e.stopPropagation();
-                    const idx = parseInt(this.dataset.idx);
-                    if (!isNaN(idx)) {
-                        restoreSoftDeleted(idx);
-                        // Re-render the modal content
-                        const list = overlay.querySelector("#recycleBinList");
-                        if (list) list.innerHTML = renderRecycleBinItems();
-                        updateRecycleBinBadge();
-                        // Update batch actions visibility
-                        const actions = overlay.querySelector("#recycleBinActions");
-                        if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
-                        // If empty, close after short delay
-                        if (softDeletedIndices.size === 0) {
-                            setTimeout(() => overlay.remove(), 600);
-                        }
-                    }
-                });
-            });
+            // Use event delegation to ensure each button works reliably
+            const list = overlay.querySelector("#recycleBinList");
+            if (list) {
+                list.addEventListener('click', function(e) {
+                    const restoreBtn = e.target.closest('.rb-restore');
+                    const deleteBtn = e.target.closest('.rb-permadel');
 
-            overlay.querySelectorAll(".rb-permadel").forEach(btn => {
-                btn.addEventListener("click", async function(e) {
-                    e.stopPropagation();
-                    const idx = parseInt(this.dataset.idx);
-                    if (!isNaN(idx)) {
-                        // Individual delete - still show confirmation for single items
-                        if (softDeletedIndices.has(idx)) {
-                            const item = vocabList[idx];
-                            if (item && !confirm(`⚠️ Permanently delete Display #${getDisplayNumberFromArrayIndex(idx)} (${item.chinese || item.khmer}) from sheet?`)) return;
+                    if (restoreBtn) {
+                        e.stopPropagation();
+                        const idx = parseInt(restoreBtn.dataset.idx);
+                        if (!isNaN(idx)) {
+                            restoreSoftDeleted(idx);
+                            // Re-render the modal content
+                            list.innerHTML = renderRecycleBinItems();
+                            updateRecycleBinBadge();
+                            // Update batch actions visibility
+                            const actions = overlay.querySelector("#recycleBinActions");
+                            if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+                            // If empty, close after short delay
+                            if (softDeletedIndices.size === 0) {
+                                setTimeout(() => overlay.remove(), 600);
+                            }
                         }
-                        await permanentlyDeleteSoftDeleted(idx);
-                        // Re-render the modal content
-                        const list = overlay.querySelector("#recycleBinList");
-                        if (list) list.innerHTML = renderRecycleBinItems();
-                        updateRecycleBinBadge();
-                        const actions = overlay.querySelector("#recycleBinActions");
-                        if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
-                        if (softDeletedIndices.size === 0) {
-                            setTimeout(() => overlay.remove(), 600);
+                    }
+
+                    if (deleteBtn) {
+                        e.stopPropagation();
+                        const idx = parseInt(deleteBtn.dataset.idx);
+                        if (!isNaN(idx)) {
+                            // Individual delete - show confirmation for single items
+                            if (softDeletedIndices.has(idx)) {
+                                const item = vocabList[idx];
+                                if (item && !confirm(`⚠️ Permanently delete Display #${getDisplayNumberFromArrayIndex(idx)} (${item.chinese || item.khmer}) from sheet?`)) return;
+                            }
+                            permanentlyDeleteSoftDeleted(idx).then(() => {
+                                list.innerHTML = renderRecycleBinItems();
+                                updateRecycleBinBadge();
+                                const actions = overlay.querySelector("#recycleBinActions");
+                                if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+                                if (softDeletedIndices.size === 0) {
+                                    setTimeout(() => overlay.remove(), 600);
+                                }
+                            });
                         }
                     }
                 });
-            });
+            }
 
             // Batch action buttons - close modal immediately after action
             const restoreAllBtn = overlay.querySelector("#restoreAllBtn");
