@@ -2188,13 +2188,11 @@
         .recycle-bin-item .rb-text .rb-zh {
             font-weight: 700;
             font-size: 1.1rem;
-            text-decoration: line-through;
-            opacity: 0.7;
+            opacity: 0.9;
         }
         .recycle-bin-item .rb-text .rb-km {
             font-size: 0.9rem;
-            opacity: 0.6;
-            text-decoration: line-through;
+            opacity: 0.7;
         }
         .recycle-bin-item .rb-actions {
             display: flex;
@@ -4121,14 +4119,13 @@
             }
         }
 
-        // ---- Batch actions ----
+        // ---- Batch actions (no confirm prompts) ----
         async function restoreAllSoftDeleted() {
             const count = softDeletedIndices.size;
             if (count === 0) {
                 showToast("Recycle bin is empty");
                 return;
             }
-            if (!confirm(`Restore all ${count} items from recycle bin?`)) return;
             const indices = Array.from(softDeletedIndices);
             for (const idx of indices) {
                 if (softDeletedIndices.has(idx)) {
@@ -4166,7 +4163,6 @@
                 showToast("Recycle bin is empty");
                 return;
             }
-            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
             const indices = Array.from(softDeletedIndices).sort((a, b) => b - a); // descending
             let successCount = 0;
             let failCount = 0;
@@ -4286,7 +4282,7 @@
                 });
             });
 
-            // Batch action buttons
+            // Batch action buttons - NO confirm prompts
             const restoreAllBtn = overlay.querySelector("#restoreAllBtn");
             if (restoreAllBtn) {
                 restoreAllBtn.addEventListener("click", async function(e) {
