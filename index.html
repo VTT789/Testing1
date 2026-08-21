@@ -4047,6 +4047,7 @@
             saveAllData();
         }
 
+        // ---- Batch permanent delete WITHOUT individual item confirmations ----
         async function permanentlyDeleteSoftDeleted(idx) {
             if (!softDeletedIndices.has(idx)) {
                 showToast("⚠️ Not in recycle bin");
@@ -4055,9 +4056,7 @@
             const item = vocabList[idx];
             if (!item) return;
             const rowToDelete = item.sheetRow;
-            const displayNum = getDisplayNumberFromArrayIndex(idx);
-            if (!confirm(`⚠️ Permanently delete Display #${displayNum} (${item.chinese || item.khmer}) from sheet?`)) return;
-
+            // No confirm prompt for individual items - will be handled by batch
             // Add to pending deletions for optimistic UI
             pendingDeletions.add(idx);
             try {
@@ -4081,45 +4080,15 @@
                         softDeletedData.set(k, v);
                     }
                 }
-                buildFirstCharCache();
-                saveAllData();
-                renderSidebarUI();
-                updateRecycleBinBadge();
-                // If sidebar is empty or current item was deleted, find next
-                if (vocabList.length === 0) {
-                    updateChineseDisplay("");
-                    document.getElementById("khmerWord").innerText = "";
-                } else {
-                    // Check if current focus is still valid
-                    if (sidebarFocusIdx >= sidebarIndices.length || sidebarIndices.length === 0) {
-                        // Find any non-deleted word
-                        const available = vocabList.filter((_, i) => !softDeletedIndices.has(i));
-                        if (available.length > 0) {
-                            const newIdx = vocabList.indexOf(available[0]);
-                            if (newIdx !== -1) loadWordByMode(newIdx, true);
-                        } else {
-                            updateChineseDisplay("");
-                            document.getElementById("khmerWord").innerText = "";
-                        }
-                    } else {
-                        const focusIdx = sidebarIndices[sidebarFocusIdx];
-                        if (focusIdx !== undefined && focusIdx < vocabList.length && !softDeletedIndices.has(focusIdx)) {
-                            loadWordByMode(focusIdx, true);
-                        } else {
-                            // Find next available
-                            const nextIdx = findNextAvailableIndex(0);
-                            if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-                        }
-                    }
-                }
-                showToast("✅ Permanently deleted from sheet");
+                return true;
             } catch (err) {
                 pendingDeletions.delete(idx);
-                showToast("❌ Permanent delete failed: " + err.message);
+                console.warn("Delete failed for row", rowToDelete, err);
+                return false;
             }
         }
 
-        // ---- Batch actions (no confirm prompts) ----
+        // ---- Batch actions (no confirm prompts for individual items) ----
         async function restoreAllSoftDeleted() {
             const count = softDeletedIndices.size;
             if (count === 0) {
@@ -4163,18 +4132,21 @@
                 showToast("Recycle bin is empty");
                 return;
             }
+            // Single batch confirmation for all items
+            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
+
             const indices = Array.from(softDeletedIndices).sort((a, b) => b - a); // descending
             let successCount = 0;
             let failCount = 0;
             for (const idx of indices) {
                 // Check if still soft-deleted
                 if (!softDeletedIndices.has(idx)) continue;
-                try {
-                    await permanentlyDeleteSoftDeleted(idx);
+                const result = await permanentlyDeleteSoftDeleted(idx);
+                if (result) {
                     successCount++;
-                } catch (e) {
+                } else {
                     failCount++;
-                    // Remove from set to avoid loop issues
+                    // Remove from set to avoid loop issues if deletion failed but item was removed
                     softDeletedIndices.delete(idx);
                     softDeletedData.delete(idx);
                 }
@@ -4268,6 +4240,11 @@
                     e.stopPropagation();
                     const idx = parseInt(this.dataset.idx);
                     if (!isNaN(idx)) {
+                        // Individual delete - still show confirmation for single items
+                        if (softDeletedIndices.has(idx)) {
+                            const item = vocabList[idx];
+                            if (item && !confirm(`⚠️ Permanently delete Display #${getDisplayNumberFromArrayIndex(idx)} (${item.chinese || item.khmer}) from sheet?`)) return;
+                        }
                         await permanentlyDeleteSoftDeleted(idx);
                         // Re-render the modal content
                         const list = overlay.querySelector("#recycleBinList");
@@ -4282,7 +4259,7 @@
                 });
             });
 
-            // Batch action buttons - NO confirm prompts
+            // Batch action buttons - NO confirm prompts for individual items
             const restoreAllBtn = overlay.querySelector("#restoreAllBtn");
             if (restoreAllBtn) {
                 restoreAllBtn.addEventListener("click", async function(e) {
