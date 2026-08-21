@@ -3875,7 +3875,7 @@
             performSearch(query, container, true);
         };
 
-        // ======================== RECYCLE BIN (FIXED) =========================
+        // ======================== RECYCLE BIN (FIXED - no renumbering on move) =========================
         let recycleBin = [];
 
         function loadRecycleBin() {
@@ -3955,6 +3955,7 @@
                 chinese: item.chinese,
                 sheetRow: item.sheetRow
             });
+            // Sort by sheetRow to keep order
             vocabList.sort((a, b) => a.sheetRow - b.sheetRow);
 
             recycleBin.splice(index, 1);
@@ -3985,7 +3986,7 @@
             return true;
         }
 
-        // ---- FIXED: permanentDeleteFromRecycle - uses original API and then reloads ----
+        // ---- permanentDeleteFromRecycle - uses original API and then reloads ----
         function permanentDeleteFromRecycle(index) {
             if (index < 0 || index >= recycleBin.length) return false;
             const item = recycleBin[index];
@@ -4027,7 +4028,7 @@
             return true;
         }
 
-        // ---- FIXED: emptyRecycleBin - processes items and reloads sheet afterwards ----
+        // ---- emptyRecycleBin - processes items and reloads sheet afterwards ----
         function emptyRecycleBin() {
             if (recycleBin.length === 0) {
                 showToast('📭 Recycle bin is already empty');
@@ -4074,7 +4075,6 @@
                     .then(() => {
                         deleted++;
                         showToast(`🗑️ Deleted row ${row} (${deleted}/${total})`);
-                        // Remove from vocabList if present (will be synced later)
                         processNext(idx + 1);
                     })
                     .catch(err => {
@@ -4488,7 +4488,7 @@
             updateRecycleBadge();
         };
 
-        // ---- MODIFIED: delete functions now move to recycle ----
+        // ---- MODIFIED: delete functions now move to recycle (NO RENUMBERING) ----
         window.deleteFromAddSearch = function(idx, row, searchQuery) {
             if (isDeleting) {
                 showToast("⏳ Please wait, previous deletion in progress...");
@@ -4512,12 +4512,10 @@
                 return;
             }
 
+            // Remove from vocabList WITHOUT renumbering
             vocabList.splice(idx, 1);
-            for (let i = 0; i < vocabList.length; i++) {
-                if (vocabList[i].sheetRow > rowToDelete) {
-                    vocabList[i].sheetRow--;
-                }
-            }
+            // No loop to adjust sheetRow - keep original row numbers intact
+
             buildFirstCharCache();
             saveAllData();
             pendingDeletions.delete(idx);
@@ -4569,11 +4567,8 @@
             }
 
             vocabList.splice(idx, 1);
-            for (let i = 0; i < vocabList.length; i++) {
-                if (vocabList[i].sheetRow > rowToDelete) {
-                    vocabList[i].sheetRow--;
-                }
-            }
+            // No renumbering
+
             buildFirstCharCache();
             saveAllData();
             pendingDeletions.delete(idx);
@@ -5056,7 +5051,7 @@
             }, 50);
         };
 
-        // ---- MODIFIED: showEditModal with recycle integration ----
+        // ---- MODIFIED: showEditModal with recycle integration (NO RENUMBERING) ----
         window.showEditModal = function(e, t, n, o) {
             if (!editUnlocked) return void showPasswordModal((() => { showEditModal(e, t, n, o) }));
             const i = getDisplayNumberFromArrayIndex(e),
@@ -5166,7 +5161,7 @@
             document.getElementById("confirmUpdateBtn").onclick = () => showPasswordProtectionModal(confirmUpdate,
                 "update vocabulary");
 
-            // ---- MODIFIED: delete action now moves to recycle ----
+            // ---- MODIFIED: delete action now moves to recycle (NO RENUMBERING) ----
             const deleteAction = async () => {
                 const displayNum = getDisplayNumberFromArrayIndex(window.currentEdit.idx);
                 const item = vocabList[window.currentEdit.idx];
@@ -5191,11 +5186,8 @@
 
                 const oldIndices = [...sidebarIndices];
                 vocabList.splice(idx, 1);
-                for (let i = 0; i < vocabList.length; i++) {
-                    if (vocabList[i].sheetRow > rowToDelete) {
-                        vocabList[i].sheetRow--;
-                    }
-                }
+                // NO renumbering
+
                 buildFirstCharCache();
                 saveAllData();
                 pendingDeletions.delete(idx);
@@ -7069,17 +7061,13 @@
             if (typeof origDeleteVocabByRow !== 'function') {
                 if (typeof window.deleteVocabByRow === 'function') {
                     origDeleteVocabByRow = window.deleteVocabByRow;
-                    // Override it with our version that moves to recycle
+                    // Override it with our version that moves to recycle (NO RENUMBERING)
                     window.deleteVocabByRow = async function(row) {
                         const idx = vocabList.findIndex(v => v.sheetRow === row);
                         if (idx !== -1) {
                             if (moveToRecycle(idx, row)) {
                                 vocabList.splice(idx, 1);
-                                for (let i = 0; i < vocabList.length; i++) {
-                                    if (vocabList[i].sheetRow > row) {
-                                        vocabList[i].sheetRow--;
-                                    }
-                                }
+                                // NO RENUMBERING - keep original row numbers
                                 buildFirstCharCache();
                                 saveAllData();
                                 renderSidebarUI();
@@ -7102,7 +7090,7 @@
                             }
                         }
                     };
-                    console.log('✅ deleteVocabByRow overridden with recycle support');
+                    console.log('✅ deleteVocabByRow overridden with recycle support (no renumbering)');
                 }
             }
         };
@@ -7127,11 +7115,7 @@
             }
         };
 
-        // ---- Ensure recycle functions use the correct API ----
-        // The functions permanentDeleteFromRecycle and emptyRecycleBin already use origDeleteVocabByRow or callApi.
-        // They will work correctly.
-
-        console.log('✅ Recycle bin fix applied: Empty Recycle now removes items from sheet and syncs.');
+        console.log('✅ Recycle bin fix applied: no renumbering on move, reload after permanent delete.');
     </script>
 </body>
 </html>
