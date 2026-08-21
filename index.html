@@ -166,15 +166,15 @@
             background: #1e3a8a;
             border-color: #60a5fa
         }
-        body.night-mode .vocab-item.recycled {
-            background: #1e293b;
+        body.night-mode .vocab-item.deleted {
+            background: #2d1b1b !important;
+            border-color: #ef4444 !important;
             opacity: 0.6;
-            border-color: #475569;
         }
-        body.night-mode .vocab-item.recycled .side-zh,
-        body.night-mode .vocab-item.recycled .side-km {
+        body.night-mode .vocab-item.deleted .side-zh,
+        body.night-mode .vocab-item.deleted .side-km {
             text-decoration: line-through;
-            color: #94a3b8;
+            color: #888;
         }
         body.night-mode .drag-handle {
             background: #0f172a;
@@ -1086,25 +1086,35 @@
         body.night-mode .vocab-item.active {
             background: #1e3a8a
         }
-        .vocab-item.recycled {
-            opacity: 0.6;
-            background: #f1f5f9;
-            border-color: #cbd5e1;
+        /* ---- SOFT-DELETE STRIKETHROUGH ---- */
+        .vocab-item.deleted {
+            background: #fef2f2 !important;
+            border-color: #fca5a5 !important;
+            opacity: 0.65;
         }
-        .vocab-item.recycled .side-zh,
-        .vocab-item.recycled .side-km {
+        .vocab-item.deleted .side-zh,
+        .vocab-item.deleted .side-km {
             text-decoration: line-through;
-            color: #64748b;
+            color: #999;
         }
-        body.night-mode .vocab-item.recycled {
-            background: #1e293b;
-            border-color: #475569;
+        body.night-mode .vocab-item.deleted {
+            background: #2d1b1b !important;
+            border-color: #ef4444 !important;
             opacity: 0.6;
         }
-        body.night-mode .vocab-item.recycled .side-zh,
-        body.night-mode .vocab-item.recycled .side-km {
-            color: #94a3b8;
+        body.night-mode .vocab-item.deleted .side-zh,
+        body.night-mode .vocab-item.deleted .side-km {
             text-decoration: line-through;
+            color: #888;
+        }
+        .vocab-item.deleted .deleted-badge {
+            display: inline-block;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.6rem;
+            padding: 1px 6px;
+            border-radius: 12px;
+            margin-left: 6px;
         }
         .side-number-col {
             display: flex;
@@ -1207,11 +1217,13 @@
             border-color: #475569;
             color: #94a3b8;
         }
+        /* Mode toggle - NORMAL mode: BLUE background */
         .mode-normal-active {
             background: #2563eb !important;
             color: #fff !important;
             border: 1px solid #2563eb !important;
         }
+        /* Mode toggle - RANDOM mode: GRAY background */
         .mode-random-active {
             background: #94a3b8 !important;
             color: #fff !important;
@@ -2056,6 +2068,7 @@
             margin-top: 4px;
             display: none
         }
+        /* Search result scroll improvements */
         #vocabSearchResults,
         #vocabSearchResultsEdit,
         .sidebar-search-results {
@@ -2067,6 +2080,8 @@
             cursor: pointer;
             border-bottom: 1px solid var(--border);
         }
+
+        /* New style for search icon inside Chinese input */
         .input-with-search {
             display: flex;
             align-items: center;
@@ -2112,6 +2127,8 @@
             background: rgba(255, 255, 255, 0.15);
             margin-right: 4px;
         }
+
+        /* Heading row with button outside h3 */
         .modal-heading-row {
             display: flex;
             justify-content: space-between;
@@ -2151,157 +2168,87 @@
         body.night-mode .modal-heading-row h3 {
             background: rgba(0, 0, 0, 0.6);
         }
-
-        /* Recycle bin button in sidebar header */
-        .recycle-bin-btn {
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 40px;
-            padding: 6px 12px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            transition: all 0.2s;
-            color: var(--text-primary);
-            flex-shrink: 0;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-            position: relative;
-        }
-        .recycle-bin-btn:hover {
-            background: rgba(239, 68, 68, 0.3);
-            transform: scale(1.02);
-        }
-        .recycle-bin-btn:active {
-            transform: scale(0.95);
-        }
-        .recycle-bin-btn .badge-count {
-            background: #ef4444;
-            color: #fff;
-            border-radius: 40px;
-            font-size: 0.6rem;
-            font-weight: 700;
-            padding: 1px 6px;
-            min-width: 18px;
-            text-align: center;
-            line-height: 1.4;
-        }
-        body.night-mode .recycle-bin-btn {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.4);
-        }
-        body.night-mode .recycle-bin-btn:hover {
-            background: rgba(239, 68, 68, 0.35);
-        }
-
-        /* Recycle bin modal */
-        .recycle-item {
+        /* ---- Recycle Bin modal specific styles ---- */
+        .recycle-bin-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
             padding: 12px 16px;
             margin-bottom: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            gap: 10px;
-            flex-wrap: wrap;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            border-left: 4px solid #ef4444;
+            gap: 12px;
         }
-        .recycle-item .recycle-info {
+        .recycle-bin-item .rb-text {
             flex: 1;
-            min-width: 120px;
             text-align: left;
             color: #fff;
         }
-        .recycle-item .recycle-info .r-chinese {
-            font-weight: 600;
-            font-size: 1rem;
+        .recycle-bin-item .rb-text .rb-zh {
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-decoration: line-through;
+            opacity: 0.7;
         }
-        .recycle-item .recycle-info .r-khmer {
-            font-size: 0.85rem;
-            opacity: 0.8;
-        }
-        .recycle-item .recycle-info .r-row {
-            font-size: 0.7rem;
+        .recycle-bin-item .rb-text .rb-km {
+            font-size: 0.9rem;
             opacity: 0.6;
-            margin-top: 2px;
+            text-decoration: line-through;
         }
-        .recycle-item .recycle-actions {
+        .recycle-bin-item .rb-actions {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             flex-shrink: 0;
         }
-        .recycle-item .recycle-actions button {
+        .recycle-bin-item .rb-actions button {
             border: none;
-            border-radius: 40px;
+            border-radius: 30px;
             padding: 6px 14px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #fff;
-        }
-        .recycle-item .recycle-actions .restore-btn {
-            background: #10b981;
-        }
-        .recycle-item .recycle-actions .restore-btn:hover {
-            background: #059669;
-        }
-        .recycle-item .recycle-actions .perm-delete-btn {
-            background: #ef4444;
-        }
-        .recycle-item .recycle-actions .perm-delete-btn:hover {
-            background: #dc2626;
-        }
-        .recycle-empty-btn {
-            background: #ef4444;
-            color: #fff;
-            border: none;
-            border-radius: 40px;
-            padding: 12px 20px;
-            font-size: 0.9rem;
             font-weight: 700;
+            font-size: 0.75rem;
             cursor: pointer;
-            transition: all 0.2s;
-            width: 100%;
-            margin-top: 12px;
+            transition: all .2s;
         }
-        .recycle-empty-btn:hover {
-            background: #dc2626;
-            transform: scale(0.98);
-        }
-        .recycle-empty-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .recycle-close-btn {
-            background: #475569;
+        .recycle-bin-item .rb-actions .rb-restore {
+            background: #22c55e;
             color: #fff;
-            border: none;
-            border-radius: 40px;
-            padding: 10px 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: 100%;
-            margin-top: 8px;
         }
-        .recycle-close-btn:hover {
-            background: #334155;
+        .recycle-bin-item .rb-actions .rb-restore:hover {
+            background: #16a34a;
+            transform: scale(0.97);
         }
-        .recycle-empty-row {
-            text-align: center;
+        .recycle-bin-item .rb-actions .rb-permadel {
+            background: #ef4444;
+            color: #fff;
+        }
+        .recycle-bin-item .rb-actions .rb-permadel:hover {
+            background: #dc2626;
+            transform: scale(0.97);
+        }
+        .recycle-bin-empty {
             color: #aaa;
-            padding: 20px 0;
-            font-size: 0.95rem;
+            padding: 30px 0;
+            font-size: 1.1rem;
         }
-        body.night-mode .recycle-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.08);
+        #floatingMenu .rb-badge {
+            background: #ef4444;
+            color: #fff;
+            border-radius: 30px;
+            padding: 2px 8px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            margin-left: 4px;
+        }
+        .recycle-bin-count {
+            display: inline-block;
+            background: #ef4444;
+            color: #fff;
+            border-radius: 30px;
+            padding: 1px 8px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            margin-left: 4px;
         }
     </style>
     <style>
@@ -2482,11 +2429,16 @@
                                 <option value="'KHSAMADY'">Samady KS</option>
                             </select><input type=color id=mKmColor value=#000000><button id=mKmBold class=bold-icon-btn onclick='toggleBold("mKmBold",applyStyles)'><span>BOLD</span></button></div>
                         <div class=size-row><label>KM Size (vh)</label><input type=range id=mKmSize class=size-slider min=2 max=150 value=42><span id=mKmSizeVal>42vh</span></div>
+                        <!-- Recycle Bin button added here -->
+                        <div style="display:flex; gap:8px; margin-top:8px;">
+                            <button id="recycleBinBtn" class="btn-main btn-accent" style="flex:1; background:linear-gradient(135deg,#dc2626,#b91c1c);">🗑️ Recycle Bin <span id="rbCountBadge" class="recycle-bin-count">0</span></button>
+                        </div>
                     </div>
                     <div id=voiceControls class=control-group>
                         <div class=voice-row><label style=font-weight:700>🎙️ Khmer Voice</label><select id=kmVoiceSelect class=voice-select><option value=km-KH-SreymomNeural>Sreymom (Female)</option><option value=km-KH-PisethNeural>Piseth (Male)</option></select></div>
                         <div class=voice-row><label style=font-weight:700>🇨🇳 Chinese Voice</label>
                             <select id=zhVoiceSelect class=voice-select>
+                                <!-- Static fallback options – will be replaced by dynamic loader -->
                                 <option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (女声·通用)</option>
                                 <option value="zh-CN-XiaoyiNeural">Xiaoyi (教学)</option>
                                 <option value="zh-CN-YunxiNeural" selected>Yunxi (男声·通用)</option>
@@ -2642,7 +2594,7 @@
         }
 
         function compressVocabList(list) {
-            return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2, item.recycled || false]);
+            return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2]);
         }
 
         function decompressVocabList(compressed) {
@@ -2650,8 +2602,7 @@
             return compressed.map(arr => ({
                 khmer: arr[0] || '',
                 chinese: arr[1] || '',
-                sheetRow: arr[2] || 2,
-                recycled: arr[3] === true
+                sheetRow: arr[2] || 2
             }));
         }
 
@@ -2681,7 +2632,8 @@
         // ======================== PASSWORD PROTECTION =========================
         let passwordVerified = false;
         let dynamicPassword = "012891556";
-
+        // --- password verification persists across reloads within same session ---
+        // We store a session flag in sessionStorage so sheet reload doesn't ask again.
         function checkPasswordVerifiedSession() {
             try {
                 const v = sessionStorage.getItem('vocabMaster_passwordVerified');
@@ -2700,10 +2652,12 @@
             } catch (e) {}
         }
 
+        // call this on successful password entry
         function markPasswordVerified() {
             setPasswordVerifiedSession();
         }
 
+        // Override the password verification to check session storage first
         const origShowPasswordProtectionModal = window.showPasswordProtectionModal;
 
         function closeAllModals() {
@@ -2711,10 +2665,12 @@
         }
 
         function showPasswordProtectionModal(callback, actionName = "this action") {
+            // If already verified in this session, skip password
             if (passwordVerified) {
                 if (callback) callback();
                 return;
             }
+            // check session storage
             if (checkPasswordVerifiedSession()) {
                 if (callback) callback();
                 return;
@@ -2739,9 +2695,11 @@
             const cancelBtn = overlay.querySelector("#pwCancelBtn");
             const cleanup = () => overlay.remove();
 
+            // ---- AUTO-CONFIRM when password matches ----
             inputField.addEventListener("input", function() {
                 const entered = this.value.trim();
                 if (entered === dynamicPassword) {
+                    // Auto-confirm
                     confirmBtn.click();
                 }
             });
@@ -2782,14 +2740,15 @@
             showPasswordProtectionModal(() => showAddNewModal(), "add new vocabulary");
         }
 
+        // ---- ORIGINAL delete request (now uses soft delete) ----
         function requestDeleteRow(rowNum, vocabIndex, callbackAfterDelete) {
-            showPasswordProtectionModal(() => {
-                if (callbackAfterDelete) callbackAfterDelete(rowNum, vocabIndex);
-            }, "delete vocabulary");
+            // Soft-delete instead of hard delete
+            softDeleteVocab(vocabIndex, rowNum);
         }
+
         // ======================== ORIGINAL GLOBALS =========================
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || "MacIntel" === navigator.platform && navigator
-            .maxTouchPoints > 1;
+        .maxTouchPoints > 1;
         let editUnlocked = !0,
             activePasswordModal = null,
             searchTerm = "",
@@ -2851,7 +2810,7 @@
 
         function handleEmojiPinchMove(e) {
             if (isPinchingEmoji && 2 === e.touches.length && emojiContainer && emojiContainer.classList.contains(
-                    "visible")) { e.preventDefault(); const t = getDistance(e.touches); if (initialEmojiDistance > 0) { let e =
+                "visible")) { e.preventDefault(); const t = getDistance(e.touches); if (initialEmojiDistance > 0) { let e =
                         initialEmojiFontSize * (t / initialEmojiDistance);
                     e = Math.max(16, Math.min(120, e)), emojiFontSize = Math.round(e), document.documentElement.style
                         .setProperty("--emoji-font-size", emojiFontSize + "px"), saveEmojiSize() } } }
@@ -2862,7 +2821,8 @@
             if (e.ctrlKey && emojiContainer && emojiContainer.classList.contains("visible")) { e.preventDefault(); const t =
                     e.deltaY > 0 ? -2 : 2; let n = emojiFontSize + t;
                 n = Math.max(16, Math.min(120, n)), emojiFontSize = n, document.documentElement.style.setProperty(
-                    "--emoji-font-size", emojiFontSize + "px"), saveEmojiSize() } }
+                    "--emoji-font-size", emojiFontSize + "px"), saveEmojiSize() }
+        }
 
         function saveEmojiPosition() {
             if (emojiContainer) { const e = emojiContainer.offsetLeft,
@@ -2915,13 +2875,13 @@
                         `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&q=${encodeURIComponent(e)}`,
                     n = await fetch(t),
                     o = (await n.json())[0][0][0].toLowerCase(); if (!o) return void emojiContainer.classList.add(
-                        "hidden"); const i =
+                    "hidden"); const i =
                         `https://emojihub.yurace.pro/api/search?q=${encodeURIComponent(o)}`,
                     a = await fetch(i),
                     r = await a.json(); if (r && r.length > 0) { const e = r.slice(0, 6).map((e => e.htmlCode ? e
-                            .htmlCode[0] : "")).filter((e => e)); if (e.length) return currentEmojiText = e.join(
-                            " "), emojiContainer.innerHTML = currentEmojiText, emojiContainer.classList.remove(
-                            "hidden"), void emojiContainer.classList.add("visible") }
+                        .htmlCode[0] : "")).filter((e => e)); if (e.length) return currentEmojiText = e.join(
+                        " "), emojiContainer.innerHTML = currentEmojiText, emojiContainer.classList.remove(
+                        "hidden"), void emojiContainer.classList.add("visible") }
                 emojiContainer.classList.add("hidden") } catch (e) { console.error("Emoji fetch error:", e),
                     emojiContainer.classList.add("hidden") } else emojiContainer.classList.add("hidden")
         }
@@ -2965,6 +2925,7 @@
                 const n = t.rows.row2?.value || "";
                 detectedApiUrl = e && e.startsWith("http") ? e : "";
                 dynamicPassword = n || "012891556";
+                // Save to localStorage so they're remembered
                 safeSetItem("vocabMaster_ApiUrl", detectedApiUrl);
                 safeSetItem("vocabMaster_Password", dynamicPassword);
                 return true;
@@ -2972,11 +2933,13 @@
             return false;
         }
 
+        // ---- RETRY TOAST (kept for other operations like add/update) ----
         let retryToastElement = null;
         let retryResolve = null;
-        let __isRetry = false;
+        let __isRetry = false; // still used for add/update operations
 
         function showRetryToast(message, retryFn) {
+            // Remove any existing retry toast
             if (retryToastElement) {
                 retryToastElement.remove();
                 retryToastElement = null;
@@ -2988,6 +2951,7 @@
             const toast = document.createElement("div");
             toast.className = "copy-toast clickable";
             toast.style.display = "block";
+            // Short message: "retry Tap ⟳" (removed "/Update" and long error text)
             toast.innerHTML = `
                 <span>${message}</span>
                 <span class="retry-icon" title="Retry">⟳</span>
@@ -3001,9 +2965,13 @@
                 toast.style.opacity = "0.6";
                 toast.style.pointerEvents = "none";
                 toast.querySelector("span").innerHTML = "⏳ Retrying...";
+
+                // Set flag to suppress pickRandom during retry
                 __isRetry = true;
+
                 try {
                     const result = await retryFn();
+                    // Success
                     toast.remove();
                     retryToastElement = null;
                     showToast("✅ Retry successful!");
@@ -3012,6 +2980,7 @@
                         retryResolve = null;
                     }
                 } catch (err) {
+                    // Failed again
                     toast.style.opacity = "1";
                     toast.style.pointerEvents = "auto";
                     toast.querySelector("span").innerHTML = `⚠️ retry failed. Tap ⟳ to retry`;
@@ -3020,14 +2989,17 @@
                 }
             });
 
+            // Also allow clicking on the toast background to retry
             toast.addEventListener("click", function(e) {
                 if (e.target === toast || e.target === toast.querySelector("span")) {
                     retryIcon.click();
                 }
             });
 
+            // Return a promise that resolves on success
             return new Promise((resolve, reject) => {
                 retryResolve = resolve;
+                // If the user manually closes? Not needed – keep until success.
             });
         }
 
@@ -3147,10 +3119,17 @@
             normalCurrentPage = 0;
         const ITEMS_PER_PAGE = 40;
 
+        // ---- Pending deletions set for optimistic search removal ----
         const pendingDeletions = new Set();
 
+        // ---- SOFT DELETE globals ----
+        const softDeletedIndices = new Set(); // indices of soft-deleted items
+        let softDeletedData = new Map(); // idx -> {khmer, chinese, sheetRow} backup
+
+        // ---- Delete lock to prevent concurrent deletions ----
         let isDeleting = false;
 
+        // ---- Speech cancellation token ----
         let _speechCancelToken = null;
 
         function _killAudioOnly() {
@@ -3163,6 +3142,7 @@
             isProcessingQueue = false;
         }
 
+        // override killAllSpeech to also cancel the speech token
         const origKillAllSpeech = window.killAllSpeech || function() {
             currentAudio && (currentAudio.pause(), currentAudio.src = "", currentAudio = null);
             speechQueue = [];
@@ -3177,21 +3157,28 @@
             origKillAllSpeech();
         };
 
+        // also patch the original killAllSpeech variable if it exists
         const killAllSpeech = window.killAllSpeech;
 
+        // ---- FIXED speakAutoSequence with cancellation token ----
         async function speakAutoSequence(chinese, khmer) {
+            // Guard: if no text, just return
             if (!chinese && !khmer) return;
 
+            // Cancel any previous speech
             if (_speechCancelToken) {
                 _speechCancelToken.cancelled = true;
             }
+            // Create a new token for this speech
             const token = { cancelled: false };
             _speechCancelToken = token;
 
+            // Kill current audio without cancelling our new token
             _killAudioOnly();
             await new Promise(resolve => setTimeout(resolve, 30));
             if (token.cancelled) return;
 
+            // If auto is active, clear any pending timer
             if (autoTimer) {
                 clearTimeout(autoTimer);
                 autoTimer = null;
@@ -3254,6 +3241,8 @@
             if (autoActive) startAutoCycle();
         }
 
+        // -------- end of fixed speakAutoSequence ---------
+
         function openSheetToKhmerColumn(e) {
             if (!currentSheetUrl) { showToast("❌ No sheet loaded"); return }
             const t = currentSheetUrl + "/edit#gid=0&range=D" + e;
@@ -3309,23 +3298,23 @@
                     l = Object.values(o);
                 let d = -1 !== a && l.length > a && l[a] || "",
                     c = -1 !== r && l.length > r && l[r] || "";
-                s.push({ khmer: d.toString().trim(), chinese: c.toString().trim(), sheetRow: 2, recycled: false });
+                s.push({ khmer: d.toString().trim(), chinese: c.toString().trim(), sheetRow: 2 });
                 for (let e = 1; e < n.length; e++) { const t = n[e],
                         o = Object.values(t),
                         i = -1 !== a && o.length > a && o[a] || "",
                         l = -1 !== r && o.length > r && o[r] || "";
-                    (i || l) && s.push({ khmer: i.toString().trim(), chinese: l.toString().trim(), sheetRow: e + 2,
-                        recycled: false }) }
+                    (i || l) && s.push({ khmer: i.toString().trim(), chinese: l.toString().trim(), sheetRow: e + 2 }) }
                 vocabList = s, vocabularyData = vocabList, editUnlocked = !0, updateEditButtonsState();
                 await loadApiAndPasswordFromSheet();
                 buildFirstCharCache();
                 saveAllData();
+                // Save sheet ID to localStorage
                 if (currentSheetId) {
                     safeSetItem("vocabMaster_SheetId", currentSheetId);
                 }
-                // Ensure no recycled flags from old data
-                vocabList.forEach(item => item.recycled = false);
-                // Load recycled flag from saved list (if any) — already in decompress
+                // Clear soft-deleted indices on fresh load (they are no longer valid)
+                softDeletedIndices.clear();
+                softDeletedData.clear();
                 "random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length ||
                     pickRandom(), sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
                     vocabList.length && pickRandom()) : (normalCurrentIdx >= vocabList.length && (normalCurrentIdx = 0),
@@ -3340,6 +3329,7 @@
                         u.innerText = "Vocab Master";
                     }
                 }
+                updateRecycleBinBadge();
                 showToast(`✅ Loaded ${vocabList.length} words`);
             } catch (e) { console.error("Error loading sheet:", e), showToast(`❌ Error: ${e.message}`) }
         }
@@ -3347,7 +3337,7 @@
         async function callApi(e, t) {
             if (!editUnlocked) return showPasswordModal((async n => { n && await callApi(e, t) })), !1;
             if (!detectedApiUrl || !detectedApiUrl.startsWith("http")) return showToast("❌ No valid API URL found."),
-                !1;
+            !1;
             if (!currentSheetId) return showToast("❌ No sheet loaded"), !1;
             const n = { ...e,
                 sheetId: currentSheetId,
@@ -3404,8 +3394,21 @@
             return await callApi({ action: "update", row: e - 1, vocab: t, chinese: n }, "UPDATE");
         }
 
-        // --- ORIGINAL deleteVocabByRow (kept for reference, but we override it below) ---
-        let origDeleteVocabByRow = null;
+        async function deleteVocabByRow(e) {
+            if (!editUnlocked) {
+                return new Promise((resolve, reject) => {
+                    showPasswordModal(async (t) => {
+                        if (t) {
+                            try { const res = await deleteVocabByRow(e);
+                                resolve(res); } catch (err) { reject(err); }
+                        } else reject(new Error('Password required'));
+                    });
+                });
+            }
+            if (e === undefined || e < 1) { showToast("❌ Invalid row number");
+                throw new Error('Invalid row'); }
+            return await callApi({ action: "delete", row: e - 1 }, "DELETE");
+        }
 
         function scrollToSidebarItem() { setTimeout((() => { const e = document.querySelector(".vocab-item.active");
                 e && e.scrollIntoView({ behavior: "smooth", block: "center" }) }), 100) }
@@ -3487,46 +3490,41 @@
 
         function renderNormalSidebar() {
             if (!vocabList.length) return;
-            // Filter out recycled items for navigation
-            const activeItems = vocabList.filter(item => !item.recycled);
-            const e = filterVocabBySearch(activeItems);
+            const e = filterVocabBySearch(vocabList);
             if (0 === e.length) return sidebarIndices = [], renderSidebarUI(), void updateDisplay();
             const t = 40 * normalCurrentPage,
                 n = Math.min(t + 40, e.length),
                 o = [];
-            for (let i = t; i < n; i++) { const t = activeItems.findIndex((t => t === e[i]));
-                if (t !== -1) {
-                    const idx = vocabList.indexOf(activeItems[t]);
-                    if (idx !== -1) o.push(idx);
-                }
-            }
+            for (let i = t; i < n; i++) { const t = vocabList.findIndex((t => t === e[i]));
+                -1 !== t && o.push(t) }
             sidebarIndices = o;
             let i = o.indexOf(normalCurrentIdx);
             -1 === i && o.length && (normalCurrentIdx = o[0], i = 0), sidebarFocusIdx = i >= 0 ? i : 0, renderSidebarUI(),
                 updateDisplay();
             const a = vocabList[sidebarIndices[sidebarFocusIdx]];
-            a && speakAutoSequence(a.chinese, a.khmer), scrollToActiveSidebarItem()
+            if (a && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
+                speakAutoSequence(a.chinese, a.khmer);
+            }
+            scrollToActiveSidebarItem()
         }
 
         let firstCharCache = new Map();
 
         function buildFirstCharCache() {
             firstCharCache.clear();
-            const activeItems = vocabList.filter(item => !item.recycled);
-            for (let i = 0; i < activeItems.length; i++) {
-                const ch = activeItems[i].chinese;
+            for (let i = 0; i < vocabList.length; i++) {
+                const ch = vocabList[i].chinese;
                 if (!ch) continue;
                 const first = ch.charAt(0);
                 if (!firstCharCache.has(first)) firstCharCache.set(first, []);
-                firstCharCache.get(first).push(vocabList.indexOf(activeItems[i]));
+                firstCharCache.get(first).push(i);
             }
             for (let [k, arr] of firstCharCache.entries()) arr.sort((a, b) => a - b);
         }
 
         function getRelatedIndices(currentIdx) {
             const currentWord = vocabList[currentIdx];
-            if (!currentWord || currentWord.recycled) return [currentIdx];
-            if (!currentWord.chinese) return [currentIdx];
+            if (!currentWord || !currentWord.chinese) return [currentIdx];
             const firstChar = currentWord.chinese.charAt(0);
             const all = firstCharCache.get(firstChar) || [];
             const others = all.filter(i => i !== currentIdx).slice(0, 50);
@@ -3552,26 +3550,23 @@
                 });
                 updateDisplay();
                 const word = vocabList[sidebarIndices[sidebarFocusIdx]];
-                if (word) speakAutoSequence(word.chinese, word.khmer);
+                if (word && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
+                    speakAutoSequence(word.chinese, word.khmer);
+                }
                 scrollToActiveSidebarItem();
             }
             updateDisplay();
-            speakAutoSequence(t.chinese, t.khmer);
+            if (!softDeletedIndices.has(e)) {
+                speakAutoSequence(t.chinese, t.khmer);
+            }
         }
 
         function loadWordByMode(e, t = !0) {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), killAllSpeech(), !vocabList[e]) return;
-            if (vocabList[e].recycled) {
-                // If the selected word is recycled, skip to next active
-                const activeIndices = vocabList.map((item, idx) => item.recycled ? -1 : idx).filter(idx => idx !== -1);
-                if (activeIndices.length > 0) {
-                    const nextIdx = activeIndices.find(idx => idx > e) || activeIndices[0];
-                    return loadWordByMode(nextIdx, t);
-                } else {
-                    updateChineseDisplay("");
-                    document.getElementById("khmerWord").innerText = "";
-                    return;
-                }
+            // Prevent loading soft-deleted items
+            if (softDeletedIndices.has(e)) {
+                showToast("⚠️ This word is in the recycle bin");
+                return;
             }
             if ("random" === appMode) {
                 if (t && history[historyIndex] !== e) { history = history.slice(0, historyIndex + 1);
@@ -3580,8 +3575,7 @@
                 renderRandomSidebar(e);
             } else {
                 normalCurrentIdx = e;
-                const activeItems = vocabList.filter(item => !item.recycled);
-                const f = filterVocabBySearch(activeItems);
+                const f = filterVocabBySearch(vocabList);
                 const page = Math.floor(f.findIndex((v => v === vocabList[e])) / 40);
                 if (page !== normalCurrentPage && page >= 0) { normalCurrentPage = page;
                     renderNormalSidebar(); } else { let idx = sidebarIndices.indexOf(e); if (idx !== -1) { sidebarFocusIdx =
@@ -3589,7 +3583,9 @@
                         renderSidebarUI();
                         updateDisplay();
                         const w = vocabList[sidebarIndices[sidebarFocusIdx]];
-                        w && speakAutoSequence(w.chinese, w.khmer);
+                        if (w && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
+                            speakAutoSequence(w.chinese, w.khmer);
+                        }
                         scrollToActiveSidebarItem(); } else renderNormalSidebar() }
             }
             const ch = vocabList[e]?.chinese || "";
@@ -3599,14 +3595,14 @@
         function pickRandom() {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), "normal" === appMode) goNextNormal();
             else if (vocabList.length) {
-                const activeIndices = vocabList.map((item, idx) => item.recycled ? -1 : idx).filter(idx => idx !== -1);
-                if (activeIndices.length === 0) {
-                    updateChineseDisplay("");
-                    document.getElementById("khmerWord").innerText = "";
+                // Find a non-soft-deleted word
+                const available = vocabList.filter((_, idx) => !softDeletedIndices.has(idx));
+                if (available.length === 0) {
+                    showToast("⚠️ All words are in the recycle bin!");
                     return;
                 }
-                const newIdx = activeIndices[Math.floor(Math.random() * activeIndices.length)];
-                loadWordByMode(newIdx, !0);
+                const newIdx = vocabList.indexOf(available[Math.floor(Math.random() * available.length)]);
+                if (newIdx !== -1) loadWordByMode(newIdx, !0);
             }
         }
 
@@ -3620,18 +3616,24 @@
 
         function goPrevNormal() {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), !vocabList.length) return;
-            const activeItems = vocabList.filter(item => !item.recycled);
-            const e = filterVocabBySearch(activeItems);
+            const e = filterVocabBySearch(vocabList);
             let t = e.findIndex((e => e === vocabList[normalCurrentIdx])) - 1;
-            if (t < 0 && (t = 0), e[t]) { loadWordByMode(vocabList.findIndex((n => n === e[t])), !0) }
+            if (t < 0 && (t = 0), e[t]) {
+                const idx = vocabList.findIndex((n => n === e[t]));
+                if (idx !== -1 && !softDeletedIndices.has(idx)) loadWordByMode(idx, !0);
+                else pickRandom();
+            }
         }
 
         function goNextNormal() {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), !vocabList.length) return;
-            const activeItems = vocabList.filter(item => !item.recycled);
-            const e = filterVocabBySearch(activeItems);
+            const e = filterVocabBySearch(vocabList);
             let t = e.findIndex((e => e === vocabList[normalCurrentIdx])) + 1;
-            if (t >= e.length && (t = e.length - 1), e[t]) { loadWordByMode(vocabList.findIndex((n => n === e[t])), !0) }
+            if (t >= e.length && (t = e.length - 1), e[t]) {
+                const idx = vocabList.findIndex((n => n === e[t]));
+                if (idx !== -1 && !softDeletedIndices.has(idx)) loadWordByMode(idx, !0);
+                else pickRandom();
+            }
         }
 
         function toggleAppMode() {
@@ -3643,15 +3645,10 @@
                 e.classList.remove("mode-random-active");
                 e.classList.add("mode-normal-active");
                 const t = document.getElementById("chineseWord").getAttribute("data-plain") || "";
-                let n = vocabList.findIndex((e => e.chinese === t && !e.recycled));
+                let n = vocabList.findIndex((e => e.chinese === t));
                 -1 === n && vocabList.length && (n = 0);
-                // skip recycled
-                if (n !== -1 && vocabList[n].recycled) {
-                    const active = vocabList.findIndex(item => !item.recycled);
-                    n = active !== -1 ? active : 0;
-                }
                 normalCurrentIdx = n;
-                const o = filterVocabBySearch(vocabList.filter(item => !item.recycled));
+                const o = filterVocabBySearch(vocabList);
                 normalCurrentPage = Math.floor(o.findIndex((e => e === vocabList[n])) / 40);
                 normalCurrentPage < 0 && (normalCurrentPage = 0);
                 renderNormalSidebar();
@@ -3661,20 +3658,13 @@
                 e.classList.remove("mode-normal-active");
                 e.classList.add("mode-random-active");
                 const t = document.getElementById("chineseWord").getAttribute("data-plain") || "";
-                let n = vocabList.findIndex((e => e.chinese === t && !e.recycled));
+                let n = vocabList.findIndex((e => e.chinese === t));
                 -1 === n && vocabList.length && (n = 0);
-                if (-1 !== n && !vocabList[n].recycled) {
+                if (-1 !== n) {
                     history = [n];
                     historyIndex = 0;
                     renderRandomSidebar(n);
-                } else {
-                    const active = vocabList.findIndex(item => !item.recycled);
-                    if (active !== -1) {
-                        history = [active];
-                        historyIndex = 0;
-                        renderRandomSidebar(active);
-                    }
-                }
+                } else vocabList.length && pickRandom();
             }
             saveAllData();
             const t = document.getElementById("modeRandomIconHeader"),
@@ -3782,7 +3772,7 @@
         }
 
         function scrollToActiveSidebarItem() { setTimeout((() => { const e = document.querySelector(
-                        ".vocab-item.active");
+                    ".vocab-item.active");
                 e && e.scrollIntoView({ behavior: "smooth", block: "center" }) }), 50) }
         let searchDebounceTimer = null,
             currentSearchInputElement = null,
@@ -3861,6 +3851,7 @@
             });
         }
 
+        // ===== IMPROVED: compute relevance score for search matches =====
         function getRelevanceScore(item, query) {
             const chineseLower = (item.chinese || '').toLowerCase();
             const khmerLower = (item.khmer || '').toLowerCase();
@@ -3876,19 +3867,29 @@
 
             if (!chineseContains && !khmerContains) return 0;
 
+            // Exact match (highest priority)
             if (chineseExact) score += 10000;
             if (khmerExact) score += 9000;
+
+            // Starts with (high priority)
             if (chineseStartsWith && !chineseExact) score += 1000;
             if (khmerStartsWith && !khmerExact) score += 900;
+
+            // Contains (medium priority) — only if not already counted as starts-with or exact
             if (chineseContains && !chineseStartsWith && !chineseExact) score += 500;
             if (khmerContains && !khmerStartsWith && !khmerExact) score += 400;
+
+            // Bonus for shorter length (more precise match)
             if (chineseContains) score += Math.max(0, 50 - item.chinese.length);
             if (khmerContains) score += Math.max(0, 50 - item.khmer.length);
+
+            // Slight bonus for Chinese match over Khmer match (primary language)
             if (chineseContains) score += 10;
 
             return score;
         }
 
+        // Perform search with limit and optimized loop, respecting pendingDeletions + SORTED
         function performSearch(query, container, isEdit = false) {
             const q = query.trim().toLowerCase();
             if (!q) { container.innerHTML = ""; return; }
@@ -3902,6 +3903,7 @@
                     matches.push({ index: i, item: v, score: score });
                 }
             }
+            // Sort by score descending (best match first)
             matches.sort((a, b) => b.score - a.score);
             const limited = matches.slice(0, limit);
 
@@ -3938,6 +3940,7 @@
             container.innerHTML = html;
         }
 
+        // Modal search functions - triggered from Chinese input
         window.addModalPerformSearch = function(query) {
             const container = document.getElementById('vocabSearchResults');
             if (!container) return;
@@ -3950,253 +3953,257 @@
             performSearch(query, container, true);
         };
 
-        // ======================== RECYCLE BIN (NEW: using recycled flag) =========================
-        function getRecycledItems() {
-            return vocabList.filter(item => item.recycled === true);
-        }
-
-        function updateRecycleBadge() {
-            const badge = document.getElementById('recycleBadge');
-            if (badge) {
-                const count = getRecycledItems().length;
-                if (count > 0) {
-                    badge.textContent = count;
-                    badge.style.display = 'inline-block';
-                } else {
-                    badge.style.display = 'none';
-                }
+        // ---- SOFT DELETE FUNCTIONS ----
+        function softDeleteVocab(idx, row) {
+            if (idx === undefined || idx < 0 || idx >= vocabList.length) {
+                showToast("❌ Invalid vocabulary index");
+                return;
             }
-        }
-
-        function moveToRecycle(idx) {
+            if (softDeletedIndices.has(idx)) {
+                showToast("⚠️ Already in recycle bin");
+                return;
+            }
             const item = vocabList[idx];
-            if (!item) return false;
-            if (item.recycled) {
-                showToast('⚠️ Item is already in recycle bin');
-                return false;
-            }
-            item.recycled = true;
-            saveAllData();
+            if (!item) return;
+            // Backup data
+            softDeletedData.set(idx, { khmer: item.khmer, chinese: item.chinese, sheetRow: item.sheetRow });
+            softDeletedIndices.add(idx);
+            // Re-render sidebar
             renderSidebarUI();
-            updateRecycleBadge();
-            // If currently displayed word is recycled, skip to next active
-            const activeIndices = vocabList.map((it, i) => it.recycled ? -1 : i).filter(i => i !== -1);
-            if (activeIndices.length > 0) {
-                const currentIdx = sidebarIndices[sidebarFocusIdx];
-                if (currentIdx === idx || (currentIdx !== undefined && vocabList[currentIdx]?.recycled)) {
-                    // find next active
-                    const nextIdx = activeIndices.find(i => i > idx) || activeIndices[0];
+            // If the current displayed word is this one, skip to next available
+            const currentIdx = sidebarIndices[sidebarFocusIdx];
+            if (currentIdx === idx) {
+                // Find next non-deleted word
+                const nextIdx = findNextAvailableIndex(idx);
+                if (nextIdx !== -1) {
                     loadWordByMode(nextIdx, true);
+                } else {
+                    // No available words left
+                    updateChineseDisplay("");
+                    document.getElementById("khmerWord").innerText = "";
                 }
-            } else {
-                updateChineseDisplay("");
-                document.getElementById("khmerWord").innerText = "";
             }
-            return true;
+            updateRecycleBinBadge();
+            showToast(`🗑️ Moved to recycle bin: ${item.chinese || item.khmer}`);
+            saveAllData();
         }
 
-        function restoreFromRecycle(idx) {
-            const item = vocabList[idx];
-            if (!item || !item.recycled) return false;
-            item.recycled = false;
-            saveAllData();
-            renderSidebarUI();
-            updateRecycleBadge();
-            showToast(`✅ Restored "${item.chinese || item.khmer}"`);
-            return true;
-        }
-
-        function permanentDeleteFromRecycle(idx) {
-            const item = vocabList[idx];
-            if (!item || !item.recycled) return false;
-            const row = item.sheetRow;
-
-            // Remove from vocabList (optimistic)
-            vocabList.splice(idx, 1);
-            saveAllData();
-            renderSidebarUI();
-            updateRecycleBadge();
-
-            // Call API to delete from sheet
-            if (typeof origDeleteVocabByRow === 'function') {
-                origDeleteVocabByRow(row)
-                    .then(() => {
-                        showToast(`✅ Permanently deleted row ${row}`);
-                        // Reload sheet to sync row numbers
-                        loadSheetData(true);
-                    })
-                    .catch(err => {
-                        // Restore item if deletion fails
-                        vocabList.splice(idx, 0, item);
-                        saveAllData();
-                        renderSidebarUI();
-                        updateRecycleBadge();
-                        showToast(`❌ Permanent delete failed: ${err.message}`);
-                    });
-            } else {
-                callApi({ action: "delete", row: row - 1 }, "DELETE")
-                    .then(() => {
-                        showToast(`✅ Permanently deleted row ${row}`);
-                        loadSheetData(true);
-                    })
-                    .catch(err => {
-                        vocabList.splice(idx, 0, item);
-                        saveAllData();
-                        renderSidebarUI();
-                        updateRecycleBadge();
-                        showToast(`❌ Permanent delete failed: ${err.message}`);
-                    });
+        function findNextAvailableIndex(fromIdx) {
+            // Search forward first, then backward
+            for (let i = fromIdx + 1; i < vocabList.length; i++) {
+                if (!softDeletedIndices.has(i)) return i;
             }
-            return true;
+            for (let i = fromIdx - 1; i >= 0; i--) {
+                if (!softDeletedIndices.has(i)) return i;
+            }
+            return -1;
         }
 
-        function emptyRecycleBin() {
-            const recycled = getRecycledItems();
-            if (recycled.length === 0) {
-                showToast('📭 Recycle bin is already empty');
+        function restoreSoftDeleted(idx) {
+            if (!softDeletedIndices.has(idx)) {
+                showToast("⚠️ Not in recycle bin");
                 return;
             }
-            if (!confirm(`⚠️ Permanently delete all ${recycled.length} items from the sheet? This cannot be undone.`)) {
+            softDeletedIndices.delete(idx);
+            softDeletedData.delete(idx);
+            renderSidebarUI();
+            updateRecycleBinBadge();
+            showToast("↩️ Restored from recycle bin");
+            saveAllData();
+        }
+
+        async function permanentlyDeleteSoftDeleted(idx) {
+            if (!softDeletedIndices.has(idx)) {
+                showToast("⚠️ Not in recycle bin");
                 return;
             }
+            const item = vocabList[idx];
+            if (!item) return;
+            const rowToDelete = item.sheetRow;
+            const displayNum = getDisplayNumberFromArrayIndex(idx);
+            if (!confirm(`⚠️ Permanently delete Display #${displayNum} (${item.chinese || item.khmer}) from sheet?`)) return;
 
-            const itemsToDelete = [...recycled];
-            // Remove from vocabList (optimistic)
-            const indicesToRemove = itemsToDelete.map(item => vocabList.indexOf(item)).filter(i => i !== -1);
-            // Sort descending to splice safely
-            indicesToRemove.sort((a, b) => b - a);
-            for (const i of indicesToRemove) {
-                vocabList.splice(i, 1);
-            }
-            saveAllData();
-            renderSidebarUI();
-            updateRecycleBadge();
-
-            let deleted = 0;
-            let failed = 0;
-            const total = itemsToDelete.length;
-
-            function processNext(idx) {
-                if (idx >= total) {
-                    const msg = failed === 0 ?
-                        `✅ Permanently deleted all ${deleted} items` :
-                        `⚠️ Deleted ${deleted} items, ${failed} failed (kept in recycle)`;
-                    showToast(msg);
-                    loadSheetData(true);
-                    return;
-                }
-                const item = itemsToDelete[idx];
-                const row = item.sheetRow;
-                const doDelete = () => {
-                    if (typeof origDeleteVocabByRow === 'function') {
-                        return origDeleteVocabByRow(row);
-                    } else {
-                        return callApi({ action: "delete", row: row - 1 }, "DELETE");
+            // Add to pending deletions for optimistic UI
+            pendingDeletions.add(idx);
+            try {
+                await deleteVocabByRow(rowToDelete);
+                // Success: remove from vocabList and soft-deleted data
+                pendingDeletions.delete(idx);
+                softDeletedIndices.delete(idx);
+                softDeletedData.delete(idx);
+                // Remove from vocabList
+                vocabList.splice(idx, 1);
+                // Update sheetRow for items after this one
+                for (let i = 0; i < vocabList.length; i++) {
+                    if (vocabList[i].sheetRow > rowToDelete) {
+                        vocabList[i].sheetRow--;
                     }
-                };
-                doDelete()
-                    .then(() => {
-                        deleted++;
-                        showToast(`🗑️ Deleted row ${row} (${deleted}/${total})`);
-                        processNext(idx + 1);
-                    })
-                    .catch(err => {
-                        failed++;
-                        // Restore item to vocabList
-                        vocabList.push(item);
-                        saveAllData();
-                        renderSidebarUI();
-                        updateRecycleBadge();
-                        showToast(`❌ Failed to delete row ${row}: ${err.message}`);
-                        processNext(idx + 1);
-                    });
+                }
+                // Also update softDeletedData sheetRow values
+                for (let [k, v] of softDeletedData) {
+                    if (v.sheetRow > rowToDelete) {
+                        v.sheetRow--;
+                        softDeletedData.set(k, v);
+                    }
+                }
+                buildFirstCharCache();
+                saveAllData();
+                renderSidebarUI();
+                updateRecycleBinBadge();
+                // If sidebar is empty or current item was deleted, find next
+                if (vocabList.length === 0) {
+                    updateChineseDisplay("");
+                    document.getElementById("khmerWord").innerText = "";
+                } else {
+                    // Check if current focus is still valid
+                    if (sidebarFocusIdx >= sidebarIndices.length || sidebarIndices.length === 0) {
+                        // Find any non-deleted word
+                        const available = vocabList.filter((_, i) => !softDeletedIndices.has(i));
+                        if (available.length > 0) {
+                            const newIdx = vocabList.indexOf(available[0]);
+                            if (newIdx !== -1) loadWordByMode(newIdx, true);
+                        } else {
+                            updateChineseDisplay("");
+                            document.getElementById("khmerWord").innerText = "";
+                        }
+                    } else {
+                        const focusIdx = sidebarIndices[sidebarFocusIdx];
+                        if (focusIdx !== undefined && focusIdx < vocabList.length && !softDeletedIndices.has(focusIdx)) {
+                            loadWordByMode(focusIdx, true);
+                        } else {
+                            // Find next available
+                            const nextIdx = findNextAvailableIndex(0);
+                            if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+                        }
+                    }
+                }
+                showToast("✅ Permanently deleted from sheet");
+            } catch (err) {
+                pendingDeletions.delete(idx);
+                showToast("❌ Permanent delete failed: " + err.message);
             }
-            showToast(`🗑️ Deleting ${total} items...`);
-            processNext(0);
         }
 
-        // ---- END RECYCLE BIN ----
+        function updateRecycleBinBadge() {
+            const badge = document.getElementById('rbCountBadge');
+            if (badge) {
+                const count = softDeletedIndices.size;
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline-block' : 'none';
+            }
+            // Also update the recycle bin button text if needed
+            const btn = document.getElementById('recycleBinBtn');
+            if (btn) {
+                const count = softDeletedIndices.size;
+                btn.innerHTML = `🗑️ Recycle Bin <span class="recycle-bin-count" id="rbCountBadge">${count}</span>`;
+            }
+        }
 
+        // ---- Show Recycle Bin Modal ----
         function showRecycleBinModal() {
-            const recycled = getRecycledItems();
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
+            const overlay = document.createElement("div");
+            overlay.className = "modal-overlay";
             overlay.innerHTML = `
-                <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%; max-height:90vh; display:flex; flex-direction:column;">
-                    <h3 style="flex-shrink:0;">🗑️ Recycle Bin <span id="recycleModalCount" style="font-size:0.8rem; opacity:0.7;">(${recycled.length})</span></h3>
-                    <div id="recycleList" style="flex:1; overflow-y:auto; max-height:50vh; margin:8px 0; text-align:left; padding:4px;">
-                        ${recycled.length === 0 ? '<div class="recycle-empty-row">📭 Recycle bin is empty</div>' : ''}
-                        ${recycled.map((item, idx) => `
-                            <div class="recycle-item" data-idx="${vocabList.indexOf(item)}">
-                                <div class="recycle-info">
-                                    <div class="r-chinese">${escapeHtml(item.chinese)}</div>
-                                    <div class="r-khmer">${escapeHtml(item.khmer)}</div>
-                                    <div class="r-row">Row ${item.sheetRow}</div>
-                                </div>
-                                <div class="recycle-actions">
-                                    <button class="restore-btn" data-idx="${vocabList.indexOf(item)}" title="Restore to list">↩️</button>
-                                    <button class="perm-delete-btn" data-idx="${vocabList.indexOf(item)}" title="Permanently delete from sheet">🗑️</button>
-                                </div>
-                            </div>
-                        `).join('')}
+                <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
+                    <h3>🗑️ Recycle Bin <span class="recycle-bin-count" style="font-size:1.2rem;">${softDeletedIndices.size}</span></h3>
+                    <div id="recycleBinList" style="max-height:400px; overflow-y:auto; margin:16px 0; text-align:left;">
+                        ${renderRecycleBinItems()}
                     </div>
-                    <div style="display:flex; gap:10px; flex-shrink:0; flex-wrap:wrap;">
-                        <button id="recycleEmptyBtn" class="recycle-empty-btn" ${recycled.length === 0 ? 'disabled' : ''}>🗑️ Empty Recycle (${recycled.length})</button>
-                        <button id="recycleCloseBtn" class="recycle-close-btn">✕ Close</button>
-                    </div>
+                    <button class="choice-cancel" id="closeRecycleBinBtn">✕ Close</button>
                 </div>
             `;
             document.body.appendChild(overlay);
-
-            // Restore buttons
-            overlay.querySelectorAll('.restore-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const idx = parseInt(this.dataset.idx);
-                    if (isNaN(idx)) return;
-                    if (restoreFromRecycle(idx)) {
-                        showRecycleBinModal();
-                        overlay.remove();
-                    }
-                });
-            });
-
-            // Permanent delete buttons
-            overlay.querySelectorAll('.perm-delete-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const idx = parseInt(this.dataset.idx);
-                    if (isNaN(idx)) return;
-                    const item = vocabList[idx];
-                    if (!item || !item.recycled) return;
-                    if (confirm(`Permanently delete "${item.chinese || item.khmer}" from sheet? This cannot be undone.`)) {
-                        permanentDeleteFromRecycle(idx);
-                        showRecycleBinModal();
-                        overlay.remove();
-                    }
-                });
-            });
-
-            // Empty recycle
-            const emptyBtn = document.getElementById('recycleEmptyBtn');
-            if (emptyBtn) {
-                emptyBtn.onclick = function() {
-                    emptyRecycleBin();
-                    showRecycleBinModal();
-                    overlay.remove();
-                };
-            }
-
-            // Close
-            document.getElementById('recycleCloseBtn').onclick = () => overlay.remove();
             overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-            // Update count
-            const countEl = document.getElementById('recycleModalCount');
-            if (countEl) countEl.textContent = `(${recycled.length})`;
+            const closeBtn = overlay.querySelector("#closeRecycleBinBtn");
+            closeBtn.onclick = () => overlay.remove();
+
+            // Attach event listeners to restore and permanent delete buttons
+            overlay.querySelectorAll(".rb-restore").forEach(btn => {
+                btn.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    const idx = parseInt(this.dataset.idx);
+                    if (!isNaN(idx)) {
+                        restoreSoftDeleted(idx);
+                        // Re-render the modal content
+                        const list = overlay.querySelector("#recycleBinList");
+                        if (list) list.innerHTML = renderRecycleBinItems();
+                        updateRecycleBinBadge();
+                        // If empty, close after short delay
+                        if (softDeletedIndices.size === 0) {
+                            setTimeout(() => overlay.remove(), 600);
+                        }
+                    }
+                });
+            });
+
+            overlay.querySelectorAll(".rb-permadel").forEach(btn => {
+                btn.addEventListener("click", async function(e) {
+                    e.stopPropagation();
+                    const idx = parseInt(this.dataset.idx);
+                    if (!isNaN(idx)) {
+                        await permanentlyDeleteSoftDeleted(idx);
+                        // Re-render the modal content
+                        const list = overlay.querySelector("#recycleBinList");
+                        if (list) list.innerHTML = renderRecycleBinItems();
+                        updateRecycleBinBadge();
+                        if (softDeletedIndices.size === 0) {
+                            setTimeout(() => overlay.remove(), 600);
+                        }
+                    }
+                });
+            });
         }
 
-        // ======================== SIDEBAR RENDER =========================
+        function renderRecycleBinItems() {
+            if (softDeletedIndices.size === 0) {
+                return '<div class="recycle-bin-empty">✨ Recycle bin is empty</div>';
+            }
+            let html = '';
+            // Sort by index for consistent display
+            const sorted = Array.from(softDeletedIndices).sort((a, b) => a - b);
+            for (const idx of sorted) {
+                const data = softDeletedData.get(idx) || vocabList[idx];
+                if (!data) continue;
+                const displayNum = getDisplayNumberFromArrayIndex(idx);
+                const chinese = data.chinese || '';
+                const khmer = data.khmer || '';
+                html += `
+                    <div class="recycle-bin-item">
+                        <div class="rb-text">
+                            <div class="rb-zh">#${displayNum} ${chinese}</div>
+                            <div class="rb-km">${khmer}</div>
+                        </div>
+                        <div class="rb-actions">
+                            <button class="rb-restore" data-idx="${idx}">↩️ Restore</button>
+                            <button class="rb-permadel" data-idx="${idx}">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        // ---- Modified delete handlers to use soft delete ----
+        window.deleteFromAddSearch = function(idx, row, searchQuery) {
+            softDeleteVocab(idx, row);
+            // Refresh search results
+            const addInput = document.getElementById('addChineseInput');
+            if (addInput && window.addModalPerformSearch) {
+                window.addModalPerformSearch(addInput.value);
+            }
+            // Refresh sidebar
+            renderSidebarUI();
+        };
+
+        window.deleteFromEditSearch = function(idx, row, searchQuery) {
+            softDeleteVocab(idx, row);
+            const editInput = document.getElementById('editChineseInput');
+            if (editInput && window.editModalPerformSearch) {
+                window.editModalPerformSearch(editInput.value);
+            }
+            renderSidebarUI();
+        };
 
         function renderSidebarUI(e = !0) {
             const t = document.getElementById("sidebarList"),
@@ -4209,23 +4216,11 @@
                         <button id="manualSearchBtn" style="background:var(--accent); border:none; border-radius:40px; width:36px; height:36px; color:white; font-weight:bold; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">🔍</button>
                         <input type="text" id="choiceSearchInput" style="flex:1;" value="${escapeHtml(n)}">
                         <button class="search-clear-btn" id="searchClearBtn" title="Clear search" style="right:8px;">✕</button>
-                        <button id="recycleBinBtn" class="recycle-bin-btn" title="Recycle Bin" style="flex-shrink:0; margin-left:4px;">
-                            🗑️<span id="recycleBadge" class="badge-count" style="${getRecycledItems().length > 0 ? '' : 'display:none;'}">${getRecycledItems().length}</span>
-                        </button>
                         <div class="sidebar-search-results" id="sidebarSearchResults"></div>
                     </div>
                     <div class="mode-icons-container" id="modeIconsContainer"></div>
                     <div id="paginationContainer"></div>`;
             t.appendChild(o);
-
-            const recycleBtn = o.querySelector('#recycleBinBtn');
-            if (recycleBtn) {
-                recycleBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    showRecycleBinModal();
-                });
-            }
-
             const i = o.querySelector("#choiceSearchInput"),
                 a = o.querySelector("#manualSearchBtn"),
                 r = o.querySelector("#searchClearBtn"),
@@ -4264,12 +4259,15 @@
                         e.addEventListener("click", (t => {
                             t.stopPropagation();
                             const n = parseInt(e.dataset.index);
-                            if (!isNaN(n) && vocabList[n] && !pendingDeletions.has(n)) {
+                            if (!isNaN(n) && vocabList[n] && !pendingDeletions.has(n) && !softDeletedIndices
+                                .has(n)) {
                                 searchTerm = "";
                                 i.value = "";
                                 s.style.display = "none";
                                 loadWordByMode(n, true);
                                 blurSearchInput();
+                            } else if (softDeletedIndices.has(n)) {
+                                showToast("⚠️ This word is in the recycle bin");
                             }
                         }));
                     }));
@@ -4281,14 +4279,16 @@
                     searchTerm = e, "normal" === appMode) { normalCurrentPage = 0;
                     normalCurrentIdx = 0;
                     renderNormalSidebar(); } else if ("" === searchTerm.trim()) { if (null !== previousWordBeforeSearch &&
-                        vocabList[previousWordBeforeSearch] && !pendingDeletions.has(previousWordBeforeSearch)) {
+                        vocabList[previousWordBeforeSearch] && !pendingDeletions.has(previousWordBeforeSearch) && !
+                        softDeletedIndices.has(previousWordBeforeSearch)) {
                         loadWordByMode(previousWordBeforeSearch, !0);
                         previousWordBeforeSearch = null } else if (sidebarIndices.length && void 0 !== sidebarIndices[
-                            sidebarFocusIdx] && !pendingDeletions.has(sidebarIndices[sidebarFocusIdx]))
+                        sidebarFocusIdx] && !pendingDeletions.has(sidebarIndices[sidebarFocusIdx]) && !
+                        softDeletedIndices.has(sidebarIndices[sidebarFocusIdx]))
                     renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
                     else vocabList.length ? pickRandom() : renderSidebarUI(!0) } else { const t = filterVocabBySearch(
-                        vocabList).filter(idx => !pendingDeletions.has(idx)).map((e => vocabList.findIndex((t =>
-                        t === e)))); if (t.length) { sidebarIndices = t;
+                        vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx))
+                        .map((e => vocabList.findIndex((t => t === e)))); if (t.length) { sidebarIndices = t;
                         sidebarFocusIdx = 0;
                         renderSidebarUI(!0); if (sidebarIndices.length > 0) loadWordByMode(sidebarIndices[0], !0) } else { sidebarIndices =
                             [];
@@ -4309,7 +4309,7 @@
                 searchTerm = "";
                 s.style.display = "none";
                 if (null !== previousWordBeforeSearch && vocabList[previousWordBeforeSearch] && !pendingDeletions
-                    .has(previousWordBeforeSearch)) {
+                    .has(previousWordBeforeSearch) && !softDeletedIndices.has(previousWordBeforeSearch)) {
                     loadWordByMode(previousWordBeforeSearch, !0);
                     previousWordBeforeSearch = null;
                 } else if ("normal" === appMode) {
@@ -4317,7 +4317,8 @@
                     normalCurrentIdx = 0;
                     renderNormalSidebar();
                 } else if (sidebarIndices.length && void 0 !== sidebarIndices[sidebarFocusIdx] && !pendingDeletions
-                    .has(sidebarIndices[sidebarFocusIdx])) {
+                    .has(sidebarIndices[sidebarFocusIdx]) && !softDeletedIndices.has(sidebarIndices[
+                    sidebarFocusIdx])) {
                     renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
                 } else {
                     vocabList.length ? pickRandom() : renderSidebarUI(!0);
@@ -4335,35 +4336,33 @@
             updatePaginationControlsInside(o.querySelector("#paginationContainer"));
             let u = sidebarIndices;
             if ("normal" === appMode && searchTerm) u = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions
-                .has(idx)).map((e => vocabList.findIndex((t => t === e))));
+                .has(idx) && !softDeletedIndices.has(idx)).map((e => vocabList.findIndex((t => t === e))));
             else "random" === appMode && searchTerm && "" !== searchTerm.trim() && (u = sidebarIndices);
+            // Filter out pending deletions and soft-deleted items (but we show soft-deleted with strikethrough)
             u = u.filter(idx => !pendingDeletions.has(idx));
+            // For soft-deleted, we still show them but with strikethrough
             for (let e = 0; e < u.length; e++) {
                 const n = u[e],
                     o = document.createElement("div"),
                     i = "normal" === appMode && searchTerm ? n === normalCurrentIdx : e === sidebarFocusIdx;
-                const isRecycled = vocabList[n]?.recycled || false;
-                o.className = "vocab-item " + (i ? "active" : "") + (isRecycled ? " recycled" : "");
+                const isDeleted = softDeletedIndices.has(n);
+                o.className = "vocab-item " + (i ? "active" : "") + (isDeleted ? " deleted" : "");
                 const a = getDisplayNumberFromArrayIndex(n),
                     r = vocabList[n].sheetRow,
                     s = editUnlocked ? "" : "disabled";
-                // Show recycle icon or edit icon
-                const recycleAction = isRecycled ?
-                    `<button class="edit-side-icon" onclick="event.stopPropagation(); if (confirm('Restore this item?')) { restoreFromRecycle(${n}); }" title="Restore">↩️</button>` :
-                    `<button class="edit-side-icon ${s}" onclick="event.stopPropagation(); if (confirm('Move to Recycle?')) { moveToRecycle(${n}); }" title="Move to Recycle">🗑️</button>`;
+                const delBadge = isDeleted ? '<span class="deleted-badge">🗑️</span>' : '';
                 o.innerHTML =
-                    `<div class="side-number-col"><div class="side-number">#${a}</div><div class="side-icons-row">${recycleAction}<button class="sheet-row-icon ${s}" onclick="event.stopPropagation(); requestOpenSheetRow(${r})" title="Open Sheet Row ${r} (Khmer cell)">📊</button></div></div><div class="word-wrapper" onclick="${isRecycled ? '' : `loadWordByMode(${n}, true); event.stopPropagation()`}"><span class="side-zh">${escapeHtml(vocabList[n].chinese)}</span><span class="side-km">${escapeHtml(vocabList[n].khmer)}</span></div>`;
+                    `<div class="side-number-col"><div class="side-number">#${a}</div><div class="side-icons-row"><button class="edit-side-icon ${s}" onclick="event.stopPropagation(); requestEditModal(${n}, ${r}, '${escapeHtml(vocabList[n].khmer)}', '${escapeHtml(vocabList[n].chinese)}')" title="Edit">✏️</button><button class="sheet-row-icon ${s}" onclick="event.stopPropagation(); requestOpenSheetRow(${r})" title="Open Sheet Row ${r} (Khmer cell)">📊</button></div></div><div class="word-wrapper" onclick="if(!softDeletedIndices.has(${n})) { loadWordByMode(${n}, true); } else { showToast('⚠️ This word is in the recycle bin'); } event.stopPropagation()"><span class="side-zh">${escapeHtml(vocabList[n].chinese)} ${delBadge}</span><span class="side-km">${escapeHtml(vocabList[n].khmer)}</span></div>`;
                 t.appendChild(o);
             }
             applySidebarStyles();
             scrollToActiveSidebarItem();
-            updateRecycleBadge();
+            updateRecycleBinBadge();
         }
 
         function updatePaginationControlsInside(e) {
             if (!e) return;
-            const activeItems = vocabList.filter(item => !item.recycled);
-            const t = filterVocabBySearch(activeItems);
+            const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
             if ("normal" === appMode && t.length > 40) {
                 const n = Math.ceil(t.length / 40);
                 e.style.display = "block", e.innerHTML =
@@ -4377,13 +4376,16 @@
                     l = !1;
                 let longPressPrev = !1,
                     longPressNext = !1;
-                const d = () => { const e = filterVocabBySearch(vocabList.filter(item => !item.recycled));
+                const d = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(
+                        idx) && !softDeletedIndices.has(idx));
                     if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[0])), !0), showToast(
                             "📖 Jumped to FIRST word") } },
-                    c = () => { const e = filterVocabBySearch(vocabList.filter(item => !item.recycled));
+                    c = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(
+                            idx) && !softDeletedIndices.has(idx));
                         if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[e.length - 1])), !0),
                                 showToast("📖 Jumped to LAST word") } };
 
+                // Page jump input handler
                 if (jumpInput) {
                     const handleJump = () => {
                         let val = parseInt(jumpInput.value);
@@ -4395,6 +4397,7 @@
                             normalCurrentPage = newPage;
                             renderNormalSidebar();
                         }
+                        // Keep input in sync
                         jumpInput.value = normalCurrentPage + 1;
                     };
                     jumpInput.addEventListener('change', handleJump);
@@ -4409,7 +4412,8 @@
                 function syncPageInput() {
                     const input = document.getElementById('pageJumpInput');
                     if (input) {
-                        const totalPages = Math.ceil(filterVocabBySearch(vocabList.filter(item => !item.recycled)).length / 40);
+                        const totalPages = Math.ceil(filterVocabBySearch(vocabList).filter(idx => !pendingDeletions
+                            .has(idx) && !softDeletedIndices.has(idx)).length / 40);
                         input.value = normalCurrentPage + 1;
                         input.max = totalPages;
                     }
@@ -4425,6 +4429,7 @@
                             setTimeout(syncPageInput, 50);
                         }
                     };
+                    // long press logic unchanged
                     const prevStart = function(e) {
                         e.preventDefault();
                         s = !1;
@@ -4451,7 +4456,8 @@
                     i.onclick = function(e) {
                         e.preventDefault();
                         if (longPressNext) { longPressNext = !1; return; }
-                        const t = filterVocabBySearch(vocabList.filter(item => !item.recycled));
+                        const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !
+                            softDeletedIndices.has(idx));
                         const pageCount = Math.ceil(t.length / 40);
                         if (normalCurrentPage + 1 < pageCount) {
                             normalCurrentPage++;
@@ -4482,21 +4488,24 @@
                     i.addEventListener("mouseleave", nextEnd);
                 }
 
+                // Initial sync
                 setTimeout(syncPageInput, 100);
             } else e.style.display = "none", e.innerHTML = ""
         }
 
+        // Global sync function
         function syncPageInput() {
             const input = document.getElementById('pageJumpInput');
             if (input) {
-                const filtered = filterVocabBySearch(vocabList.filter(item => !item.recycled));
+                const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                    .has(idx));
                 const totalPages = Math.ceil(filtered.length / 40);
                 input.value = normalCurrentPage + 1;
                 input.max = totalPages;
             }
         }
 
-        // ---- Override render functions to keep pagination in sync ----
+        // Patch renderNormalSidebar and renderSidebarUI to sync after rendering
         const origRenderNormalSidebar = renderNormalSidebar;
         renderNormalSidebar = function() {
             origRenderNormalSidebar();
@@ -4507,63 +4516,22 @@
         renderSidebarUI = function(e) {
             origRenderSidebarUI(e);
             setTimeout(syncPageInput, 50);
-            updateRecycleBadge();
         };
 
-        // ---- MODIFIED: delete functions now set recycled flag (not remove) ----
-        window.deleteFromAddSearch = function(idx, row, searchQuery) {
-            if (isDeleting) {
-                showToast("⏳ Please wait, previous deletion in progress...");
-                return;
-            }
-            const item = vocabList[idx];
-            if (!item) { showToast("Item not found"); return }
-            if (item.recycled) { showToast("Item already in recycle bin"); return; }
-            const displayNum = getDisplayNumberFromArrayIndex(idx);
-            if (!confirm(`🗑️ Move Display #${displayNum} (${item.chinese || item.khmer}) to Recycle?`)) return;
+        // ---- DELETE FUNCTIONS (now using soft delete) ----
+        // These are kept for compatibility but now use soft delete
 
-            pendingDeletions.add(idx);
-            if (moveToRecycle(idx)) {
-                pendingDeletions.delete(idx);
-                const addChineseInput = document.getElementById('addChineseInput');
-                if (addChineseInput && window.addModalPerformSearch) {
-                    window.addModalPerformSearch(addChineseInput.value);
-                }
-                showToast(`🗑️ "${item.chinese || item.khmer}" moved to Recycle Bin`);
-            } else {
-                pendingDeletions.delete(idx);
-                showToast("❌ Failed to move to recycle");
+        function refreshAddModalSearch() {
+            const addChineseInput = document.getElementById('addChineseInput');
+            if (addChineseInput && window.addModalPerformSearch) {
+                window.addModalPerformSearch(addChineseInput.value);
             }
-        };
+        }
+        window.refreshAddModalSearch = refreshAddModalSearch;
 
-        window.deleteFromEditSearch = function(idx, row, searchQuery) {
-            if (isDeleting) {
-                showToast("⏳ Please wait, previous deletion in progress...");
-                return;
-            }
-            const item = vocabList[idx];
-            if (!item) { showToast("Item not found"); return }
-            if (item.recycled) { showToast("Item already in recycle bin"); return; }
-            const displayNum = getDisplayNumberFromArrayIndex(idx);
-            if (!confirm(`🗑️ Move Display #${displayNum} (${item.chinese || item.khmer}) to Recycle?`)) return;
-
-            pendingDeletions.add(idx);
-            if (moveToRecycle(idx)) {
-                pendingDeletions.delete(idx);
-                const editChineseInput = document.getElementById('editChineseInput');
-                if (editChineseInput && window.editModalPerformSearch) {
-                    window.editModalPerformSearch(editChineseInput.value);
-                }
-                showToast(`🗑️ "${item.chinese || item.khmer}" moved to Recycle Bin`);
-            } else {
-                pendingDeletions.delete(idx);
-                showToast("❌ Failed to move to recycle");
-            }
-        };
-
-        // ---- LAYER TRANSFORMS (unchanged) ----
-        let baselineFontSizePx = null;
-        let rowsSwapped = false;
+        // --- Layer transforms using baseline font size for scaling ---
+        let baselineFontSizePx = null; // pixel size when offsets were set
+        let rowsSwapped = false; // track whether button rows are swapped
 
         function applyLayerTransforms() {
             if (!chineseElement) return;
@@ -4572,6 +4540,7 @@
             const currentSize = parseFloat(getComputedStyle(mainEl).fontSize);
             if (!currentSize || isNaN(currentSize)) return;
 
+            // If baseline not set, use current
             if (baselineFontSizePx === null) {
                 baselineFontSizePx = currentSize;
             }
@@ -4593,9 +4562,11 @@
                 el.style.marginLeft = mx + 'px';
                 el.style.transform = 'none';
             });
+            // Update button arrows and labels if modal is open
             updateLayerButtonTexts();
         }
 
+        // ---- Function to update layer drag button texts (labels + arrows) ----
         let topBtnLabel = '🔶 Drag Top Pinyin';
         let bottomBtnLabel = '🔷 Drag Bottom Char';
         let topBtnElement = null;
@@ -4603,8 +4574,11 @@
 
         function updateLayerButtonTexts() {
             if (!topBtnElement || !bottomBtnElement) return;
+            // Determine which direction arrows to use based on whether rows have been swapped.
+            // If rowsSwapped is true, the top button now controls the bottom layer (and vice versa).
             let topDir, bottomDir;
             if (rowsSwapped) {
+                // Top button shows bottom layer direction; bottom button shows top layer direction.
                 topDir = bottomLayerY > 0 ? '↓' : '↑';
                 bottomDir = topLayerY > 0 ? '↓' : '↑';
             } else {
@@ -4615,22 +4589,27 @@
             bottomBtnElement.textContent = bottomBtnLabel + ' ' + bottomDir;
         }
 
+        // ---- Swap button rows in the modal ----
         function swapButtonRows() {
             const container = document.querySelector('.choice-buttons');
             if (!container) return;
             const rows = container.querySelectorAll('.choice-item-row');
             if (rows.length < 2) return;
             const parent = rows[0].parentNode;
+            // Swap rows
             parent.insertBefore(rows[1], rows[0]);
             rowsSwapped = !rowsSwapped;
+            // Update references
             topBtnElement = container.querySelector('.choice-item-row:first-child button');
             bottomBtnElement = container.querySelector('.choice-item-row:last-child button');
+            // Swap labels
             const temp = topBtnLabel;
             topBtnLabel = bottomBtnLabel;
             bottomBtnLabel = temp;
             updateLayerButtonTexts();
         }
 
+        // ---- Reset button rows to default ----
         function resetButtonRows() {
             if (!rowsSwapped) return;
             const container = document.querySelector('.choice-buttons');
@@ -4638,10 +4617,13 @@
             const rows = container.querySelectorAll('.choice-item-row');
             if (rows.length < 2) return;
             const parent = rows[0].parentNode;
+            // Swap back
             parent.insertBefore(rows[1], rows[0]);
             rowsSwapped = false;
+            // Update references
             topBtnElement = container.querySelector('.choice-item-row:first-child button');
             bottomBtnElement = container.querySelector('.choice-item-row:last-child button');
+            // Reset labels
             topBtnLabel = '🔶 Drag Top Pinyin';
             bottomBtnLabel = '🔷 Drag Bottom Char';
             updateLayerButtonTexts();
@@ -4659,7 +4641,8 @@
             showToast("Both layers reset");
         }
 
-        // ---- showAddNewModal (unchanged) ----
+        // ---- MODIFIED: showAddNewModal with heading row (button outside h3) and optimistic update ----
+        // ---- REMOVED retry on add error: now just shows a toast message ----
         function showAddNewModal() {
             if (!editUnlocked) return void showPasswordModal((() => { showAddNewModal() }));
             const e = document.createElement("div");
@@ -4739,6 +4722,7 @@
                 }
             };
 
+            // ===== MODIFIED: confirmAddBtn with optimistic update and SIMPLE TOAST on error (no retry) =====
             document.getElementById("confirmAddBtn").onclick = () => {
                 const chinese = chineseInput.value.trim();
                 const khmer = khmerInput.value.trim();
@@ -4752,7 +4736,7 @@
                 chineseInput.focus();
 
                 const newRow = vocabList.length > 0 ? vocabList[vocabList.length - 1].sheetRow + 1 : 2;
-                const newEntry = { khmer: khmer || '', chinese: chinese || '', sheetRow: newRow, recycled: false };
+                const newEntry = { khmer: khmer || '', chinese: chinese || '', sheetRow: newRow };
                 vocabList.push(newEntry);
                 buildFirstCharCache();
                 saveAllData();
@@ -4763,7 +4747,7 @@
                     renderRandomSidebar(newIdx);
                 } else {
                     normalCurrentIdx = newIdx;
-                    const filtered = filterVocabBySearch(vocabList.filter(item => !item.recycled));
+                    const filtered = filterVocabBySearch(vocabList);
                     const page = Math.floor(filtered.findIndex(v => v === vocabList[newIdx]) / 40);
                     if (page >= 0) normalCurrentPage = page;
                     renderNormalSidebar();
@@ -4775,6 +4759,7 @@
                     window.addModalPerformSearch(chineseInput.value.trim());
                 }
 
+                // Fire-and-forget API call — on error: just show a toast message, no retry
                 addVocabToSheet(khmer, chinese).catch(err => {
                     showToast("❌ Add failed: " + err.message);
                 });
@@ -4795,22 +4780,23 @@
                 }
             });
 
+            // ----- FOCUS on Chinese input -----
             setTimeout(() => {
                 const input = document.getElementById('addChineseInput');
                 if (input) input.focus();
             }, 150);
         }
 
-        // ---- reset functions ----
         function resetTopLayer() { topLayerX = 0; topLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); showToast(
                 "🔶 Top Pinyin layer reset"); }
 
         function resetBottomLayer() { bottomLayerX = 0; bottomLayerY = 0; applyLayerTransforms(); saveAllDragPositions();
             showToast("🔷 Bottom Character layer reset"); }
 
-        // ---- showLayerChoiceModal (unchanged) ----
+        // ---- MODIFIED: showLayerChoiceModal with sorted search results ----
         function showLayerChoiceModal() {
             return new Promise((e => {
+                // Reset labels and row state when modal opens
                 rowsSwapped = false;
                 topBtnLabel = '🔶 Drag Top Pinyin';
                 bottomBtnLabel = '🔷 Drag Bottom Char';
@@ -4820,6 +4806,7 @@
                     '\n                <div class="choice-modal">\n                    <h3>✧ CHOOSE ACTION ✧</h3>\n                    <div class="choice-search-area">\n                        <input type="text" id="choiceSearchInput" placeholder="🔍 Search vocabulary...">\n                        <div id="choiceSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>\n                    </div>\n                    <div class="choice-buttons">\n                        <div class="choice-item-row">\n                            <button class="choice-top" id="topDragBtn">🔶 Drag Top Pinyin ↑</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleTopPinyinChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetTopBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="choice-item-row">\n                            <button class="choice-bottom" id="bottomDragBtn">🔷 Drag Bottom Char ↑</button>\n                            <div style="display:flex; gap:6px; align-items:center;"><button id="toggleBottomChoiceBtn" class="reset-icon" style="background:transparent; font-size:1.2rem;">😱</button><button id="resetBottomBtn" class="reset-icon" style="background:transparent;">⟳</button></div>\n                        </div>\n                        <div class="edit-group-buttons">\n                            <button id="editVocabBtn" style="background:#f59e0b;">✏️ EDIT CURRENT</button>\n                            <div style="display: flex; gap: 8px; align-items: center; flex:1;">\n                                <button id="addVocabBtn" style="background:#10b981; flex:1;">➕ ADD NEW</button>\n                                <button id="resetBothLayersBtn" class="reset-icon" style="background:transparent; box-shadow:none; font-size:1.2rem; width:auto; padding:8px;">⟳</button>\n                            </div>\n                        </div>\n                        <button class="choice-cancel" id="closeLayerChoiceBtn">✕ Cancel</button>\n                    </div>\n                </div>\n            ',
                     document.body.appendChild(t);
 
+                // Get button references
                 topBtnElement = t.querySelector('#topDragBtn');
                 bottomBtnElement = t.querySelector('#bottomDragBtn');
 
@@ -4828,6 +4815,7 @@
                 n.addEventListener("input", (() => {
                     const query = n.value.trim().toLowerCase();
                     if (!query) return void(o.innerHTML = "");
+                    // Get matches with scores and sort
                     const matches = [];
                     for (let i = 0; i < vocabList.length; i++) {
                         if (pendingDeletions.has(i)) continue;
@@ -4858,8 +4846,10 @@
                     p = t.querySelector("#toggleBottomChoiceBtn"),
                     h = n => { t.remove(); e(n); };
 
+                // Initial update
                 updateLayerButtonTexts();
 
+                // ----- Simultaneous swap function with length‑based offset scaling (mobile‑ready) -----
                 const toggleBothLayers = () => {
                     const charBlock = chineseElement.querySelector('.char-block');
                     if (!charBlock) return;
@@ -4872,12 +4862,15 @@
                     const pinyinRect = pinyinEl.getBoundingClientRect();
                     const bottomRect = bottomEl.getBoundingClientRect();
 
+                    // Compute base distances in pixels
                     let distPinyinToBottom = mainRect.bottom - pinyinRect.top;
                     let distBottomToTop = mainRect.top - bottomRect.bottom;
 
+                    // Get text length
                     const plain = chineseElement.getAttribute('data-plain') || '';
                     const len = plain.length;
 
+                    // ---- UPDATED VALUES FOR 1-3 CHARS (much tighter) ----
                     let lenFactor;
                     let gap;
                     if (len === 1) {
@@ -4890,20 +4883,27 @@
                         lenFactor = 0.30;
                         gap = 0.04;
                     } else {
+                        // Longer words: use original logic with a slightly reduced factor
                         lenFactor = Math.max(0.08, 0.35 - (len - 3) * 0.018);
                         gap = 0.08;
                     }
 
+                    // Store offsets in pixels (baseline will be set on first apply)
                     topLayerY = distPinyinToBottom * lenFactor + gap;
                     bottomLayerY = distBottomToTop * lenFactor - gap;
                     topLayerX = 0;
                     bottomLayerX = 0;
+                    // Reset baseline so scale factor is recalculated
                     baselineFontSizePx = null;
                     applyLayerTransforms();
                     saveAllDragPositions();
+
+                    // Swap the button rows in the DOM
                     swapButtonRows();
                 };
 
+                // ----- PRESS-HOLD REMOVED: no setupLayerHoldSwap calls -----
+                // Normal click handlers (drag mode) only
                 i.onclick = (ev) => {
                     h("top");
                 };
@@ -4911,6 +4911,7 @@
                     h("bottom");
                 };
 
+                // Reset handlers
                 d.onclick = () => { resetTopLayer(); h(null); };
                 c.onclick = () => { resetBottomLayer(); h(null); };
                 m.onclick = () => {
@@ -4918,6 +4919,7 @@
                     h(null);
                 };
 
+                // Toggle visibility handlers
                 u.onclick = () => {
                     topPinyinVisible = !topPinyinVisible;
                     applyTextVisibility();
@@ -4962,10 +4964,13 @@
 
                 r.onclick = () => {
                     const idx = sidebarIndices[sidebarFocusIdx];
-                    if (idx !== undefined && !pendingDeletions.has(idx)) {
+                    if (idx !== undefined && !pendingDeletions.has(idx) && !softDeletedIndices.has(idx)) {
                         requestEditModal(idx, vocabList[idx]?.sheetRow, vocabList[idx]?.khmer,
                             vocabList[idx]?.chinese);
                         h(null)
+                    } else if (softDeletedIndices.has(idx)) {
+                        showToast("⚠️ This word is in the recycle bin");
+                        h(null);
                     }
                 };
                 s.onclick = () => { requestAddNewVocab();
@@ -4975,7 +4980,6 @@
             }))
         }
 
-        // ---- getPinyinForText (unchanged) ----
         function getPinyinForText(e) {
             if (!e || void 0 === window.pinyinPro) return e.split("").map((e => ({ char: e, pinyin: "" })));
             try { const t = window.pinyinPro.pinyin(e, { toneType: "symbol", type: "array", multiple: !1,
@@ -4991,7 +4995,6 @@
                         pinyin: "" }))) }
         }
 
-        // ---- updateEditModalState (unchanged) ----
         window.updateEditModalState = function(idx, row, chinese, khmer) {
             window.currentEdit.idx = idx;
             window.currentEdit.row = row;
@@ -4999,7 +5002,7 @@
             document.getElementById('editKhmerInput').value = khmer;
             document.getElementById('editModalHeading').innerHTML =
                 `✏️ EDIT Display #${getDisplayNumberFromArrayIndex(idx)}  <span id="addIconInsideEdit" style="font-size:1.2rem; cursor:pointer; margin-left:12px;">➕</span>`;
-            document.getElementById('deleteRowBtn').innerHTML = '🗑️ MOVE TO RECYCLE #' + getDisplayNumberFromArrayIndex(idx);
+            document.getElementById('deleteRowBtn').innerHTML = '🗑️ DELETE Display #' + getDisplayNumberFromArrayIndex(idx);
             const addIcon = document.getElementById('addIconInsideEdit');
             if (addIcon) {
                 addIcon.onclick = function(e) {
@@ -5016,7 +5019,7 @@
             }, 50);
         };
 
-        // ---- MODIFIED: showEditModal with recycle integration (sets recycled flag) ----
+        // ---- MODIFIED: showEditModal with heading row (button outside h3) and optimistic update ----
         window.showEditModal = function(e, t, n, o) {
             if (!editUnlocked) return void showPasswordModal((() => { showEditModal(e, t, n, o) }));
             const i = getDisplayNumberFromArrayIndex(e),
@@ -5040,7 +5043,7 @@
                     </div>
                     <div id="vocabSearchResultsEdit" style="max-height:200px; overflow-y:auto; margin-top:8px; margin-bottom:12px;"></div>
                     <div class="edit-group-buttons" style="margin-bottom:12px;"><button id="confirmUpdateBtn" style="background:#10b981;">💾 UPDATE SHEET</button></div>
-                    <div class="delete-group-btn"><button id="deleteRowBtn">🗑️ MOVE TO RECYCLE #${i}</button></div>
+                    <div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${i}</button></div>
                     <button id="closeEditModalBtn" class="cancel-icon">✕</button>
                 </div>`,
                 document.body.appendChild(a);
@@ -5095,6 +5098,7 @@
                 requestOpenSheetRow(window.currentEdit.row);
             };
 
+            // ===== MODIFIED: confirmUpdate with optimistic update and retry (kept as original) =====
             const confirmUpdate = () => {
                 const ch = editChineseInput.value.trim();
                 const km = editKhmerInput.value.trim();
@@ -5108,8 +5112,7 @@
                 const oldKhmer = vocabList[idx]?.khmer || '';
                 const oldChinese = vocabList[idx]?.chinese || '';
 
-                vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row, recycled: vocabList[idx]
-                        ?.recycled || false };
+                vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row };
                 buildFirstCharCache();
                 saveAllData();
                 renderSidebarUI();
@@ -5127,25 +5130,17 @@
             document.getElementById("confirmUpdateBtn").onclick = () => showPasswordProtectionModal(confirmUpdate,
                 "update vocabulary");
 
-            // ---- MODIFIED: delete action now sets recycled flag ----
+            // ---- DELETE now uses soft delete ----
             const deleteAction = () => {
-                const displayNum = getDisplayNumberFromArrayIndex(window.currentEdit.idx);
-                const item = vocabList[window.currentEdit.idx];
-                if (!item) return;
-                if (item.recycled) { showToast("Already in recycle bin");
-                    a.remove(); return; }
-                if (!confirm(`🗑️ Move Display #${displayNum} (${item.chinese || item.khmer}) to Recycle?`)) return;
                 const idx = window.currentEdit.idx;
+                const row = window.currentEdit.row;
+                softDeleteVocab(idx, row);
                 a.remove();
-                if (moveToRecycle(idx)) {
-                    showToast(`🗑️ Moved "${item.chinese || item.khmer}" to Recycle Bin`);
-                    refreshAddModalSearch();
-                } else {
-                    showToast("❌ Failed to move to recycle");
-                }
+                renderSidebarUI();
+                refreshAddModalSearch();
             };
             document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction,
-                "move to recycle");
+                "delete vocabulary");
             document.getElementById("closeEditModalBtn").onclick = () => a.remove();
 
             const addIcon = document.getElementById("addIconInsideEdit");
@@ -5163,13 +5158,13 @@
                 }
             }, 100);
 
+            // ----- FOCUS on Chinese input -----
             setTimeout(() => {
                 const input = document.getElementById('editChineseInput');
                 if (input) input.focus();
             }, 150);
         };
 
-        // ---- triple HTML cache (unchanged) ----
         const tripleHtmlCache = new Map;
 
         function getTripleHTML(e) {
@@ -5179,15 +5174,13 @@
                 let n = "";
                 for (let e = 0; e < t.length; e++) { const o = t[e].char;
                     n +=
-                        `<div class="char-block"><div class="pinyin-top">${t[e].pinyin}</div><div class="chinese-main">${o}</div><div class="chinese-bottom">${o}</div></div>` }
+                    `<div class="char-block"><div class="pinyin-top">${t[e].pinyin}</div><div class="chinese-main">${o}</div><div class="chinese-bottom">${o}</div></div>` }
                 return tripleHtmlCache.set(e, n), n } catch (t) { console.warn("pinyin error", t);
                 let n = "";
                 for (let t = 0; t < e.length; t++) { const o = e[t];
                     n +=
-                        `<div class="char-block"><div class="pinyin-top"></div><div class="chinese-main">${o}</div><div class="chinese-bottom">${o}</div></div>` } return n }
+                    `<div class="char-block"><div class="pinyin-top"></div><div class="chinese-main">${o}</div><div class="chinese-bottom">${o}</div></div>` } return n }
         }
-
-        // ---- Audio / TTS (unchanged) ----
         let currentAudio = null,
             speechQueue = [],
             isProcessingQueue = !1;
@@ -5203,7 +5196,7 @@
                     s = new Audio;
                 return s.src = r, new Promise(((e, t) => { s.onended = () => { URL.revokeObjectURL(r), e() },
                     s.onerror = () => t(), s.play().catch(t), currentAudio && !currentAudio.paused && currentAudio
-                        .pause(), currentAudio = s })) } catch (e) { return console.error(e), Promise.reject(e) }
+                    .pause(), currentAudio = s })) } catch (e) { return console.error(e), Promise.reject(e) }
         }
 
         async function processSpeechQueue() {
@@ -5215,8 +5208,9 @@
             }
         }
 
-        function enqueueSpeech(e, t, n = null) { e && (speechQueue.push({ text: e, voice: t, rate: n }),
-                processSpeechQueue()) }
+        function enqueueSpeech(e, t, n = null) { e && (speechQueue.push({ text: e, voice: t, rate: n }), processSpeechQueue()) }
+
+        // Note: killAllSpeech is already overridden above
 
         function speakChineseEdge(e) {
             if (!e) return;
@@ -5236,6 +5230,8 @@
         function speakKhmerFromMain() { const e = document.getElementById("khmerWord"),
                 t = e ? e.innerText : "";
             t && (killAllSpeech(), speakKhmerEdge(t)) }
+
+        // NOTE: speakAutoSequence is now defined above with cancellation token
 
         let speechOrder = 'zh_first';
 
@@ -5295,6 +5291,7 @@
             document.querySelectorAll(".pinyin-top").forEach((e => { "inherit" !== c && (e.style.fontFamily = c),
                     e.style.color = m, e.style.fontWeight = u ? "bold" : "normal", e.style.fontSize = d + "px" })),
                 applyBottomAutoScale();
+            // Re-apply layer transforms after font size change to update scaling
             applyLayerTransforms();
         }
 
@@ -5335,7 +5332,7 @@
             const e = document.getElementById("chineseWord");
             e && (e.querySelectorAll(".pinyin-top").forEach((e => e.style.display = topPinyinVisible ? "" : "none")),
                 e.querySelectorAll(".chinese-bottom").forEach((e => e.style.display = bottomCharVisible ? "" :
-                    "none")))
+                "none")))
         }
 
         function applyChineseMainStyle() {
@@ -5371,12 +5368,14 @@
             const t = document.getElementById("pinyinColor").value;
             const n = document.getElementById("pinyinBold").classList.contains("active");
             const o = parseFloat(document.getElementById("pinyinSpacing").value);
+            // ---- DYNAMIC GAP BASED ON WORD LENGTH AND FONT SCALE ----
             const wordEl = document.getElementById("chineseWord");
             let len = 0;
             if (wordEl) {
                 const plain = wordEl.getAttribute("data-plain") || "";
                 len = plain.length;
             }
+            // Max gap is the slider value, but we scale it down for long words
             let gap = o;
             if (len >= 8 && len <= 14) {
                 gap = -2;
@@ -5385,6 +5384,7 @@
                 gap = o * (1 - reduction);
                 gap = Math.max(2, gap);
             }
+            // Apply font scale factor to gap – use baseline scaling
             const mainEl = document.querySelector('.chinese-main');
             let scale = 1;
             if (mainEl) {
@@ -5401,6 +5401,7 @@
                 el.style.color = t;
                 el.style.fontWeight = n ? "bold" : "normal";
             });
+            // Apply gap to the container
             document.querySelectorAll(".chinese-word").forEach((el) => {
                 el.style.gap = `${scaledRowGap}px ${scaledGap}px`;
             });
@@ -5430,34 +5431,22 @@
         function updateDisplay() {
             if (!sidebarIndices.length) return;
             const e = sidebarIndices[sidebarFocusIdx];
-            if (void 0 === e || pendingDeletions.has(e)) {
-                const newIdx = sidebarIndices.find(idx => !pendingDeletions.has(idx));
+            if (void 0 === e || pendingDeletions.has(e) || softDeletedIndices.has(e)) {
+                // If current item is soft-deleted or pending, find another
+                const newIdx = sidebarIndices.find(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
                 if (newIdx !== undefined) {
                     sidebarFocusIdx = sidebarIndices.indexOf(newIdx);
                     return updateDisplay();
                 }
+                // If all are soft-deleted or pending, clear display
                 updateChineseDisplay("");
                 document.getElementById("khmerWord").innerText = "";
                 return;
             }
             const t = vocabList[e];
-            if (t.recycled) {
-                // skip recycled items
-                const active = sidebarIndices.find(idx => !vocabList[idx]?.recycled);
-                if (active !== undefined) {
-                    sidebarFocusIdx = sidebarIndices.indexOf(active);
-                    return updateDisplay();
-                } else {
-                    updateChineseDisplay("");
-                    document.getElementById("khmerWord").innerText = "";
-                    return;
-                }
-            }
             updateChineseDisplay(t.chinese || t.khmer), document.getElementById("khmerWord").innerText = t.khmer ||
-                "", document.querySelectorAll(".vocab-item").forEach(((el, idx) => {
-                    const item = vocabList[sidebarIndices[idx]];
-                    el.classList.toggle("active", idx === sidebarFocusIdx);
-                })), applyStyles(), forceShrink(), applyBottomAutoScale()
+                "", document.querySelectorAll(".vocab-item").forEach(((e, t) => e.classList.toggle("active", t ===
+                sidebarFocusIdx))), applyStyles(), forceShrink(), applyBottomAutoScale()
         }
 
         function applySidebarStyles() {
@@ -5492,7 +5481,6 @@
             i && (i.style.textShadow = o), saveAllData()
         }
 
-        // ---- saveAllData (now saves recycled flag via compress) ----
         function saveAllData() {
             const settings = {
                 mZhSize: userSetChineseFontSize,
@@ -5531,6 +5519,17 @@
             };
             safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
 
+            // Save soft-deleted indices as array
+            const softDeletedArray = Array.from(softDeletedIndices);
+            safeSetItem("vocabMaster_SoftDeleted", JSON.stringify(softDeletedArray));
+
+            // Save soft-deleted data
+            const softDataObj = {};
+            for (let [k, v] of softDeletedData) {
+                softDataObj[k] = v;
+            }
+            safeSetItem("vocabMaster_SoftData", JSON.stringify(softDataObj));
+
             if (vocabList.length > 0) {
                 const compressed = compressVocabList(vocabList);
                 const jsonStr = JSON.stringify(compressed);
@@ -5540,11 +5539,8 @@
             } else {
                 safeRemoveItem("vocabMaster_List_Compressed");
             }
-            // Recycle bin is now part of vocabList, so no separate save needed.
-            updateRecycleBadge();
         }
 
-        // ---- loadSettings (now also loads recycled flag) ----
         function loadSettings() {
             const settingsStr = safeGetItem("vocabMaster_Settings", null);
             if (settingsStr) {
@@ -5571,6 +5567,7 @@
                     document.body.style.setProperty("--vocab-spacing", (t.vocabSpacing || 8) + "px");
                     document.getElementById("vocabSpacingVal").innerText = (t.vocabSpacing || 8) + "px";
                     if (t.zhVoice) document.getElementById("zhVoiceSelect").value = t.zhVoice;
+                    // If no saved voice, use Yunxi (already selected in HTML)
                     if (t.kmVoice) document.getElementById("kmVoiceSelect").value = t.kmVoice;
                     if (void 0 !== t.zhRate) document.getElementById("zhRateSlider").value = t.zhRate;
                     if (t.pinyinFont) document.getElementById("pinyinFont").value = t.pinyinFont;
@@ -5633,6 +5630,33 @@
                 bottomCharVisible = true;
             }
 
+            // ---- Load soft-deleted data ----
+            try {
+                const softDeletedStr = safeGetItem("vocabMaster_SoftDeleted", "[]");
+                const softArr = JSON.parse(softDeletedStr);
+                if (Array.isArray(softArr)) {
+                    for (const idx of softArr) {
+                        if (idx >= 0 && idx < vocabList.length) {
+                            softDeletedIndices.add(idx);
+                        }
+                    }
+                }
+            } catch (e) { console.warn("Soft-deleted parse error:", e); }
+
+            try {
+                const softDataStr = safeGetItem("vocabMaster_SoftData", "{}");
+                const softDataObj = JSON.parse(softDataStr);
+                if (typeof softDataObj === 'object') {
+                    for (let [k, v] of Object.entries(softDataObj)) {
+                        const idx = parseInt(k);
+                        if (!isNaN(idx) && idx >= 0 && idx < vocabList.length) {
+                            softDeletedData.set(idx, v);
+                        }
+                    }
+                }
+            } catch (e) { console.warn("Soft-data parse error:", e); }
+
+            // ===== RESTORE SHEET ID, API URL, AND PASSWORD =====
             const sheetId = safeGetItem("vocabMaster_SheetId", "");
             if (sheetId) {
                 currentSheetId = sheetId;
@@ -5671,12 +5695,13 @@
             setKhmerFontSize(userSetKhmerFontSize);
             applyShadow();
             applyBottomAutoScale();
+            // Init baseline
             const mainEl = document.querySelector('.chinese-main');
             if (mainEl) {
                 const size = parseFloat(getComputedStyle(mainEl).fontSize);
                 if (size && !isNaN(size)) baselineFontSizePx = size;
             }
-            updateRecycleBadge();
+            updateRecycleBinBadge();
         }
 
         function toggleBold(e, t) {
@@ -5691,7 +5716,6 @@
                 "side" !== e || sidebarVisible || toggleSidebar()
         }
 
-        // ---- setupBackgroundClick (unchanged) ----
         function setupBackgroundClick() {
             const area = document.getElementById("bgClickArea");
             let longPressTimer = null;
@@ -5702,7 +5726,6 @@
             let tapProcessed = false;
             let touchInProgress = false;
             let lastTouchEndTime = 0;
-            let isSwiping = false;
 
             const shouldHandle = (target) => {
                 return !target.closest('#floatingMenu') &&
@@ -5828,7 +5851,6 @@
             }, { passive: false });
         }
 
-        // ---- setupSidebarWheelNavigation (unchanged) ----
         function setupSidebarWheelNavigation() {
             const e = document.getElementById("sidebarList");
             e && e.addEventListener("wheel", (function(e) {
@@ -5846,8 +5868,6 @@
         window.addEventListener("resize", (() => { resizeDebounce && clearTimeout(resizeDebounce), resizeDebounce =
                 setTimeout((() => { forceShrink(), applyBottomAutoScale() }), 150) })), window.addEventListener(
             "orientationchange", (() => { setTimeout((() => { forceShrink(), applyBottomAutoScale() }), 100) }));
-
-        // ---- Drag initialization (unchanged) ----
         let chineseElement = null,
             khmerElement = null,
             chineseX = 50,
@@ -5901,6 +5921,7 @@
             safeSetItem("drag_topY", topLayerY);
             safeSetItem("drag_bottomX", bottomLayerX);
             safeSetItem("drag_bottomY", bottomLayerY);
+            // Store baseline font size
             if (baselineFontSizePx !== null) {
                 safeSetItem("drag_baselineFontSize", baselineFontSizePx);
             }
@@ -5942,7 +5963,7 @@
                 if (!hasMovedDuringPress && !dragActive && !copyLocked) { const e = chineseElement.getAttribute(
                         "data-plain") || "";
                     e && (isIOS ? showCopyPopupWithButton(e, "Chinese") : await copyTextDirectly(e,
-                        "Chinese"));
+                    "Chinese"));
                     const t = await showLayerChoiceModal();
                     "top" === t ? startLayerDrag("top", pressStartX, pressStartY) : "bottom" === t &&
                         startLayerDrag("bottom", pressStartX, pressStartY) }
@@ -5978,6 +5999,7 @@
         }
 
         function onPressEnd() {
+            // Only speak if no long press, no drag, and no move occurred
             if (longPressTimer !== null && !dragActive && !hasMovedDuringPress) {
                 speakChineseFromMain();
             }
@@ -6021,11 +6043,13 @@
                 chineseX = (t + o) / e.width * 100, chineseY = n / e.height * 100, chineseElement.style.left =
                     chineseX + "%", chineseElement.style.top = chineseY + "%" } else if ("top" === dragType) {
                 topLayerX = dragStartTopX + o, topLayerY = dragStartTopY + i;
+                // Clamp to prevent overlapping
                 topLayerX = Math.max(-200, Math.min(200, topLayerX));
                 topLayerY = Math.max(-50, Math.min(300, topLayerY));
                 applyLayerTransforms();
             } else if ("bottom" === dragType) {
                 bottomLayerX = dragStartBottomX + o, bottomLayerY = dragStartBottomY + i;
+                // Clamp to prevent overlapping
                 bottomLayerX = Math.max(-200, Math.min(200, bottomLayerX));
                 bottomLayerY = Math.max(-300, Math.min(50, bottomLayerY));
                 applyLayerTransforms();
@@ -6048,6 +6072,8 @@
             chineseElement.style.top = chineseY + "%";
             chineseElement.style.transform = "translate(-50%, -50%)";
             chineseElement.style.cursor = "grab";
+            // REMOVED click event – speech is now handled by onPressEnd only
+            // chineseElement.addEventListener("click", (e => { e.stopPropagation(), speakChineseFromMain() }));
             chineseElement.addEventListener("mousedown", onChinesePointerDown);
             chineseElement.addEventListener("touchstart", onChinesePointerDown, { passive: false });
             chineseElement.addEventListener("touchstart", (e => handlePinchStart(e, "chinese")), { passive: false });
@@ -6067,13 +6093,21 @@
         function initKhmerDrag() {
             khmerElement = document.getElementById("khmerWord");
             if (!khmerElement) return;
+            // Add a closure flag to track long press for Khmer
             let khmerLongPressTriggered = false;
 
+            // Modified long-press handler: do NOT preventDefault on touchstart,
+            // so that click event can fire on tap.
             const newOnKhmerPointerDown = function(e) {
+                // Only prevent default for mouse to avoid text selection, but not for touch
                 if (e.type === 'mousedown') {
                     e.preventDefault();
                     e.stopPropagation();
-                } else if (e.type === 'touchstart') {}
+                } else if (e.type === 'touchstart') {
+                    // Do NOT preventDefault or stopPropagation – let click fire
+                    // But we need to prevent scrolling on drag later.
+                    // We'll handle touchmove separately.
+                }
                 let timer = null;
                 let moved = false;
                 const onMove = (ev) => {
@@ -6082,6 +6116,7 @@
                 };
                 const onEnd = () => {
                     if (timer) clearTimeout(timer);
+                    // Reset flag after a short delay so click event can run first
                     setTimeout(() => {
                         khmerLongPressTriggered = false;
                     }, 150);
@@ -6090,6 +6125,8 @@
                     window.removeEventListener("mouseup", onEnd);
                     window.removeEventListener("touchend", onEnd);
                 };
+                // For touch, we need to detect long press without blocking click.
+                // We'll set a timer, but if the user taps (quick), the timer won't fire.
                 timer = setTimeout(async () => {
                     if (!moved && !copyLocked) {
                         const text = khmerElement.innerText;
@@ -6104,6 +6141,7 @@
                     }
                     onEnd();
                 }, 500);
+                // For touch, we need to listen to touchmove/touchend
                 if (e.type === 'touchstart') {
                     window.addEventListener("touchmove", onMove);
                     window.addEventListener("touchend", onEnd);
@@ -6119,20 +6157,24 @@
             khmerElement.style.transform = "translate(-50%, -50%)";
             khmerElement.style.cursor = "grab";
 
+            // Click event with long-press check
             khmerElement.addEventListener("click", (e => {
                 e.stopPropagation();
+                // If long press was triggered, don't speak
                 if (khmerLongPressTriggered) {
                     khmerLongPressTriggered = false;
                     return;
                 }
+                // Also check if copy popup is active
                 if (copyLocked) {
                     return;
                 }
                 speakKhmerFromMain();
             }));
 
+            // Use the new pointer down handler for both mouse and touch
             khmerElement.addEventListener("mousedown", newOnKhmerPointerDown);
-            khmerElement.addEventListener("touchstart", newOnKhmerPointerDown, { passive: true });
+            khmerElement.addEventListener("touchstart", newOnKhmerPointerDown, { passive: true }); // passive: true to allow click
 
             khmerElement.addEventListener("touchstart", (e => handlePinchStart(e, "khmer")), { passive: false });
             khmerElement.addEventListener("touchmove", (e => handlePinchMove(e, "khmer")), { passive: false });
@@ -6148,6 +6190,7 @@
                 }
             }), { passive: false });
 
+            // Drag logic for Khmer (adjusted for touch)
             let dragActiveLocal = false;
             let startXLocal = 0,
                 startYLocal = 0;
@@ -6156,6 +6199,10 @@
             let hasMovedLocal = false;
 
             const onKhmerDragStart = (ev) => {
+                // Only prevent default if we are starting a drag, but we can't know yet.
+                // We'll use a timer to start drag, but we need to track movement.
+                // Instead, we'll use a simpler approach: on mousedown/touchstart, record initial position,
+                // and if move > threshold, start dragging and prevent default on touchmove.
                 const touch = ev.clientX !== undefined ? ev : (ev.touches ? ev.touches[0] : null);
                 if (!touch) return;
                 const cx = touch.clientX || 0;
@@ -6179,6 +6226,7 @@
                     const dy = cy2 - startYLocal;
                     if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
                         hasMovedLocal = true;
+                        // Prevent default only when dragging
                         ev2.preventDefault();
                     }
                     const areaRect = canvas.getBoundingClientRect();
@@ -6193,7 +6241,9 @@
                 const onEnd = () => {
                     dragActiveLocal = false;
                     khmerElement.style.cursor = "grab";
-                    if (!hasMovedLocal) {}
+                    if (!hasMovedLocal) {
+                        // If no drag, the click event will handle speech
+                    }
                     saveAllDragPositions();
                     forceShrink();
                     window.removeEventListener("mousemove", onMove);
@@ -6403,7 +6453,6 @@
             let startY = 0,
                 startX = 0,
                 moved = false;
-            let isSwiping = false;
 
             area.addEventListener("touchstart", function(e) {
                 const touch = e.touches[0];
@@ -6587,12 +6636,14 @@
             t && t.addEventListener("click", (() => e.style.display = "none")), e.addEventListener("click", (t => { t
                     .target === e && (e.style.display = "none") }));
 
+            // ---- QR image click: load default sheet ----
             const qrImg = document.querySelector('#qrPopupOverlay .qr-card img');
             if (qrImg) {
                 qrImg.addEventListener('click', async function(ev) {
                     ev.stopPropagation();
                     const overlay = document.getElementById('qrPopupOverlay');
                     if (!overlay) return;
+                    // Load the default sheet
                     const sheetId = DEFAULT_SHEET_ID;
                     const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
                     currentSheetId = sheetId;
@@ -6600,6 +6651,7 @@
                     addSheetToHistory(sheetId);
                     showToast(`📥 Loading default sheet...`);
                     await loadSheetData(true);
+                    // Close the QR overlay after loading
                     overlay.style.display = 'none';
                 });
             }
@@ -6612,7 +6664,8 @@
         }
 
         function moveSidebarFocus(e) {
-            const validIndices = sidebarIndices.filter(idx => !pendingDeletions.has(idx) && !vocabList[idx]?.recycled);
+            // Filter out pending deletions and soft-deleted items
+            const validIndices = sidebarIndices.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
             if (!validIndices.length) return;
             let t = validIndices.indexOf(sidebarIndices[sidebarFocusIdx]);
             if (t === -1) t = 0;
@@ -6623,7 +6676,9 @@
                 sidebarFocusIdx = actualPos;
                 updateDisplay();
                 const word = vocabList[sidebarIndices[sidebarFocusIdx]];
-                if (word) speakAutoSequence(word.chinese, word.khmer);
+                if (word && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
+                    speakAutoSequence(word.chinese, word.khmer);
+                }
                 scrollToActiveSidebarItem();
             }
         }
@@ -6650,43 +6705,66 @@
             applyStyles();
             applySidebarStyles();
             forceShrink();
+            // Ensure layer transforms are re-applied after styles change
             applyLayerTransforms();
         }
 
+        // ---- NEW: get font scale factor for dynamic scaling of gaps and layer positions ----
         function getFontScaleFactor() {
+            // This is no longer used for offsets but kept for other scaling like gaps.
             return 1;
         }
 
+        // ============================================================
+        // DYNAMIC VOICE LOADER (added)
+        // ============================================================
         async function loadChineseVoices() {
             try {
                 const res = await fetch('/voices');
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 const allVoices = data.voices || [];
+
+                // Filter only zh-CN voices
                 const chineseVoices = allVoices.filter(v => v.startsWith('zh-CN-'));
+
                 const select = document.getElementById('zhVoiceSelect');
                 if (!select) return;
+
+                // Remember current selection
                 const currentValue = select.value;
+
+                // Clear existing options
                 select.innerHTML = '';
+
+                // Add options for each available voice
                 chineseVoices.forEach(voiceId => {
                     const opt = document.createElement('option');
                     opt.value = voiceId;
+
+                    // Create a human‑friendly label
                     let label = voiceId.replace('zh-CN-', '').replace('Neural', '');
+                    // Add gender emoji (optional)
                     const femaleNames = ['Xiaoxiao', 'Xiaoyi', 'Xiaohan', 'Xiaomeng', 'Xiaomo', 'Xiaoqiu', 'Xiaorui', 'Xiaoshuang', 'Xiaoxia', 'Xiaoxuan', 'Xiaoyan', 'Xiaoyou', 'Xiaozhen'];
                     const isFemale = femaleNames.some(name => voiceId.includes(name));
                     opt.textContent = label + (isFemale ? ' ♀' : ' ♂');
                     select.appendChild(opt);
                 });
+
+                // Restore previous selection if possible
                 if (currentValue && chineseVoices.includes(currentValue)) {
                     select.value = currentValue;
                 } else if (select.options.length > 0) {
                     select.value = select.options[0].value;
                 }
+
                 console.log(`✅ Loaded ${chineseVoices.length} Chinese voices`);
             } catch (e) {
                 console.warn('Could not load voices, using static list:', e);
+                // Keep the static options as fallback – do nothing
             }
         }
+        // ============================================================
 
         const styleInputs = [
             "mZhFont", "mZhColor", "mZhSize", "mKmFont", "mKmColor", "mKmSize",
@@ -6709,12 +6787,6 @@
                 btn.addEventListener("click", refreshAllStyles);
             }
         });
-
-        // ---- Capture the original deleteVocabByRow after it's defined ----
-        // We'll capture it in the onload handler, but we also need it for the recycle functions.
-        // So we'll capture it now if it's available.
-
-        // ---- Window event listeners ----
         window.historyPrev = historyPrev, window.historyNext = historyNext, window.moveSidebarFocus =
             moveSidebarFocus, window.toggleAuto = toggleAuto, window.toggleSidebar = toggleSidebar, window
             .switchTab = switchTab, window.toggleMenu = toggleMenu, window.pickRandom = pickRandom, window
@@ -6724,7 +6796,6 @@
             goPrevNormal, window.goNextNormal = goNextNormal, window.requestEditModal = requestEditModal,
             window.requestOpenSheetRow = requestOpenSheetRow, window.requestAddNewVocab =
             requestAddNewVocab;
-
         window.addEventListener("keydown", (function(e) {
             const t = document.activeElement;
             !t || "INPUT" !== t.tagName && "TEXTAREA" !== t.tagName || " " !== e.key && "Space" !== e.key &&
@@ -6733,10 +6804,7 @@
                 (e.preventDefault(), historyPrev()) : "ArrowRight" === e.code ? (e.preventDefault(),
                     historyNext()) : "ArrowDown" === e.code ? (e.preventDefault(), moveSidebarFocus(1)) :
                 "ArrowUp" === e.code && (e.preventDefault(), moveSidebarFocus(-1)) : e.stopPropagation()
-        }));
-
-        // ---- onload ----
-        window.onload = async () => {
+        })), window.onload = async () => {
             initCopyPopup();
             emojiContainer = document.getElementById("emojiContainer");
             if (emojiContainer) {
@@ -6751,6 +6819,7 @@
             loadSettings();
             loadSheetHistory();
 
+            // 👇 If we have a sheet ID, fetch the API and password from the sheet (refresh from source)
             if (currentSheetId) {
                 try {
                     await loadApiAndPasswordFromSheet();
@@ -6760,6 +6829,7 @@
                 }
             }
 
+            // 👇 Dynamically load Chinese voices
             await loadChineseVoices();
 
             const orderBtn = document.getElementById('speechOrderToggle');
@@ -6770,38 +6840,31 @@
                 orderBtn.addEventListener('click', toggleSpeechOrder);
             }
 
+            // --- REMOVED auto-load: vocabList remains empty on first load ---
+            // if (vocabList.length === 0) {
+            //     await initializeSheet();
+            // }
+            // --- Instead, build cache and render empty state ---
             if (vocabList.length > 0) {
                 buildFirstCharCache();
                 if (appMode === "random") {
                     if (history.length === 0 && vocabList.length > 0) {
-                        // find first non-recycled
-                        const first = vocabList.findIndex(item => !item.recycled);
-                        if (first !== -1) {
-                            history = [first];
-                            historyIndex = 0;
-                        }
+                        history = [0];
+                        historyIndex = 0;
                     }
                     if (sidebarIndices.length === 0 && vocabList.length > 0) {
-                        const first = vocabList.findIndex(item => !item.recycled);
-                        if (first !== -1) renderRandomSidebar(first);
-                        else pickRandom();
+                        renderRandomSidebar(0);
                     } else if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
-                        const idx = sidebarIndices[sidebarFocusIdx];
-                        if (!vocabList[idx]?.recycled) loadWordByMode(idx, true);
-                        else pickRandom();
+                        loadWordByMode(sidebarIndices[sidebarFocusIdx], true);
                     } else if (vocabList.length > 0) {
                         pickRandom();
                     }
                 } else {
                     if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = 0;
-                    // skip recycled
-                    if (vocabList[normalCurrentIdx]?.recycled) {
-                        const first = vocabList.findIndex(item => !item.recycled);
-                        if (first !== -1) normalCurrentIdx = first;
-                    }
                     renderNormalSidebar();
                 }
             } else {
+                // Empty state: render empty sidebar, clear display
                 renderSidebarUI();
                 updateChineseDisplay("");
                 document.getElementById("khmerWord").innerText = "";
@@ -6862,12 +6925,29 @@
                     e.stopPropagation();
                     const overlay = document.getElementById("qrPopupOverlay");
                     if (overlay) overlay.style.display = "flex";
+                    // DO NOT auto-load sheet here — user must tap QR image to load
                 });
                 newAba.addEventListener("touchstart", async function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     const overlay = document.getElementById("qrPopupOverlay");
                     if (overlay) overlay.style.display = "flex";
+                    // DO NOT auto-load sheet here — user must tap QR image to load
+                }, { passive: false });
+            }
+
+            // Recycle Bin button handler
+            const rbBtn = document.getElementById("recycleBinBtn");
+            if (rbBtn) {
+                rbBtn.addEventListener("click", function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showRecycleBinModal();
+                });
+                rbBtn.addEventListener("touchstart", function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showRecycleBinModal();
                 }, { passive: false });
             }
 
@@ -6972,11 +7052,14 @@
 
             document.getElementById("insertDataBtn").onclick = () => { showLoadVocabularyModal(); };
 
+            // ----- KEYBOARD SHORTCUTS -----
             document.addEventListener('keydown', function(e) {
+                // Ctrl+F or Cmd+F to open ADD NEW modal
                 if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
                     e.preventDefault();
                     requestAddNewVocab();
                 }
+                // Escape to close any modal (remove .modal-overlay)
                 if (e.key === 'Escape') {
                     const modals = document.querySelectorAll('.modal-overlay');
                     if (modals.length) {
@@ -6986,33 +7069,8 @@
                 }
             });
 
-            updateRecycleBadge();
-
-            // ---- CAPTURE THE ORIGINAL deleteVocabByRow ----
-            // We need to capture it before we override it.
-            // The function is defined earlier in the script.
-            // We'll capture it from the window object.
-            if (typeof origDeleteVocabByRow !== 'function') {
-                if (typeof window.deleteVocabByRow === 'function') {
-                    origDeleteVocabByRow = window.deleteVocabByRow;
-                    // Override it with our version that moves to recycle (sets flag)
-                    window.deleteVocabByRow = async function(row) {
-                        // This is used only for permanent deletion from recycle, we use origDeleteVocabByRow directly.
-                        // So we can keep this as is.
-                        // But we need to handle the case where it's called from elsewhere? We'll just call original.
-                        if (typeof origDeleteVocabByRow === 'function') {
-                            return await origDeleteVocabByRow(row);
-                        } else {
-                            showToast('❌ Cannot delete: API not available');
-                            throw new Error('API not available');
-                        }
-                    };
-                    console.log('✅ deleteVocabByRow wrapped for permanent deletion');
-                }
-            }
+            updateRecycleBinBadge();
         };
-
-        // ---- Keep toggleMenu override ----
         const originalToggleMenu = toggleMenu;
         window.toggleMenu = function(e) {
             originalToggleMenu(e);
@@ -7031,8 +7089,6 @@
                 }
             }
         };
-
-        console.log('✅ Recycle bin updated: items stay in list with strikethrough until permanent deletion.');
     </script>
 </body>
 </html>
