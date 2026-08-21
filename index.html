@@ -1275,6 +1275,32 @@
             text-align: center;
             color: rgba(255, 255, 255, .6)
         }
+        /* X Hei font for Chinese inputs */
+        #addChineseInput,
+        #editChineseInput,
+        #vocabSearchResults .search-result-item .result-chinese,
+        #vocabSearchResultsEdit .search-result-item .result-chinese,
+        #vocabSearchResults .search-result-item strong,
+        #vocabSearchResultsEdit .search-result-item strong {
+            font-family: 'XHeiPinyin', 'PingFang SC', 'Microsoft YaHei', sans-serif !important;
+        }
+        /* White background for confirm add button */
+        #confirmAddBtn {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+        #confirmAddBtn:hover {
+            background: #f1f5f9 !important;
+        }
+        body.night-mode #confirmAddBtn {
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
+            border-color: #475569 !important;
+        }
+        body.night-mode #confirmAddBtn:hover {
+            background: #f1f5f9 !important;
+        }
         .insert-symbol-icon-inside {
             position: absolute;
             right: 12px;
@@ -1291,7 +1317,9 @@
             font-weight: 700;
             backdrop-filter: blur(4px);
             line-height: 1;
-            z-index: 2
+            z-index: 2;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .insert-symbol-icon-inside:hover {
             background: rgba(255, 255, 255, .4);
@@ -1299,6 +1327,10 @@
         }
         .insert-symbol-icon-inside:active {
             transform: translateY(-50%) scale(.96)
+        }
+        .insert-symbol-icon-inside.copy-mode {
+            background: #3b82f6 !important;
+            transform: translateY(-50%) scale(1.05);
         }
         .file-source-modal {
             display: none;
@@ -3925,6 +3957,7 @@
         }
 
         // Perform search with limit and optimized loop, respecting pendingDeletions + SORTED
+        // Also shows ↪️ for items in recycle bin instead of 🗑️
         function performSearch(query, container, isEdit = false) {
             const q = query.trim().toLowerCase();
             if (!q) { container.innerHTML = ""; return; }
@@ -3955,25 +3988,47 @@
                 const chineseEsc = escapeHtml(v.chinese);
                 const chineseJs = jsEscape(chineseEsc);
                 const khmerJs = jsEscape(khmerEsc);
-                const deleteFn = isEdit ?
-                    `window.deleteFromEditSearch(${idx}, ${row}, '${jsEscape(q)}')` :
-                    `window.deleteFromAddSearch(${idx}, ${row}, '${jsEscape(q)}')`;
+                const isDeleted = softDeletedIndices.has(idx);
+                // If in recycle bin, show ↪️ (restore) instead of 🗑️ (delete)
+                const actionIcon = isDeleted ? '↪️' : '🗑️';
+                const actionFn = isDeleted ?
+                    `window.restoreFromSearch(${idx}, '${jsEscape(q)}', ${isEdit})` :
+                    (isEdit ?
+                        `window.deleteFromEditSearch(${idx}, ${row}, '${jsEscape(q)}')` :
+                        `window.deleteFromAddSearch(${idx}, ${row}, '${jsEscape(q)}')`);
                 const onclickLoad = `loadWordByMode(${idx}, true); ${isEdit ? `window.updateEditModalState(${idx}, ${row}, '${chineseJs}', '${khmerJs}');` : `requestEditModal(${idx}, ${row}, '${khmerJs}', '${chineseJs}');`}`;
-                html += `<div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:#fff; display:flex; justify-content:space-between; align-items:center;" 
+                const delBadge = isDeleted ? ' <span style="font-size:0.7rem;opacity:0.6;">(recycle bin)</span>' : '';
+                html += `<div style="padding:8px; border-bottom:1px solid #ccc; cursor:pointer; background:rgba(255,255,255,0.1); margin:2px 0; border-radius:8px; color:#fff; display:flex; justify-content:space-between; align-items:center; ${isDeleted ? 'opacity:0.7;' : ''}" 
                             onclick="${onclickLoad}"
                             data-idx="${idx}"
                             data-row="${row}"
                             data-chinese="${chineseJs}"
                             data-khmer="${khmerJs}"
                             >
-                            <span style="flex:1;"><strong>${chineseEsc}</strong> — ${khmerEsc}</span>
-                            <span class="search-delete-btn" style="cursor:pointer; padding:4px 10px; font-size:1.2rem; border-radius:20px; background:rgba(255,0,0,0.2);" 
-                                  onclick="event.stopPropagation(); ${deleteFn}" 
-                                  ontouchstart="event.preventDefault(); event.stopPropagation(); ${deleteFn}">🗑️</span>
+                            <span style="flex:1;"><strong>${chineseEsc}</strong> — ${khmerEsc}${delBadge}</span>
+                            <span class="search-delete-btn" style="cursor:pointer; padding:4px 10px; font-size:1.2rem; border-radius:20px; background:${isDeleted ? 'rgba(34,197,94,0.2)' : 'rgba(255,0,0,0.2)'};" 
+                                  onclick="event.stopPropagation(); ${actionFn}" 
+                                  ontouchstart="event.preventDefault(); event.stopPropagation(); ${actionFn}">${actionIcon}</span>
                         </div>`;
             }
             container.innerHTML = html;
         }
+
+        // ---- Restore from search (add modal) ----
+        window.restoreFromSearch = function(idx, query, isEdit) {
+            if (softDeletedIndices.has(idx)) {
+                restoreSoftDeleted(idx);
+                // Refresh search results
+                const input = isEdit ? document.getElementById('editChineseInput') : document.getElementById('addChineseInput');
+                if (input && window.addModalPerformSearch) {
+                    window.addModalPerformSearch(input.value);
+                }
+                if (isEdit && window.editModalPerformSearch) {
+                    window.editModalPerformSearch(document.getElementById('editChineseInput')?.value || '');
+                }
+                renderSidebarUI();
+            }
+        };
 
         // Modal search functions - triggered from Chinese input
         window.addModalPerformSearch = function(query) {
@@ -4089,7 +4144,7 @@
         }
 
         // ---- Batch actions (no confirm prompts for individual items) ----
-        async function restoreAllSoftDeleted() {
+        async function restoreAllSoftDeletedAndClose() {
             const count = softDeletedIndices.size;
             if (count === 0) {
                 showToast("Recycle bin is empty");
@@ -4116,17 +4171,12 @@
             }
             saveAllData();
             showToast(`↩️ Restored ${count} items`);
-            // Refresh modal if open
+            // Close the modal immediately
             const modal = document.querySelector('.modal-overlay');
-            if (modal) {
-                const list = modal.querySelector('#recycleBinList');
-                if (list) list.innerHTML = renderRecycleBinItems();
-                const actions = modal.querySelector('#recycleBinActions');
-                if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
-            }
+            if (modal) modal.remove();
         }
 
-        async function permanentlyDeleteAllSoftDeleted() {
+        async function permanentlyDeleteAllSoftDeletedAndClose() {
             const count = softDeletedIndices.size;
             if (count === 0) {
                 showToast("Recycle bin is empty");
@@ -4164,14 +4214,9 @@
             }
             saveAllData();
             showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
-            // Refresh modal if open
+            // Close the modal immediately
             const modal = document.querySelector('.modal-overlay');
-            if (modal) {
-                const list = modal.querySelector('#recycleBinList');
-                if (list) list.innerHTML = renderRecycleBinItems();
-                const actions = modal.querySelector('#recycleBinActions');
-                if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
-            }
+            if (modal) modal.remove();
         }
 
         function updateRecycleBinBadge() {
@@ -4259,21 +4304,12 @@
                 });
             });
 
-            // Batch action buttons - NO confirm prompts for individual items
+            // Batch action buttons - close modal immediately after action
             const restoreAllBtn = overlay.querySelector("#restoreAllBtn");
             if (restoreAllBtn) {
                 restoreAllBtn.addEventListener("click", async function(e) {
                     e.stopPropagation();
-                    await restoreAllSoftDeleted();
-                    // Update modal content
-                    const list = overlay.querySelector("#recycleBinList");
-                    if (list) list.innerHTML = renderRecycleBinItems();
-                    const actions = overlay.querySelector("#recycleBinActions");
-                    if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
-                    updateRecycleBinBadge();
-                    if (softDeletedIndices.size === 0) {
-                        setTimeout(() => overlay.remove(), 600);
-                    }
+                    await restoreAllSoftDeletedAndClose();
                 });
             }
 
@@ -4281,15 +4317,7 @@
             if (deleteAllBtn) {
                 deleteAllBtn.addEventListener("click", async function(e) {
                     e.stopPropagation();
-                    await permanentlyDeleteAllSoftDeleted();
-                    const list = overlay.querySelector("#recycleBinList");
-                    if (list) list.innerHTML = renderRecycleBinItems();
-                    const actions = overlay.querySelector("#recycleBinActions");
-                    if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
-                    updateRecycleBinBadge();
-                    if (softDeletedIndices.size === 0) {
-                        setTimeout(() => overlay.remove(), 600);
-                    }
+                    await permanentlyDeleteAllSoftDeletedAndClose();
                 });
             }
         }
@@ -4668,6 +4696,91 @@
         }
         window.refreshAddModalSearch = refreshAddModalSearch;
 
+        // ---- Long-press copy for "/" button ----
+        function setupInsertSymbolLongPress() {
+            document.querySelectorAll('.insert-symbol-icon-inside').forEach(btn => {
+                let longPressTimer = null;
+                let isLongPress = false;
+                let isMouseDown = false;
+
+                const startLongPress = (e) => {
+                    isLongPress = false;
+                    isMouseDown = true;
+                    const target = btn.getAttribute('data-target');
+                    const input = document.getElementById(target);
+                    if (!input) return;
+                    const text = input.value;
+                    if (!text) return;
+
+                    longPressTimer = setTimeout(() => {
+                        isLongPress = true;
+                        // Copy text to clipboard
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(text).then(() => {
+                                btn.classList.add('copy-mode');
+                                showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
+                                setTimeout(() => btn.classList.remove('copy-mode'), 800);
+                            }).catch(() => {
+                                // Fallback
+                                const ta = document.createElement('textarea');
+                                ta.value = text;
+                                document.body.appendChild(ta);
+                                ta.select();
+                                document.execCommand('copy');
+                                document.body.removeChild(ta);
+                                btn.classList.add('copy-mode');
+                                showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
+                                setTimeout(() => btn.classList.remove('copy-mode'), 800);
+                            });
+                        } else {
+                            // Fallback
+                            const ta = document.createElement('textarea');
+                            ta.value = text;
+                            document.body.appendChild(ta);
+                            ta.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(ta);
+                            btn.classList.add('copy-mode');
+                            showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
+                            setTimeout(() => btn.classList.remove('copy-mode'), 800);
+                        }
+                    }, 1500);
+                };
+
+                const endLongPress = (e) => {
+                    isMouseDown = false;
+                    if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
+                    // If it was a long press, prevent the click event from firing
+                    if (isLongPress) {
+                        isLongPress = false;
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                };
+
+                // Mouse events
+                btn.addEventListener('mousedown', startLongPress);
+                btn.addEventListener('mouseup', endLongPress);
+                btn.addEventListener('mouseleave', endLongPress);
+
+                // Touch events
+                btn.addEventListener('touchstart', startLongPress, { passive: true });
+                btn.addEventListener('touchend', endLongPress, { passive: false });
+                btn.addEventListener('touchcancel', endLongPress, { passive: false });
+
+                // Prevent the default click from interfering
+                btn.addEventListener('click', function(e) {
+                    if (isLongPress) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                });
+            });
+        }
+
         // --- Layer transforms using baseline font size for scaling ---
         let baselineFontSizePx = null; // pixel size when offsets were set
         let rowsSwapped = false; // track whether button rows are swapped
@@ -4794,7 +4907,7 @@
                     <div style="margin-bottom:16px;">
                         <div class="input-with-search" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
                             <button class="search-icon-btn" id="addChineseSearchBtn">🔍</button>
-                            <input id="addChineseInput" placeholder="Chinese word" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+                            <input id="addChineseInput" placeholder="Chinese word" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();" style="font-family:'XHeiPinyin','PingFang SC','Microsoft YaHei',sans-serif !important;">
                             <button class="insert-symbol-icon-inside" data-target="addChineseInput"> / </button>
                         </div>
                         <div class="input-icon-wrapper" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
@@ -4803,7 +4916,7 @@
                         </div>
                     </div>
                     <div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>
-                    <div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#10b981;">✅ ADD TO SHEET (last row)</button></div>
+                    <div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#ffffff !important; color:#0f172a !important; border:1px solid #cbd5e1 !important;">✅ ADD TO SHEET (last row)</button></div>
                     <button id="closeAddModalBtn" class="cancel-icon">✕</button>
                 </div>`,
                 document.body.appendChild(e);
@@ -4811,7 +4924,13 @@
             e.querySelectorAll(".insert-symbol-icon-inside").forEach((el) => {
                 const target = el.getAttribute("data-target");
                 if (target) {
+                    // Keep click handler for inserting "/"
                     el.addEventListener("click", (ev) => {
+                        // Check if it was a long press (handled separately)
+                        if (el._isLongPress) {
+                            el._isLongPress = false;
+                            return;
+                        }
                         ev.preventDefault();
                         ev.stopPropagation();
                         const inp = document.getElementById(target);
@@ -4827,6 +4946,9 @@
                     });
                 }
             });
+
+            // Setup long-press copy for symbols in this modal
+            setTimeout(setupInsertSymbolLongPress, 100);
 
             const chineseInput = document.getElementById("addChineseInput");
             const khmerInput = document.getElementById("addKhmerInput");
@@ -5172,7 +5294,7 @@
                     <div style="margin-bottom:16px;">
                         <div class="input-with-search" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
                             <button class="search-icon-btn" id="editChineseSearchBtn">🔍</button>
-                            <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(o)}" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+                            <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(o)}" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();" style="font-family:'XHeiPinyin','PingFang SC','Microsoft YaHei',sans-serif !important;">
                             <button class="insert-symbol-icon-inside" data-target="editChineseInput"> / </button>
                         </div>
                         <div class="input-icon-wrapper" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
@@ -5190,7 +5312,12 @@
             a.querySelectorAll(".insert-symbol-icon-inside").forEach((el) => {
                 const target = el.getAttribute("data-target");
                 if (target) {
+                    // Keep click handler for inserting "/"
                     el.addEventListener("click", (ev) => {
+                        if (el._isLongPress) {
+                            el._isLongPress = false;
+                            return;
+                        }
                         ev.preventDefault();
                         ev.stopPropagation();
                         const inp = document.getElementById(target);
@@ -5206,6 +5333,9 @@
                     });
                 }
             });
+
+            // Setup long-press copy for symbols in this modal
+            setTimeout(setupInsertSymbolLongPress, 100);
 
             const editChineseInput = document.getElementById("editChineseInput");
             const editKhmerInput = document.getElementById("editKhmerInput");
@@ -5841,6 +5971,8 @@
                 if (size && !isNaN(size)) baselineFontSizePx = size;
             }
             updateRecycleBinBadge();
+            // Setup long-press copy after load
+            setTimeout(setupInsertSymbolLongPress, 200);
         }
 
         function toggleBold(e, t) {
@@ -6978,6 +7110,9 @@
                 orderBtn.textContent = speechOrder === 'zh_first' ? 'ZH → KM' : 'KM → ZH';
                 orderBtn.addEventListener('click', toggleSpeechOrder);
             }
+
+            // Setup long-press copy for symbols
+            setTimeout(setupInsertSymbolLongPress, 300);
 
             // --- REMOVED auto-load: vocabList remains empty on first load ---
             // if (vocabList.length === 0) {
