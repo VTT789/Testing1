@@ -2250,6 +2250,43 @@
             font-weight: 700;
             margin-left: 4px;
         }
+        /* Batch action buttons */
+        .rb-batch-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .rb-batch-actions button {
+            border: none;
+            border-radius: 30px;
+            padding: 8px 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all .2s;
+            color: #fff;
+            min-width: 120px;
+        }
+        .rb-batch-actions .rb-restore-all {
+            background: #22c55e;
+        }
+        .rb-batch-actions .rb-restore-all:hover {
+            background: #16a34a;
+            transform: scale(0.97);
+        }
+        .rb-batch-actions .rb-delete-all {
+            background: #ef4444;
+        }
+        .rb-batch-actions .rb-delete-all:hover {
+            background: #dc2626;
+            transform: scale(0.97);
+        }
+        .rb-batch-actions .rb-batch-disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
     </style>
     <style>
         #floatingMenu {
@@ -4084,6 +4121,91 @@
             }
         }
 
+        // ---- Batch actions ----
+        async function restoreAllSoftDeleted() {
+            const count = softDeletedIndices.size;
+            if (count === 0) {
+                showToast("Recycle bin is empty");
+                return;
+            }
+            if (!confirm(`Restore all ${count} items from recycle bin?`)) return;
+            const indices = Array.from(softDeletedIndices);
+            for (const idx of indices) {
+                if (softDeletedIndices.has(idx)) {
+                    softDeletedIndices.delete(idx);
+                    softDeletedData.delete(idx);
+                }
+            }
+            renderSidebarUI();
+            updateRecycleBinBadge();
+            // Reload current word if needed
+            if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
+                const focusIdx = sidebarIndices[sidebarFocusIdx];
+                if (focusIdx !== undefined && !softDeletedIndices.has(focusIdx)) {
+                    loadWordByMode(focusIdx, true);
+                } else {
+                    const nextIdx = findNextAvailableIndex(0);
+                    if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+                }
+            }
+            saveAllData();
+            showToast(`↩️ Restored ${count} items`);
+            // Refresh modal if open
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                const list = modal.querySelector('#recycleBinList');
+                if (list) list.innerHTML = renderRecycleBinItems();
+                const actions = modal.querySelector('#recycleBinActions');
+                if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+            }
+        }
+
+        async function permanentlyDeleteAllSoftDeleted() {
+            const count = softDeletedIndices.size;
+            if (count === 0) {
+                showToast("Recycle bin is empty");
+                return;
+            }
+            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
+            const indices = Array.from(softDeletedIndices).sort((a, b) => b - a); // descending
+            let successCount = 0;
+            let failCount = 0;
+            for (const idx of indices) {
+                // Check if still soft-deleted
+                if (!softDeletedIndices.has(idx)) continue;
+                try {
+                    await permanentlyDeleteSoftDeleted(idx);
+                    successCount++;
+                } catch (e) {
+                    failCount++;
+                    // Remove from set to avoid loop issues
+                    softDeletedIndices.delete(idx);
+                    softDeletedData.delete(idx);
+                }
+            }
+            // After loop, re-render
+            renderSidebarUI();
+            updateRecycleBinBadge();
+            if (vocabList.length === 0) {
+                updateChineseDisplay("");
+                document.getElementById("khmerWord").innerText = "";
+            } else {
+                // Find a valid word
+                const nextIdx = findNextAvailableIndex(0);
+                if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+            }
+            saveAllData();
+            showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
+            // Refresh modal if open
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                const list = modal.querySelector('#recycleBinList');
+                if (list) list.innerHTML = renderRecycleBinItems();
+                const actions = modal.querySelector('#recycleBinActions');
+                if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+            }
+        }
+
         function updateRecycleBinBadge() {
             const badge = document.getElementById('rbCountBadge');
             if (badge) {
@@ -4103,11 +4225,16 @@
         function showRecycleBinModal() {
             const overlay = document.createElement("div");
             overlay.className = "modal-overlay";
+            const hasItems = softDeletedIndices.size > 0;
             overlay.innerHTML = `
                 <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%;">
                     <h3>🗑️ Recycle Bin <span class="recycle-bin-count" style="font-size:1.2rem;">${softDeletedIndices.size}</span></h3>
                     <div id="recycleBinList" style="max-height:400px; overflow-y:auto; margin:16px 0; text-align:left;">
                         ${renderRecycleBinItems()}
+                    </div>
+                    <div id="recycleBinActions" class="rb-batch-actions" style="display:${hasItems ? 'flex' : 'none'};">
+                        <button id="restoreAllBtn" class="rb-restore-all">↩️ Restore All</button>
+                        <button id="deleteAllBtn" class="rb-delete-all">🗑️ Delete All</button>
                     </div>
                     <button class="choice-cancel" id="closeRecycleBinBtn">✕ Close</button>
                 </div>
@@ -4118,7 +4245,7 @@
             const closeBtn = overlay.querySelector("#closeRecycleBinBtn");
             closeBtn.onclick = () => overlay.remove();
 
-            // Attach event listeners to restore and permanent delete buttons
+            // Attach event listeners to restore and permanent delete buttons (individual)
             overlay.querySelectorAll(".rb-restore").forEach(btn => {
                 btn.addEventListener("click", function(e) {
                     e.stopPropagation();
@@ -4129,6 +4256,9 @@
                         const list = overlay.querySelector("#recycleBinList");
                         if (list) list.innerHTML = renderRecycleBinItems();
                         updateRecycleBinBadge();
+                        // Update batch actions visibility
+                        const actions = overlay.querySelector("#recycleBinActions");
+                        if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
                         // If empty, close after short delay
                         if (softDeletedIndices.size === 0) {
                             setTimeout(() => overlay.remove(), 600);
@@ -4147,12 +4277,48 @@
                         const list = overlay.querySelector("#recycleBinList");
                         if (list) list.innerHTML = renderRecycleBinItems();
                         updateRecycleBinBadge();
+                        const actions = overlay.querySelector("#recycleBinActions");
+                        if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
                         if (softDeletedIndices.size === 0) {
                             setTimeout(() => overlay.remove(), 600);
                         }
                     }
                 });
             });
+
+            // Batch action buttons
+            const restoreAllBtn = overlay.querySelector("#restoreAllBtn");
+            if (restoreAllBtn) {
+                restoreAllBtn.addEventListener("click", async function(e) {
+                    e.stopPropagation();
+                    await restoreAllSoftDeleted();
+                    // Update modal content
+                    const list = overlay.querySelector("#recycleBinList");
+                    if (list) list.innerHTML = renderRecycleBinItems();
+                    const actions = overlay.querySelector("#recycleBinActions");
+                    if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+                    updateRecycleBinBadge();
+                    if (softDeletedIndices.size === 0) {
+                        setTimeout(() => overlay.remove(), 600);
+                    }
+                });
+            }
+
+            const deleteAllBtn = overlay.querySelector("#deleteAllBtn");
+            if (deleteAllBtn) {
+                deleteAllBtn.addEventListener("click", async function(e) {
+                    e.stopPropagation();
+                    await permanentlyDeleteAllSoftDeleted();
+                    const list = overlay.querySelector("#recycleBinList");
+                    if (list) list.innerHTML = renderRecycleBinItems();
+                    const actions = overlay.querySelector("#recycleBinActions");
+                    if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+                    updateRecycleBinBadge();
+                    if (softDeletedIndices.size === 0) {
+                        setTimeout(() => overlay.remove(), 600);
+                    }
+                });
+            }
         }
 
         function renderRecycleBinItems() {
