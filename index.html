@@ -1262,7 +1262,7 @@
         .big-edit-input-icon {
             width: 100%;
             padding: 16px 50px 16px 20px !important;
-            font-size: 1.6rem !important;
+            font-size: 1.8rem !important;
             border-radius: 60px !important;
             border: 1px solid rgba(255, 255, 255, .3) !important;
             background: rgba(51, 65, 85, .95) !important;
@@ -1275,57 +1275,50 @@
             text-align: center;
             color: rgba(255, 255, 255, .6)
         }
-        /* X Hei font for Chinese inputs and search results - larger font size */
+        /* X Hei font for Chinese inputs only - search results use default font */
         #addChineseInput,
-        #editChineseInput,
-        #vocabSearchResults .search-result-item .result-chinese,
-        #vocabSearchResultsEdit .search-result-item .result-chinese,
-        #vocabSearchResults .search-result-item strong,
-        #vocabSearchResultsEdit .search-result-item strong,
+        #editChineseInput {
+            font-family: 'XHeiPinyin', 'PingFang SC', 'Microsoft YaHei', sans-serif !important;
+        }
+        /* Search results use default system font */
+        #vocabSearchResults,
+        #vocabSearchResultsEdit {
+            font-family: Inter, system-ui, -apple-system, sans-serif !important;
+        }
+        #vocabSearchResults .result-item,
+        #vocabSearchResultsEdit .result-item,
+        #vocabSearchResults div,
+        #vocabSearchResultsEdit div,
+        #vocabSearchResults span,
+        #vocabSearchResultsEdit span,
         #vocabSearchResults .result-item .result-chinese,
         #vocabSearchResultsEdit .result-item .result-chinese,
         #vocabSearchResults .result-item .result-khmer,
         #vocabSearchResultsEdit .result-item .result-khmer,
-        #vocabSearchResults div,
-        #vocabSearchResultsEdit div,
-        #vocabSearchResults span,
-        #vocabSearchResultsEdit span {
-            font-family: 'XHeiPinyin', 'PingFang SC', 'Microsoft YaHei', sans-serif !important;
-        }
-        /* Larger font for search results */
-        #vocabSearchResults .result-item,
-        #vocabSearchResultsEdit .result-item {
-            font-size: 1.1rem !important;
-        }
-        #vocabSearchResults .result-item .result-chinese,
-        #vocabSearchResultsEdit .result-item .result-chinese {
-            font-size: 1.2rem !important;
-        }
-        #vocabSearchResults .result-item .result-khmer,
-        #vocabSearchResultsEdit .result-item .result-khmer {
-            font-size: 1rem !important;
-        }
-        /* Larger font for search result strong tags */
         #vocabSearchResults strong,
         #vocabSearchResultsEdit strong {
-            font-size: 1.15rem !important;
+            font-family: Inter, system-ui, -apple-system, sans-serif !important;
         }
-        /* White background for confirm add button */
-        #confirmAddBtn {
+        /* confirmAddBtn and confirmUpdateBtn dynamic colors */
+        #confirmAddBtn,
+        #confirmUpdateBtn {
+            background: #1a1a1a !important;
+            color: #ffffff !important;
+            border: 1px solid #333333 !important;
+        }
+        #confirmAddBtn:hover,
+        #confirmUpdateBtn:hover {
+            background: #2a2a2a !important;
+        }
+        body.night-mode #confirmAddBtn,
+        body.night-mode #confirmUpdateBtn {
             background: #ffffff !important;
             color: #0f172a !important;
-            border: 1px solid #cbd5e1 !important;
+            border: 1px solid #e2e8f0 !important;
         }
-        #confirmAddBtn:hover {
-            background: #f1f5f9 !important;
-        }
-        body.night-mode #confirmAddBtn {
-            background: #e2e8f0 !important;
-            color: #0f172a !important;
-            border-color: #475569 !important;
-        }
-        body.night-mode #confirmAddBtn:hover {
-            background: #f1f5f9 !important;
+        body.night-mode #confirmAddBtn:hover,
+        body.night-mode #confirmUpdateBtn:hover {
+            background: #e8e8e8 !important;
         }
         .insert-symbol-icon-inside {
             position: absolute;
@@ -1874,7 +1867,7 @@
                 font-size: .7rem;
             }
             .big-edit-input-icon {
-                font-size: 1.3rem !important;
+                font-size: 1.4rem !important;
                 padding: 12px 45px 12px 16px !important
             }
             .insert-symbol-icon-inside {
@@ -2185,7 +2178,7 @@
             flex: 1;
             border-radius: 60px !important;
             backdrop-filter: none;
-            font-size: 1.6rem !important;
+            font-size: 1.8rem !important;
         }
         .input-with-search .big-edit-input-icon:focus {
             outline: none;
@@ -4046,7 +4039,7 @@
                             data-chinese="${chineseJs}"
                             data-khmer="${khmerJs}"
                             >
-                            <span style="flex:1; font-family:'XHeiPinyin','PingFang SC','Microsoft YaHei',sans-serif !important; font-size:1.1rem;"><strong style="font-size:1.15rem;">${chineseEsc}</strong> — ${khmerEsc}${delBadge}</span>
+                            <span style="flex:1; font-family:Inter, system-ui, -apple-system, sans-serif !important; font-size:1.1rem;"><strong style="font-size:1.15rem;">${chineseEsc}</strong> — ${khmerEsc}${delBadge}</span>
                             <span class="search-delete-btn" style="cursor:pointer; padding:4px 14px; font-size:1.3rem; border-radius:20px; background:${isDeleted ? 'rgba(34,197,94,0.2)' : 'rgba(255,0,0,0.2)'};" 
                                   onclick="event.stopPropagation(); ${actionFn}" 
                                   ontouchstart="event.preventDefault(); event.stopPropagation(); ${actionFn}">${actionIcon}</span>
@@ -4953,7 +4946,7 @@
                     <div style="margin-bottom:16px;">
                         <div class="input-with-search" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
                             <button class="search-icon-btn" id="addChineseSearchBtn">🔍</button>
-                            <input id="addChineseInput" placeholder="Chinese word" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();" style="font-family:'XHeiPinyin','PingFang SC','Microsoft YaHei',sans-serif !important; font-size:1.6rem !important;">
+                            <input id="addChineseInput" placeholder="Chinese word" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();" style="font-family:'XHeiPinyin','PingFang SC','Microsoft YaHei',sans-serif !important; font-size:1.8rem !important;">
                             <button class="insert-symbol-icon-inside" data-target="addChineseInput"> / </button>
                         </div>
                         <div class="input-icon-wrapper" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
@@ -4962,7 +4955,7 @@
                         </div>
                     </div>
                     <div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>
-                    <div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#ffffff !important; color:#0f172a !important; border:1px solid #cbd5e1 !important;">✅ ADD TO SHEET (last row)</button></div>
+                    <div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#1a1a1a !important; color:#ffffff !important; border:1px solid #333333 !important;">✅ ADD TO SHEET (last row)</button></div>
                     <button id="closeAddModalBtn" class="cancel-icon">✕</button>
                 </div>`,
                 document.body.appendChild(e);
@@ -5340,7 +5333,7 @@
                     <div style="margin-bottom:16px;">
                         <div class="input-with-search" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
                             <button class="search-icon-btn" id="editChineseSearchBtn">🔍</button>
-                            <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(o)}" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();" style="font-family:'XHeiPinyin','PingFang SC','Microsoft YaHei',sans-serif !important; font-size:1.6rem !important;">
+                            <input id="editChineseInput" placeholder="Chinese word" value="${escapeHtml(o)}" class="big-edit-input-icon" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();" style="font-family:'XHeiPinyin','PingFang SC','Microsoft YaHei',sans-serif !important; font-size:1.8rem !important;">
                             <button class="insert-symbol-icon-inside" data-target="editChineseInput"> / </button>
                         </div>
                         <div class="input-icon-wrapper" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
@@ -5349,7 +5342,7 @@
                         </div>
                     </div>
                     <div id="vocabSearchResultsEdit" style="max-height:200px; overflow-y:auto; margin-top:8px; margin-bottom:12px;"></div>
-                    <div class="edit-group-buttons" style="margin-bottom:12px;"><button id="confirmUpdateBtn" style="background:#10b981;">💾 UPDATE SHEET</button></div>
+                    <div class="edit-group-buttons" style="margin-bottom:12px;"><button id="confirmUpdateBtn" style="background:#1a1a1a !important; color:#ffffff !important; border:1px solid #333333 !important;">💾 UPDATE SHEET</button></div>
                     <div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${i}</button></div>
                     <button id="closeEditModalBtn" class="cancel-icon">✕</button>
                 </div>`,
