@@ -166,6 +166,16 @@
             background: #1e3a8a;
             border-color: #60a5fa
         }
+        body.night-mode .vocab-item.recycled {
+            background: #1e293b;
+            opacity: 0.6;
+            border-color: #475569;
+        }
+        body.night-mode .vocab-item.recycled .side-zh,
+        body.night-mode .vocab-item.recycled .side-km {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
         body.night-mode .drag-handle {
             background: #0f172a;
             color: #f1f5f9
@@ -1075,6 +1085,26 @@
         }
         body.night-mode .vocab-item.active {
             background: #1e3a8a
+        }
+        .vocab-item.recycled {
+            opacity: 0.6;
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .vocab-item.recycled .side-zh,
+        .vocab-item.recycled .side-km {
+            text-decoration: line-through;
+            color: #64748b;
+        }
+        body.night-mode .vocab-item.recycled {
+            background: #1e293b;
+            border-color: #475569;
+            opacity: 0.6;
+        }
+        body.night-mode .vocab-item.recycled .side-zh,
+        body.night-mode .vocab-item.recycled .side-km {
+            color: #94a3b8;
+            text-decoration: line-through;
         }
         .side-number-col {
             display: flex;
@@ -2612,7 +2642,7 @@
         }
 
         function compressVocabList(list) {
-            return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2]);
+            return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2, item.recycled || false]);
         }
 
         function decompressVocabList(compressed) {
@@ -2620,7 +2650,8 @@
             return compressed.map(arr => ({
                 khmer: arr[0] || '',
                 chinese: arr[1] || '',
-                sheetRow: arr[2] || 2
+                sheetRow: arr[2] || 2,
+                recycled: arr[3] === true
             }));
         }
 
@@ -2634,8 +2665,7 @@
                     if (k.startsWith('vocabMaster_') || k.startsWith('drag_') || k.startsWith('gear') ||
                         k.startsWith('menu') || k.startsWith('emoji') || k.startsWith('sidebar') ||
                         k === 'floatingMenuLeft' || k === 'floatingMenuTop' || k === 'speechOrder' ||
-                        k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || k === 'sheetHistory' ||
-                        k === 'recycleBin') {
+                        k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || k === 'sheetHistory') {
                         localStorage.removeItem(k);
                     }
                 }
@@ -3279,12 +3309,13 @@
                     l = Object.values(o);
                 let d = -1 !== a && l.length > a && l[a] || "",
                     c = -1 !== r && l.length > r && l[r] || "";
-                s.push({ khmer: d.toString().trim(), chinese: c.toString().trim(), sheetRow: 2 });
+                s.push({ khmer: d.toString().trim(), chinese: c.toString().trim(), sheetRow: 2, recycled: false });
                 for (let e = 1; e < n.length; e++) { const t = n[e],
                         o = Object.values(t),
                         i = -1 !== a && o.length > a && o[a] || "",
                         l = -1 !== r && o.length > r && o[r] || "";
-                    (i || l) && s.push({ khmer: i.toString().trim(), chinese: l.toString().trim(), sheetRow: e + 2 }) }
+                    (i || l) && s.push({ khmer: i.toString().trim(), chinese: l.toString().trim(), sheetRow: e + 2,
+                        recycled: false }) }
                 vocabList = s, vocabularyData = vocabList, editUnlocked = !0, updateEditButtonsState();
                 await loadApiAndPasswordFromSheet();
                 buildFirstCharCache();
@@ -3292,6 +3323,9 @@
                 if (currentSheetId) {
                     safeSetItem("vocabMaster_SheetId", currentSheetId);
                 }
+                // Ensure no recycled flags from old data
+                vocabList.forEach(item => item.recycled = false);
+                // Load recycled flag from saved list (if any) — already in decompress
                 "random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length ||
                     pickRandom(), sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
                     vocabList.length && pickRandom()) : (normalCurrentIdx >= vocabList.length && (normalCurrentIdx = 0),
@@ -3453,13 +3487,19 @@
 
         function renderNormalSidebar() {
             if (!vocabList.length) return;
-            const e = filterVocabBySearch(vocabList);
+            // Filter out recycled items for navigation
+            const activeItems = vocabList.filter(item => !item.recycled);
+            const e = filterVocabBySearch(activeItems);
             if (0 === e.length) return sidebarIndices = [], renderSidebarUI(), void updateDisplay();
             const t = 40 * normalCurrentPage,
                 n = Math.min(t + 40, e.length),
                 o = [];
-            for (let i = t; i < n; i++) { const t = vocabList.findIndex((t => t === e[i]));
-                -1 !== t && o.push(t) }
+            for (let i = t; i < n; i++) { const t = activeItems.findIndex((t => t === e[i]));
+                if (t !== -1) {
+                    const idx = vocabList.indexOf(activeItems[t]);
+                    if (idx !== -1) o.push(idx);
+                }
+            }
             sidebarIndices = o;
             let i = o.indexOf(normalCurrentIdx);
             -1 === i && o.length && (normalCurrentIdx = o[0], i = 0), sidebarFocusIdx = i >= 0 ? i : 0, renderSidebarUI(),
@@ -3472,19 +3512,21 @@
 
         function buildFirstCharCache() {
             firstCharCache.clear();
-            for (let i = 0; i < vocabList.length; i++) {
-                const ch = vocabList[i].chinese;
+            const activeItems = vocabList.filter(item => !item.recycled);
+            for (let i = 0; i < activeItems.length; i++) {
+                const ch = activeItems[i].chinese;
                 if (!ch) continue;
                 const first = ch.charAt(0);
                 if (!firstCharCache.has(first)) firstCharCache.set(first, []);
-                firstCharCache.get(first).push(i);
+                firstCharCache.get(first).push(vocabList.indexOf(activeItems[i]));
             }
             for (let [k, arr] of firstCharCache.entries()) arr.sort((a, b) => a - b);
         }
 
         function getRelatedIndices(currentIdx) {
             const currentWord = vocabList[currentIdx];
-            if (!currentWord || !currentWord.chinese) return [currentIdx];
+            if (!currentWord || currentWord.recycled) return [currentIdx];
+            if (!currentWord.chinese) return [currentIdx];
             const firstChar = currentWord.chinese.charAt(0);
             const all = firstCharCache.get(firstChar) || [];
             const others = all.filter(i => i !== currentIdx).slice(0, 50);
@@ -3519,6 +3561,18 @@
 
         function loadWordByMode(e, t = !0) {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), killAllSpeech(), !vocabList[e]) return;
+            if (vocabList[e].recycled) {
+                // If the selected word is recycled, skip to next active
+                const activeIndices = vocabList.map((item, idx) => item.recycled ? -1 : idx).filter(idx => idx !== -1);
+                if (activeIndices.length > 0) {
+                    const nextIdx = activeIndices.find(idx => idx > e) || activeIndices[0];
+                    return loadWordByMode(nextIdx, t);
+                } else {
+                    updateChineseDisplay("");
+                    document.getElementById("khmerWord").innerText = "";
+                    return;
+                }
+            }
             if ("random" === appMode) {
                 if (t && history[historyIndex] !== e) { history = history.slice(0, historyIndex + 1);
                     history.push(e);
@@ -3526,7 +3580,8 @@
                 renderRandomSidebar(e);
             } else {
                 normalCurrentIdx = e;
-                const f = filterVocabBySearch(vocabList);
+                const activeItems = vocabList.filter(item => !item.recycled);
+                const f = filterVocabBySearch(activeItems);
                 const page = Math.floor(f.findIndex((v => v === vocabList[e])) / 40);
                 if (page !== normalCurrentPage && page >= 0) { normalCurrentPage = page;
                     renderNormalSidebar(); } else { let idx = sidebarIndices.indexOf(e); if (idx !== -1) { sidebarFocusIdx =
@@ -3544,7 +3599,13 @@
         function pickRandom() {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), "normal" === appMode) goNextNormal();
             else if (vocabList.length) {
-                const newIdx = Math.floor(Math.random() * vocabList.length);
+                const activeIndices = vocabList.map((item, idx) => item.recycled ? -1 : idx).filter(idx => idx !== -1);
+                if (activeIndices.length === 0) {
+                    updateChineseDisplay("");
+                    document.getElementById("khmerWord").innerText = "";
+                    return;
+                }
+                const newIdx = activeIndices[Math.floor(Math.random() * activeIndices.length)];
                 loadWordByMode(newIdx, !0);
             }
         }
@@ -3559,14 +3620,16 @@
 
         function goPrevNormal() {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), !vocabList.length) return;
-            const e = filterVocabBySearch(vocabList);
+            const activeItems = vocabList.filter(item => !item.recycled);
+            const e = filterVocabBySearch(activeItems);
             let t = e.findIndex((e => e === vocabList[normalCurrentIdx])) - 1;
             if (t < 0 && (t = 0), e[t]) { loadWordByMode(vocabList.findIndex((n => n === e[t])), !0) }
         }
 
         function goNextNormal() {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), !vocabList.length) return;
-            const e = filterVocabBySearch(vocabList);
+            const activeItems = vocabList.filter(item => !item.recycled);
+            const e = filterVocabBySearch(activeItems);
             let t = e.findIndex((e => e === vocabList[normalCurrentIdx])) + 1;
             if (t >= e.length && (t = e.length - 1), e[t]) { loadWordByMode(vocabList.findIndex((n => n === e[t])), !0) }
         }
@@ -3580,10 +3643,15 @@
                 e.classList.remove("mode-random-active");
                 e.classList.add("mode-normal-active");
                 const t = document.getElementById("chineseWord").getAttribute("data-plain") || "";
-                let n = vocabList.findIndex((e => e.chinese === t));
+                let n = vocabList.findIndex((e => e.chinese === t && !e.recycled));
                 -1 === n && vocabList.length && (n = 0);
+                // skip recycled
+                if (n !== -1 && vocabList[n].recycled) {
+                    const active = vocabList.findIndex(item => !item.recycled);
+                    n = active !== -1 ? active : 0;
+                }
                 normalCurrentIdx = n;
-                const o = filterVocabBySearch(vocabList);
+                const o = filterVocabBySearch(vocabList.filter(item => !item.recycled));
                 normalCurrentPage = Math.floor(o.findIndex((e => e === vocabList[n])) / 40);
                 normalCurrentPage < 0 && (normalCurrentPage = 0);
                 renderNormalSidebar();
@@ -3593,13 +3661,20 @@
                 e.classList.remove("mode-normal-active");
                 e.classList.add("mode-random-active");
                 const t = document.getElementById("chineseWord").getAttribute("data-plain") || "";
-                let n = vocabList.findIndex((e => e.chinese === t));
+                let n = vocabList.findIndex((e => e.chinese === t && !e.recycled));
                 -1 === n && vocabList.length && (n = 0);
-                if (-1 !== n) {
+                if (-1 !== n && !vocabList[n].recycled) {
                     history = [n];
                     historyIndex = 0;
                     renderRandomSidebar(n);
-                } else vocabList.length && pickRandom();
+                } else {
+                    const active = vocabList.findIndex(item => !item.recycled);
+                    if (active !== -1) {
+                        history = [active];
+                        historyIndex = 0;
+                        renderRandomSidebar(active);
+                    }
+                }
             }
             saveAllData();
             const t = document.getElementById("modeRandomIconHeader"),
@@ -3875,43 +3950,15 @@
             performSearch(query, container, true);
         };
 
-        // ======================== RECYCLE BIN (FIXED - no renumbering on move) =========================
-        let recycleBin = [];
-
-        function loadRecycleBin() {
-            const stored = safeGetItem('recycleBin', '[]');
-            try {
-                const parsed = JSON.parse(stored);
-                if (Array.isArray(parsed)) {
-                    recycleBin = parsed;
-                } else {
-                    recycleBin = [];
-                }
-            } catch (e) {
-                recycleBin = [];
-            }
-            recycleBin = recycleBin.filter(item => item && typeof item === 'object');
-            const seen = new Set();
-            recycleBin = recycleBin.filter(item => {
-                if (seen.has(item.sheetRow)) return false;
-                seen.add(item.sheetRow);
-                return true;
-            });
-            if (recycleBin.length > 200) {
-                recycleBin = recycleBin.slice(0, 200);
-            }
-            saveRecycleBin();
-        }
-
-        function saveRecycleBin() {
-            safeSetItem('recycleBin', JSON.stringify(recycleBin));
-            updateRecycleBadge();
+        // ======================== RECYCLE BIN (NEW: using recycled flag) =========================
+        function getRecycledItems() {
+            return vocabList.filter(item => item.recycled === true);
         }
 
         function updateRecycleBadge() {
             const badge = document.getElementById('recycleBadge');
             if (badge) {
-                const count = recycleBin.length;
+                const count = getRecycledItems().length;
                 if (count > 0) {
                     badge.textContent = count;
                     badge.style.display = 'inline-block';
@@ -3921,148 +3968,125 @@
             }
         }
 
-        function moveToRecycle(idx, row) {
+        function moveToRecycle(idx) {
             const item = vocabList[idx];
             if (!item) return false;
-            const existing = recycleBin.find(r => r.sheetRow === row);
-            if (existing) return false;
-
-            recycleBin.push({
-                khmer: item.khmer || '',
-                chinese: item.chinese || '',
-                sheetRow: row,
-                deletedAt: Date.now()
-            });
-            saveRecycleBin();
-            return true;
-        }
-
-        function restoreFromRecycle(index) {
-            if (index < 0 || index >= recycleBin.length) return false;
-            const item = recycleBin[index];
-            if (!item) return false;
-
-            const existing = vocabList.find(v => v.sheetRow === item.sheetRow);
-            if (existing) {
-                showToast('⚠️ This item already exists in the list. Removing from recycle.');
-                recycleBin.splice(index, 1);
-                saveRecycleBin();
+            if (item.recycled) {
+                showToast('⚠️ Item is already in recycle bin');
                 return false;
             }
-
-            vocabList.push({
-                khmer: item.khmer,
-                chinese: item.chinese,
-                sheetRow: item.sheetRow
-            });
-            // Sort by sheetRow to keep order
-            vocabList.sort((a, b) => a.sheetRow - b.sheetRow);
-
-            recycleBin.splice(index, 1);
-            saveRecycleBin();
-
-            buildFirstCharCache();
+            item.recycled = true;
             saveAllData();
-
-            const newIdx = vocabList.findIndex(v => v.sheetRow === item.sheetRow);
-            if (newIdx !== -1) {
-                if (appMode === 'random') {
-                    history = [newIdx];
-                    historyIndex = 0;
-                    renderRandomSidebar(newIdx);
-                } else {
-                    normalCurrentIdx = newIdx;
-                    const filtered = filterVocabBySearch(vocabList);
-                    const page = Math.floor(filtered.findIndex(v => v === vocabList[newIdx]) / 40);
-                    if (page >= 0) normalCurrentPage = page;
-                    renderNormalSidebar();
+            renderSidebarUI();
+            updateRecycleBadge();
+            // If currently displayed word is recycled, skip to next active
+            const activeIndices = vocabList.map((it, i) => it.recycled ? -1 : i).filter(i => i !== -1);
+            if (activeIndices.length > 0) {
+                const currentIdx = sidebarIndices[sidebarFocusIdx];
+                if (currentIdx === idx || (currentIdx !== undefined && vocabList[currentIdx]?.recycled)) {
+                    // find next active
+                    const nextIdx = activeIndices.find(i => i > idx) || activeIndices[0];
+                    loadWordByMode(nextIdx, true);
                 }
-                updateDisplay();
-                showToast(`✅ Restored "${item.chinese || item.khmer}"`);
             } else {
-                renderSidebarUI();
-                showToast('✅ Restored');
+                updateChineseDisplay("");
+                document.getElementById("khmerWord").innerText = "";
             }
             return true;
         }
 
-        // ---- permanentDeleteFromRecycle - uses original API and then reloads ----
-        function permanentDeleteFromRecycle(index) {
-            if (index < 0 || index >= recycleBin.length) return false;
-            const item = recycleBin[index];
-            if (!item) return false;
+        function restoreFromRecycle(idx) {
+            const item = vocabList[idx];
+            if (!item || !item.recycled) return false;
+            item.recycled = false;
+            saveAllData();
+            renderSidebarUI();
+            updateRecycleBadge();
+            showToast(`✅ Restored "${item.chinese || item.khmer}"`);
+            return true;
+        }
+
+        function permanentDeleteFromRecycle(idx) {
+            const item = vocabList[idx];
+            if (!item || !item.recycled) return false;
             const row = item.sheetRow;
 
-            // Remove from recycle first (optimistic)
-            recycleBin.splice(index, 1);
-            saveRecycleBin();
+            // Remove from vocabList (optimistic)
+            vocabList.splice(idx, 1);
+            saveAllData();
+            renderSidebarUI();
+            updateRecycleBadge();
 
-            // Use the ORIGINAL delete function (which calls the API)
+            // Call API to delete from sheet
             if (typeof origDeleteVocabByRow === 'function') {
                 origDeleteVocabByRow(row)
                     .then(() => {
                         showToast(`✅ Permanently deleted row ${row}`);
-                        // Reload sheet to sync
+                        // Reload sheet to sync row numbers
                         loadSheetData(true);
                     })
                     .catch(err => {
-                        // Restore to recycle on failure
-                        recycleBin.push(item);
-                        saveRecycleBin();
+                        // Restore item if deletion fails
+                        vocabList.splice(idx, 0, item);
+                        saveAllData();
+                        renderSidebarUI();
+                        updateRecycleBadge();
                         showToast(`❌ Permanent delete failed: ${err.message}`);
                     });
             } else {
-                // Fallback: try to call the API directly
                 callApi({ action: "delete", row: row - 1 }, "DELETE")
                     .then(() => {
                         showToast(`✅ Permanently deleted row ${row}`);
                         loadSheetData(true);
                     })
                     .catch(err => {
-                        recycleBin.push(item);
-                        saveRecycleBin();
+                        vocabList.splice(idx, 0, item);
+                        saveAllData();
+                        renderSidebarUI();
+                        updateRecycleBadge();
                         showToast(`❌ Permanent delete failed: ${err.message}`);
                     });
             }
-
             return true;
         }
 
-        // ---- emptyRecycleBin - processes items and reloads sheet afterwards ----
         function emptyRecycleBin() {
-            if (recycleBin.length === 0) {
+            const recycled = getRecycledItems();
+            if (recycled.length === 0) {
                 showToast('📭 Recycle bin is already empty');
                 return;
             }
-            if (!confirm(`⚠️ Permanently delete all ${recycleBin.length} items from the sheet? This cannot be undone.`)) {
+            if (!confirm(`⚠️ Permanently delete all ${recycled.length} items from the sheet? This cannot be undone.`)) {
                 return;
             }
 
-            // Copy items and clear recycle (optimistic)
-            const itemsToDelete = [...recycleBin];
-            recycleBin = [];
-            saveRecycleBin();
+            const itemsToDelete = [...recycled];
+            // Remove from vocabList (optimistic)
+            const indicesToRemove = itemsToDelete.map(item => vocabList.indexOf(item)).filter(i => i !== -1);
+            // Sort descending to splice safely
+            indicesToRemove.sort((a, b) => b - a);
+            for (const i of indicesToRemove) {
+                vocabList.splice(i, 1);
+            }
+            saveAllData();
+            renderSidebarUI();
+            updateRecycleBadge();
 
             let deleted = 0;
             let failed = 0;
             const total = itemsToDelete.length;
 
-            // Process sequentially
             function processNext(idx) {
-                if (idx >= itemsToDelete.length) {
-                    // All done
+                if (idx >= total) {
                     const msg = failed === 0 ?
                         `✅ Permanently deleted all ${deleted} items` :
                         `⚠️ Deleted ${deleted} items, ${failed} failed (kept in recycle)`;
                     showToast(msg);
-                    // Reload sheet to sync local list with sheet
                     loadSheetData(true);
                     return;
                 }
-
                 const item = itemsToDelete[idx];
                 const row = item.sheetRow;
-
                 const doDelete = () => {
                     if (typeof origDeleteVocabByRow === 'function') {
                         return origDeleteVocabByRow(row);
@@ -4070,7 +4094,6 @@
                         return callApi({ action: "delete", row: row - 1 }, "DELETE");
                     }
                 };
-
                 doDelete()
                     .then(() => {
                         deleted++;
@@ -4079,50 +4102,46 @@
                     })
                     .catch(err => {
                         failed++;
-                        // Put back into recycle
-                        recycleBin.push(item);
-                        saveRecycleBin();
+                        // Restore item to vocabList
+                        vocabList.push(item);
+                        saveAllData();
+                        renderSidebarUI();
+                        updateRecycleBadge();
                         showToast(`❌ Failed to delete row ${row}: ${err.message}`);
                         processNext(idx + 1);
                     });
-            }
-
-            // Start processing
-            if (total === 0) {
-                showToast('📭 Recycle bin is empty');
-                return;
             }
             showToast(`🗑️ Deleting ${total} items...`);
             processNext(0);
         }
 
-        // ---- END RECYCLE BIN FIXES ----
+        // ---- END RECYCLE BIN ----
 
         function showRecycleBinModal() {
-            loadRecycleBin();
+            const recycled = getRecycledItems();
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay';
             overlay.innerHTML = `
                 <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%; max-height:90vh; display:flex; flex-direction:column;">
-                    <h3 style="flex-shrink:0;">🗑️ Recycle Bin <span id="recycleModalCount" style="font-size:0.8rem; opacity:0.7;">(${recycleBin.length})</span></h3>
+                    <h3 style="flex-shrink:0;">🗑️ Recycle Bin <span id="recycleModalCount" style="font-size:0.8rem; opacity:0.7;">(${recycled.length})</span></h3>
                     <div id="recycleList" style="flex:1; overflow-y:auto; max-height:50vh; margin:8px 0; text-align:left; padding:4px;">
-                        ${recycleBin.length === 0 ? '<div class="recycle-empty-row">📭 Recycle bin is empty</div>' : ''}
-                        ${recycleBin.map((item, idx) => `
-                            <div class="recycle-item" data-idx="${idx}">
+                        ${recycled.length === 0 ? '<div class="recycle-empty-row">📭 Recycle bin is empty</div>' : ''}
+                        ${recycled.map((item, idx) => `
+                            <div class="recycle-item" data-idx="${vocabList.indexOf(item)}">
                                 <div class="recycle-info">
                                     <div class="r-chinese">${escapeHtml(item.chinese)}</div>
                                     <div class="r-khmer">${escapeHtml(item.khmer)}</div>
                                     <div class="r-row">Row ${item.sheetRow}</div>
                                 </div>
                                 <div class="recycle-actions">
-                                    <button class="restore-btn" data-idx="${idx}" title="Restore to list">↩️</button>
-                                    <button class="perm-delete-btn" data-idx="${idx}" title="Permanently delete from sheet">🗑️</button>
+                                    <button class="restore-btn" data-idx="${vocabList.indexOf(item)}" title="Restore to list">↩️</button>
+                                    <button class="perm-delete-btn" data-idx="${vocabList.indexOf(item)}" title="Permanently delete from sheet">🗑️</button>
                                 </div>
                             </div>
                         `).join('')}
                     </div>
                     <div style="display:flex; gap:10px; flex-shrink:0; flex-wrap:wrap;">
-                        <button id="recycleEmptyBtn" class="recycle-empty-btn" ${recycleBin.length === 0 ? 'disabled' : ''}>🗑️ Empty Recycle (${recycleBin.length})</button>
+                        <button id="recycleEmptyBtn" class="recycle-empty-btn" ${recycled.length === 0 ? 'disabled' : ''}>🗑️ Empty Recycle (${recycled.length})</button>
                         <button id="recycleCloseBtn" class="recycle-close-btn">✕ Close</button>
                     </div>
                 </div>
@@ -4148,9 +4167,8 @@
                     e.stopPropagation();
                     const idx = parseInt(this.dataset.idx);
                     if (isNaN(idx)) return;
-                    if (idx < 0 || idx >= recycleBin.length) return;
-                    const item = recycleBin[idx];
-                    if (!item) return;
+                    const item = vocabList[idx];
+                    if (!item || !item.recycled) return;
                     if (confirm(`Permanently delete "${item.chinese || item.khmer}" from sheet? This cannot be undone.`)) {
                         permanentDeleteFromRecycle(idx);
                         showRecycleBinModal();
@@ -4175,12 +4193,11 @@
 
             // Update count
             const countEl = document.getElementById('recycleModalCount');
-            if (countEl) countEl.textContent = `(${recycleBin.length})`;
+            if (countEl) countEl.textContent = `(${recycled.length})`;
         }
 
-        // ======================== END RECYCLE BIN =========================
+        // ======================== SIDEBAR RENDER =========================
 
-        // ---- renderSidebarUI (patched to include recycle bin button) ----
         function renderSidebarUI(e = !0) {
             const t = document.getElementById("sidebarList"),
                 n = currentSearchInputElement ? currentSearchInputElement.value : searchTerm;
@@ -4193,7 +4210,7 @@
                         <input type="text" id="choiceSearchInput" style="flex:1;" value="${escapeHtml(n)}">
                         <button class="search-clear-btn" id="searchClearBtn" title="Clear search" style="right:8px;">✕</button>
                         <button id="recycleBinBtn" class="recycle-bin-btn" title="Recycle Bin" style="flex-shrink:0; margin-left:4px;">
-                            🗑️<span id="recycleBadge" class="badge-count" style="${recycleBin.length > 0 ? '' : 'display:none;'}">${recycleBin.length}</span>
+                            🗑️<span id="recycleBadge" class="badge-count" style="${getRecycledItems().length > 0 ? '' : 'display:none;'}">${getRecycledItems().length}</span>
                         </button>
                         <div class="sidebar-search-results" id="sidebarSearchResults"></div>
                     </div>
@@ -4325,12 +4342,17 @@
                 const n = u[e],
                     o = document.createElement("div"),
                     i = "normal" === appMode && searchTerm ? n === normalCurrentIdx : e === sidebarFocusIdx;
-                o.className = "vocab-item " + (i ? "active" : "");
+                const isRecycled = vocabList[n]?.recycled || false;
+                o.className = "vocab-item " + (i ? "active" : "") + (isRecycled ? " recycled" : "");
                 const a = getDisplayNumberFromArrayIndex(n),
                     r = vocabList[n].sheetRow,
                     s = editUnlocked ? "" : "disabled";
+                // Show recycle icon or edit icon
+                const recycleAction = isRecycled ?
+                    `<button class="edit-side-icon" onclick="event.stopPropagation(); if (confirm('Restore this item?')) { restoreFromRecycle(${n}); }" title="Restore">↩️</button>` :
+                    `<button class="edit-side-icon ${s}" onclick="event.stopPropagation(); if (confirm('Move to Recycle?')) { moveToRecycle(${n}); }" title="Move to Recycle">🗑️</button>`;
                 o.innerHTML =
-                    `<div class="side-number-col"><div class="side-number">#${a}</div><div class="side-icons-row"><button class="edit-side-icon ${s}" onclick="event.stopPropagation(); requestEditModal(${n}, ${r}, '${escapeHtml(vocabList[n].khmer)}', '${escapeHtml(vocabList[n].chinese)}')" title="Edit">✏️</button><button class="sheet-row-icon ${s}" onclick="event.stopPropagation(); requestOpenSheetRow(${r})" title="Open Sheet Row ${r} (Khmer cell)">📊</button></div></div><div class="word-wrapper" onclick="loadWordByMode(${n}, true); event.stopPropagation()"><span class="side-zh">${escapeHtml(vocabList[n].chinese)}</span><span class="side-km">${escapeHtml(vocabList[n].khmer)}</span></div>`;
+                    `<div class="side-number-col"><div class="side-number">#${a}</div><div class="side-icons-row">${recycleAction}<button class="sheet-row-icon ${s}" onclick="event.stopPropagation(); requestOpenSheetRow(${r})" title="Open Sheet Row ${r} (Khmer cell)">📊</button></div></div><div class="word-wrapper" onclick="${isRecycled ? '' : `loadWordByMode(${n}, true); event.stopPropagation()`}"><span class="side-zh">${escapeHtml(vocabList[n].chinese)}</span><span class="side-km">${escapeHtml(vocabList[n].khmer)}</span></div>`;
                 t.appendChild(o);
             }
             applySidebarStyles();
@@ -4340,7 +4362,8 @@
 
         function updatePaginationControlsInside(e) {
             if (!e) return;
-            const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
+            const activeItems = vocabList.filter(item => !item.recycled);
+            const t = filterVocabBySearch(activeItems);
             if ("normal" === appMode && t.length > 40) {
                 const n = Math.ceil(t.length / 40);
                 e.style.display = "block", e.innerHTML =
@@ -4354,10 +4377,10 @@
                     l = !1;
                 let longPressPrev = !1,
                     longPressNext = !1;
-                const d = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
+                const d = () => { const e = filterVocabBySearch(vocabList.filter(item => !item.recycled));
                     if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[0])), !0), showToast(
                             "📖 Jumped to FIRST word") } },
-                    c = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
+                    c = () => { const e = filterVocabBySearch(vocabList.filter(item => !item.recycled));
                         if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[e.length - 1])), !0),
                                 showToast("📖 Jumped to LAST word") } };
 
@@ -4386,8 +4409,7 @@
                 function syncPageInput() {
                     const input = document.getElementById('pageJumpInput');
                     if (input) {
-                        const totalPages = Math.ceil(filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx))
-                            .length / 40);
+                        const totalPages = Math.ceil(filterVocabBySearch(vocabList.filter(item => !item.recycled)).length / 40);
                         input.value = normalCurrentPage + 1;
                         input.max = totalPages;
                     }
@@ -4429,7 +4451,7 @@
                     i.onclick = function(e) {
                         e.preventDefault();
                         if (longPressNext) { longPressNext = !1; return; }
-                        const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
+                        const t = filterVocabBySearch(vocabList.filter(item => !item.recycled));
                         const pageCount = Math.ceil(t.length / 40);
                         if (normalCurrentPage + 1 < pageCount) {
                             normalCurrentPage++;
@@ -4467,7 +4489,7 @@
         function syncPageInput() {
             const input = document.getElementById('pageJumpInput');
             if (input) {
-                const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx));
+                const filtered = filterVocabBySearch(vocabList.filter(item => !item.recycled));
                 const totalPages = Math.ceil(filtered.length / 40);
                 input.value = normalCurrentPage + 1;
                 input.max = totalPages;
@@ -4488,7 +4510,7 @@
             updateRecycleBadge();
         };
 
-        // ---- MODIFIED: delete functions now move to recycle (NO RENUMBERING) ----
+        // ---- MODIFIED: delete functions now set recycled flag (not remove) ----
         window.deleteFromAddSearch = function(idx, row, searchQuery) {
             if (isDeleting) {
                 showToast("⏳ Please wait, previous deletion in progress...");
@@ -4496,51 +4518,22 @@
             }
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
+            if (item.recycled) { showToast("Item already in recycle bin"); return; }
             const displayNum = getDisplayNumberFromArrayIndex(idx);
             if (!confirm(`🗑️ Move Display #${displayNum} (${item.chinese || item.khmer}) to Recycle?`)) return;
-            const rowToDelete = row;
 
             pendingDeletions.add(idx);
-
-            if (!moveToRecycle(idx, rowToDelete)) {
-                showToast("⚠️ Item already in recycle bin");
+            if (moveToRecycle(idx)) {
                 pendingDeletions.delete(idx);
                 const addChineseInput = document.getElementById('addChineseInput');
                 if (addChineseInput && window.addModalPerformSearch) {
                     window.addModalPerformSearch(addChineseInput.value);
                 }
-                return;
-            }
-
-            // Remove from vocabList WITHOUT renumbering
-            vocabList.splice(idx, 1);
-            // No loop to adjust sheetRow - keep original row numbers intact
-
-            buildFirstCharCache();
-            saveAllData();
-            pendingDeletions.delete(idx);
-            renderSidebarUI();
-
-            if (vocabList.length > 0 && sidebarIndices.length === 0) {
-                pickRandom();
-            } else if (vocabList.length === 0) {
-                updateChineseDisplay("");
-                document.getElementById("khmerWord").innerText = "";
-                renderSidebarUI();
+                showToast(`🗑️ "${item.chinese || item.khmer}" moved to Recycle Bin`);
             } else {
-                const nextIdx = Math.min(idx, vocabList.length - 1);
-                if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
-                    loadWordByMode(sidebarIndices[sidebarFocusIdx], true);
-                } else if (vocabList.length > 0) {
-                    pickRandom();
-                }
+                pendingDeletions.delete(idx);
+                showToast("❌ Failed to move to recycle");
             }
-
-            const addChineseInput = document.getElementById('addChineseInput');
-            if (addChineseInput && window.addModalPerformSearch) {
-                window.addModalPerformSearch(addChineseInput.value);
-            }
-            showToast(`🗑️ Moved "${item.chinese || item.khmer}" to Recycle Bin`);
         };
 
         window.deleteFromEditSearch = function(idx, row, searchQuery) {
@@ -4550,50 +4543,22 @@
             }
             const item = vocabList[idx];
             if (!item) { showToast("Item not found"); return }
+            if (item.recycled) { showToast("Item already in recycle bin"); return; }
             const displayNum = getDisplayNumberFromArrayIndex(idx);
             if (!confirm(`🗑️ Move Display #${displayNum} (${item.chinese || item.khmer}) to Recycle?`)) return;
-            const rowToDelete = row;
 
             pendingDeletions.add(idx);
-
-            if (!moveToRecycle(idx, rowToDelete)) {
-                showToast("⚠️ Item already in recycle bin");
+            if (moveToRecycle(idx)) {
                 pendingDeletions.delete(idx);
                 const editChineseInput = document.getElementById('editChineseInput');
                 if (editChineseInput && window.editModalPerformSearch) {
                     window.editModalPerformSearch(editChineseInput.value);
                 }
-                return;
-            }
-
-            vocabList.splice(idx, 1);
-            // No renumbering
-
-            buildFirstCharCache();
-            saveAllData();
-            pendingDeletions.delete(idx);
-            renderSidebarUI();
-
-            if (vocabList.length > 0 && sidebarIndices.length === 0) {
-                pickRandom();
-            } else if (vocabList.length === 0) {
-                updateChineseDisplay("");
-                document.getElementById("khmerWord").innerText = "";
-                renderSidebarUI();
+                showToast(`🗑️ "${item.chinese || item.khmer}" moved to Recycle Bin`);
             } else {
-                const nextIdx = Math.min(idx, vocabList.length - 1);
-                if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
-                    loadWordByMode(sidebarIndices[sidebarFocusIdx], true);
-                } else if (vocabList.length > 0) {
-                    pickRandom();
-                }
+                pendingDeletions.delete(idx);
+                showToast("❌ Failed to move to recycle");
             }
-
-            const editChineseInput = document.getElementById('editChineseInput');
-            if (editChineseInput && window.editModalPerformSearch) {
-                window.editModalPerformSearch(editChineseInput.value);
-            }
-            showToast(`🗑️ Moved "${item.chinese || item.khmer}" to Recycle Bin`);
         };
 
         // ---- LAYER TRANSFORMS (unchanged) ----
@@ -4787,7 +4752,7 @@
                 chineseInput.focus();
 
                 const newRow = vocabList.length > 0 ? vocabList[vocabList.length - 1].sheetRow + 1 : 2;
-                const newEntry = { khmer: khmer || '', chinese: chinese || '', sheetRow: newRow };
+                const newEntry = { khmer: khmer || '', chinese: chinese || '', sheetRow: newRow, recycled: false };
                 vocabList.push(newEntry);
                 buildFirstCharCache();
                 saveAllData();
@@ -4798,7 +4763,7 @@
                     renderRandomSidebar(newIdx);
                 } else {
                     normalCurrentIdx = newIdx;
-                    const filtered = filterVocabBySearch(vocabList);
+                    const filtered = filterVocabBySearch(vocabList.filter(item => !item.recycled));
                     const page = Math.floor(filtered.findIndex(v => v === vocabList[newIdx]) / 40);
                     if (page >= 0) normalCurrentPage = page;
                     renderNormalSidebar();
@@ -5051,7 +5016,7 @@
             }, 50);
         };
 
-        // ---- MODIFIED: showEditModal with recycle integration (NO RENUMBERING) ----
+        // ---- MODIFIED: showEditModal with recycle integration (sets recycled flag) ----
         window.showEditModal = function(e, t, n, o) {
             if (!editUnlocked) return void showPasswordModal((() => { showEditModal(e, t, n, o) }));
             const i = getDisplayNumberFromArrayIndex(e),
@@ -5143,7 +5108,8 @@
                 const oldKhmer = vocabList[idx]?.khmer || '';
                 const oldChinese = vocabList[idx]?.chinese || '';
 
-                vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row };
+                vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row, recycled: vocabList[idx]
+                        ?.recycled || false };
                 buildFirstCharCache();
                 saveAllData();
                 renderSidebarUI();
@@ -5161,79 +5127,22 @@
             document.getElementById("confirmUpdateBtn").onclick = () => showPasswordProtectionModal(confirmUpdate,
                 "update vocabulary");
 
-            // ---- MODIFIED: delete action now moves to recycle (NO RENUMBERING) ----
-            const deleteAction = async () => {
+            // ---- MODIFIED: delete action now sets recycled flag ----
+            const deleteAction = () => {
                 const displayNum = getDisplayNumberFromArrayIndex(window.currentEdit.idx);
                 const item = vocabList[window.currentEdit.idx];
                 if (!item) return;
+                if (item.recycled) { showToast("Already in recycle bin");
+                    a.remove(); return; }
                 if (!confirm(`🗑️ Move Display #${displayNum} (${item.chinese || item.khmer}) to Recycle?`)) return;
                 const idx = window.currentEdit.idx;
-                const rowToDelete = window.currentEdit.row;
-
-                pendingDeletions.add(idx);
-
-                if (!moveToRecycle(idx, rowToDelete)) {
-                    showToast("⚠️ Item already in recycle bin");
-                    pendingDeletions.delete(idx);
-                    if (editChineseInput && window.editModalPerformSearch) {
-                        window.editModalPerformSearch(editChineseInput.value);
-                    }
-                    a.remove();
-                    return;
-                }
-
                 a.remove();
-
-                const oldIndices = [...sidebarIndices];
-                vocabList.splice(idx, 1);
-                // NO renumbering
-
-                buildFirstCharCache();
-                saveAllData();
-                pendingDeletions.delete(idx);
-
-                if (vocabList.length === 0) {
-                    sidebarIndices = [];
-                    renderSidebarUI();
-                    updateChineseDisplay("");
-                    document.getElementById("khmerWord").innerText = "";
-                    showToast("All vocabulary moved to recycle");
+                if (moveToRecycle(idx)) {
+                    showToast(`🗑️ Moved "${item.chinese || item.khmer}" to Recycle Bin`);
+                    refreshAddModalSearch();
                 } else {
-                    let newIdx = -1;
-                    if (oldIndices.length > 0) {
-                        const pos = oldIndices.indexOf(idx);
-                        if (pos !== -1) {
-                            if (pos + 1 < oldIndices.length) {
-                                let cand = oldIndices[pos + 1];
-                                if (cand > idx) cand--;
-                                if (cand >= 0 && cand < vocabList.length) newIdx = cand;
-                            }
-                            if (newIdx === -1 && pos - 1 >= 0) {
-                                let cand = oldIndices[pos - 1];
-                                if (cand > idx) cand--;
-                                if (cand >= 0 && cand < vocabList.length) newIdx = cand;
-                            }
-                        }
-                    }
-                    if (newIdx === -1 && vocabList.length > 0) newIdx = 0;
-                    if (appMode === "normal") {
-                        normalCurrentIdx = newIdx;
-                        normalCurrentPage = getNormalPageForIndex(newIdx);
-                        renderNormalSidebar();
-                    } else if (newIdx >= 0 && vocabList[newIdx] && !pendingDeletions.has(newIdx)) {
-                        history = [newIdx];
-                        historyIndex = 0;
-                        renderRandomSidebar(newIdx);
-                    } else if (vocabList.length > 0) {
-                        pickRandom();
-                    } else {
-                        renderSidebarUI();
-                        updateChineseDisplay("");
-                        document.getElementById("khmerWord").innerText = "";
-                    }
+                    showToast("❌ Failed to move to recycle");
                 }
-                showToast(`🗑️ Moved to Recycle Bin`);
-                refreshAddModalSearch();
             };
             document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction,
                 "move to recycle");
@@ -5532,9 +5441,23 @@
                 return;
             }
             const t = vocabList[e];
+            if (t.recycled) {
+                // skip recycled items
+                const active = sidebarIndices.find(idx => !vocabList[idx]?.recycled);
+                if (active !== undefined) {
+                    sidebarFocusIdx = sidebarIndices.indexOf(active);
+                    return updateDisplay();
+                } else {
+                    updateChineseDisplay("");
+                    document.getElementById("khmerWord").innerText = "";
+                    return;
+                }
+            }
             updateChineseDisplay(t.chinese || t.khmer), document.getElementById("khmerWord").innerText = t.khmer ||
-                "", document.querySelectorAll(".vocab-item").forEach(((e, t) => e.classList.toggle("active", t ===
-                    sidebarFocusIdx))), applyStyles(), forceShrink(), applyBottomAutoScale()
+                "", document.querySelectorAll(".vocab-item").forEach(((el, idx) => {
+                    const item = vocabList[sidebarIndices[idx]];
+                    el.classList.toggle("active", idx === sidebarFocusIdx);
+                })), applyStyles(), forceShrink(), applyBottomAutoScale()
         }
 
         function applySidebarStyles() {
@@ -5569,7 +5492,7 @@
             i && (i.style.textShadow = o), saveAllData()
         }
 
-        // ---- saveAllData (now also saves recycle bin) ----
+        // ---- saveAllData (now saves recycled flag via compress) ----
         function saveAllData() {
             const settings = {
                 mZhSize: userSetChineseFontSize,
@@ -5617,10 +5540,11 @@
             } else {
                 safeRemoveItem("vocabMaster_List_Compressed");
             }
-            saveRecycleBin();
+            // Recycle bin is now part of vocabList, so no separate save needed.
+            updateRecycleBadge();
         }
 
-        // ---- loadSettings (now also loads recycle bin) ----
+        // ---- loadSettings (now also loads recycled flag) ----
         function loadSettings() {
             const settingsStr = safeGetItem("vocabMaster_Settings", null);
             if (settingsStr) {
@@ -5737,8 +5661,6 @@
                     }
                 } catch (e) { console.warn("Vocab list parse error:", e); }
             }
-
-            loadRecycleBin();
 
             checkPasswordVerifiedSession();
 
@@ -6690,7 +6612,7 @@
         }
 
         function moveSidebarFocus(e) {
-            const validIndices = sidebarIndices.filter(idx => !pendingDeletions.has(idx));
+            const validIndices = sidebarIndices.filter(idx => !pendingDeletions.has(idx) && !vocabList[idx]?.recycled);
             if (!validIndices.length) return;
             let t = validIndices.indexOf(sidebarIndices[sidebarFocusIdx]);
             if (t === -1) t = 0;
@@ -6852,18 +6774,31 @@
                 buildFirstCharCache();
                 if (appMode === "random") {
                     if (history.length === 0 && vocabList.length > 0) {
-                        history = [0];
-                        historyIndex = 0;
+                        // find first non-recycled
+                        const first = vocabList.findIndex(item => !item.recycled);
+                        if (first !== -1) {
+                            history = [first];
+                            historyIndex = 0;
+                        }
                     }
                     if (sidebarIndices.length === 0 && vocabList.length > 0) {
-                        renderRandomSidebar(0);
+                        const first = vocabList.findIndex(item => !item.recycled);
+                        if (first !== -1) renderRandomSidebar(first);
+                        else pickRandom();
                     } else if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
-                        loadWordByMode(sidebarIndices[sidebarFocusIdx], true);
+                        const idx = sidebarIndices[sidebarFocusIdx];
+                        if (!vocabList[idx]?.recycled) loadWordByMode(idx, true);
+                        else pickRandom();
                     } else if (vocabList.length > 0) {
                         pickRandom();
                     }
                 } else {
                     if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = 0;
+                    // skip recycled
+                    if (vocabList[normalCurrentIdx]?.recycled) {
+                        const first = vocabList.findIndex(item => !item.recycled);
+                        if (first !== -1) normalCurrentIdx = first;
+                    }
                     renderNormalSidebar();
                 }
             } else {
@@ -7051,7 +6986,6 @@
                 }
             });
 
-            loadRecycleBin();
             updateRecycleBadge();
 
             // ---- CAPTURE THE ORIGINAL deleteVocabByRow ----
@@ -7061,36 +6995,19 @@
             if (typeof origDeleteVocabByRow !== 'function') {
                 if (typeof window.deleteVocabByRow === 'function') {
                     origDeleteVocabByRow = window.deleteVocabByRow;
-                    // Override it with our version that moves to recycle (NO RENUMBERING)
+                    // Override it with our version that moves to recycle (sets flag)
                     window.deleteVocabByRow = async function(row) {
-                        const idx = vocabList.findIndex(v => v.sheetRow === row);
-                        if (idx !== -1) {
-                            if (moveToRecycle(idx, row)) {
-                                vocabList.splice(idx, 1);
-                                // NO RENUMBERING - keep original row numbers
-                                buildFirstCharCache();
-                                saveAllData();
-                                renderSidebarUI();
-                                showToast(`🗑️ Moved to Recycle Bin`);
-                                return { result: 'success', message: 'Moved to recycle' };
-                            } else {
-                                showToast('⚠️ Item already in recycle');
-                                return { result: 'error', message: 'Already in recycle' };
-                            }
+                        // This is used only for permanent deletion from recycle, we use origDeleteVocabByRow directly.
+                        // So we can keep this as is.
+                        // But we need to handle the case where it's called from elsewhere? We'll just call original.
+                        if (typeof origDeleteVocabByRow === 'function') {
+                            return await origDeleteVocabByRow(row);
                         } else {
-                            const inRecycle = recycleBin.find(r => r.sheetRow === row);
-                            if (inRecycle) {
-                                return { result: 'success', message: 'Already in recycle' };
-                            }
-                            if (typeof origDeleteVocabByRow === 'function') {
-                                return await origDeleteVocabByRow(row);
-                            } else {
-                                showToast('❌ Cannot delete: API not available');
-                                throw new Error('API not available');
-                            }
+                            showToast('❌ Cannot delete: API not available');
+                            throw new Error('API not available');
                         }
                     };
-                    console.log('✅ deleteVocabByRow overridden with recycle support (no renumbering)');
+                    console.log('✅ deleteVocabByRow wrapped for permanent deletion');
                 }
             }
         };
@@ -7115,7 +7032,7 @@
             }
         };
 
-        console.log('✅ Recycle bin fix applied: no renumbering on move, reload after permanent delete.');
+        console.log('✅ Recycle bin updated: items stay in list with strikethrough until permanent deletion.');
     </script>
 </body>
 </html>
