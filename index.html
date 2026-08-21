@@ -3371,10 +3371,8 @@
         }
 
         // --- ORIGINAL deleteVocabByRow (kept for reference, but we override it below) ---
-        // We'll store the original in a variable before overriding.
         let origDeleteVocabByRow = null;
 
-        // This will be set after the function is defined below.
         function scrollToSidebarItem() { setTimeout((() => { const e = document.querySelector(".vocab-item.active");
                 e && e.scrollIntoView({ behavior: "smooth", block: "center" }) }), 100) }
 
@@ -3877,7 +3875,7 @@
             performSearch(query, container, true);
         };
 
-        // ======================== RECYCLE BIN =========================
+        // ======================== RECYCLE BIN (FIXED) =========================
         let recycleBin = [];
 
         function loadRecycleBin() {
@@ -3987,7 +3985,7 @@
             return true;
         }
 
-        // ---- FIXED: permanentDeleteFromRecycle - uses the original API call directly ----
+        // ---- FIXED: permanentDeleteFromRecycle - uses original API and then reloads ----
         function permanentDeleteFromRecycle(index) {
             if (index < 0 || index >= recycleBin.length) return false;
             const item = recycleBin[index];
@@ -3999,30 +3997,15 @@
             saveRecycleBin();
 
             // Use the ORIGINAL delete function (which calls the API)
-            // We stored the original in origDeleteVocabByRow
             if (typeof origDeleteVocabByRow === 'function') {
                 origDeleteVocabByRow(row)
                     .then(() => {
                         showToast(`✅ Permanently deleted row ${row}`);
-                        for (let i = 0; i < vocabList.length; i++) {
-                            if (vocabList[i].sheetRow === row) {
-                                pendingDeletions.add(i);
-                                vocabList.splice(i, 1);
-                                break;
-                            }
-                        }
-                        buildFirstCharCache();
-                        saveAllData();
-                        renderSidebarUI();
-                        if (vocabList.length > 0 && sidebarIndices.length === 0) {
-                            pickRandom();
-                        } else if (vocabList.length === 0) {
-                            updateChineseDisplay("");
-                            document.getElementById("khmerWord").innerText = "";
-                            renderSidebarUI();
-                        }
+                        // Reload sheet to sync
+                        loadSheetData(true);
                     })
                     .catch(err => {
+                        // Restore to recycle on failure
                         recycleBin.push(item);
                         saveRecycleBin();
                         showToast(`❌ Permanent delete failed: ${err.message}`);
@@ -4032,23 +4015,7 @@
                 callApi({ action: "delete", row: row - 1 }, "DELETE")
                     .then(() => {
                         showToast(`✅ Permanently deleted row ${row}`);
-                        for (let i = 0; i < vocabList.length; i++) {
-                            if (vocabList[i].sheetRow === row) {
-                                pendingDeletions.add(i);
-                                vocabList.splice(i, 1);
-                                break;
-                            }
-                        }
-                        buildFirstCharCache();
-                        saveAllData();
-                        renderSidebarUI();
-                        if (vocabList.length > 0 && sidebarIndices.length === 0) {
-                            pickRandom();
-                        } else if (vocabList.length === 0) {
-                            updateChineseDisplay("");
-                            document.getElementById("khmerWord").innerText = "";
-                            renderSidebarUI();
-                        }
+                        loadSheetData(true);
                     })
                     .catch(err => {
                         recycleBin.push(item);
@@ -4060,7 +4027,7 @@
             return true;
         }
 
-        // ---- FIXED: emptyRecycleBin - now processes items sequentially and uses the API ----
+        // ---- FIXED: emptyRecycleBin - processes items and reloads sheet afterwards ----
         function emptyRecycleBin() {
             if (recycleBin.length === 0) {
                 showToast('📭 Recycle bin is already empty');
@@ -4079,33 +4046,22 @@
             let failed = 0;
             const total = itemsToDelete.length;
 
-            // Process sequentially to avoid overwhelming the API
+            // Process sequentially
             function processNext(idx) {
                 if (idx >= itemsToDelete.length) {
                     // All done
-                    if (deleted + failed === total) {
-                        const msg = failed === 0 ?
-                            `✅ Permanently deleted all ${deleted} items` :
-                            `⚠️ Deleted ${deleted} items, ${failed} failed`;
-                        showToast(msg);
-                        buildFirstCharCache();
-                        saveAllData();
-                        renderSidebarUI();
-                        if (vocabList.length > 0 && sidebarIndices.length === 0) {
-                            pickRandom();
-                        } else if (vocabList.length === 0) {
-                            updateChineseDisplay("");
-                            document.getElementById("khmerWord").innerText = "";
-                            renderSidebarUI();
-                        }
-                    }
+                    const msg = failed === 0 ?
+                        `✅ Permanently deleted all ${deleted} items` :
+                        `⚠️ Deleted ${deleted} items, ${failed} failed (kept in recycle)`;
+                    showToast(msg);
+                    // Reload sheet to sync local list with sheet
+                    loadSheetData(true);
                     return;
                 }
 
                 const item = itemsToDelete[idx];
                 const row = item.sheetRow;
 
-                // Use the ORIGINAL delete function
                 const doDelete = () => {
                     if (typeof origDeleteVocabByRow === 'function') {
                         return origDeleteVocabByRow(row);
@@ -4118,14 +4074,7 @@
                     .then(() => {
                         deleted++;
                         showToast(`🗑️ Deleted row ${row} (${deleted}/${total})`);
-                        // Also remove from vocabList if present
-                        for (let i = 0; i < vocabList.length; i++) {
-                            if (vocabList[i].sheetRow === row) {
-                                pendingDeletions.add(i);
-                                vocabList.splice(i, 1);
-                                break;
-                            }
-                        }
+                        // Remove from vocabList if present (will be synced later)
                         processNext(idx + 1);
                     })
                     .catch(err => {
@@ -4149,7 +4098,6 @@
 
         // ---- END RECYCLE BIN FIXES ----
 
-        // ---- showRecycleBinModal (unchanged, but uses the fixed functions) ----
         function showRecycleBinModal() {
             loadRecycleBin();
             const overlay = document.createElement('div');
@@ -4652,11 +4600,6 @@
             }
             showToast(`🗑️ Moved "${item.chinese || item.khmer}" to Recycle Bin`);
         };
-
-        // ---- We keep the original deleteVocabByRow for API calls ----
-        // Define the original function first, then override it with the recycle version.
-        // But we need to store the original before overriding.
-        // Since the original is defined later in the code, we'll store it after.
 
         // ---- LAYER TRANSFORMS (unchanged) ----
         let baselineFontSizePx = null;
@@ -6853,19 +6796,9 @@
             }
         });
 
-        // ---- Define the original deleteVocabByRow before overriding ----
-        // The original function (defined earlier in the code) is:
-        // async function deleteVocabByRow(e) { ... }
-        // We need to capture it before we override.
-        // But the function is defined later in the code, so we capture it after it's defined.
-        // We'll set origDeleteVocabByRow after the function is defined.
-
-        // ---- Patch the original deleteVocabByRow to use recycle ----
-        // We need to override deleteVocabByRow to move to recycle instead of deleting directly.
-        // But we also need to keep the original function for permanent deletion from recycle.
-
-        // Since the original deleteVocabByRow is defined later in the code, we'll capture it and override it.
-        // We'll do this at the end of the script.
+        // ---- Capture the original deleteVocabByRow after it's defined ----
+        // We'll capture it in the onload handler, but we also need it for the recycle functions.
+        // So we'll capture it now if it's available.
 
         // ---- Window event listeners ----
         window.historyPrev = historyPrev, window.historyNext = historyNext, window.moveSidebarFocus =
@@ -7129,91 +7062,48 @@
             loadRecycleBin();
             updateRecycleBadge();
 
-            // ---- CAPTURE THE ORIGINAL deleteVocabByRow AFTER it's defined ----
-            // Since the original function is defined earlier, we need to capture it now.
-            // Actually, the original function is defined in the global scope.
-            // We'll capture it and then override it.
-
-            // The original deleteVocabByRow function is defined in the code above.
-            // We need to capture it before overriding.
-            // But since we're in the onload handler, the function is already defined.
-            // However, it might have been overridden already by the time we get here.
-            // Let's capture it from the window object.
-
-            // Actually, the deleteVocabByRow function is defined as a function declaration,
-            // so it's in the global scope. We can capture it with window.deleteVocabByRow.
-            // But we need to be careful: if it's already been overridden, we want the original.
-
-            // Let's capture the original before we override it.
-            // We'll do this outside the onload handler, but we need to make sure
-            // the function is defined first.
-
-            // Since the function is defined in the script, we can capture it at the end of the script.
-            // We'll use a setTimeout to capture it after the script has loaded.
-
-            // Actually, the easiest way is to just define origDeleteVocabByRow at the end of the script.
-            // But we're inside the onload handler now.
-
-            // Let's just use the window object.
-            // The original function should be window.deleteVocabByRow.
-            // But if it's been overridden, we need to capture it before the override.
-
-            // We'll capture it now and then override it.
-
-            // Wait - the original function is defined as async function deleteVocabByRow(e) { ... }
-            // This is a function declaration, so it's in the global scope.
-            // We can capture it with const orig = deleteVocabByRow; before overriding.
-            // But we're in the onload handler, so the function is already defined.
-
-            // Let's capture it and override it.
-
-            // But we need to make sure we don't override it multiple times.
-            // Let's check if we've already overridden it.
-
-            if (typeof origDeleteVocabByRow === 'function') {
-                // Already captured
-            } else {
-                // Capture the original
-                origDeleteVocabByRow = deleteVocabByRow;
-                // Now override deleteVocabByRow to use recycle
-                deleteVocabByRow = async function(row) {
-                    // This is the overridden function that moves to recycle
-                    // We need to find the item in vocabList by sheetRow
-                    const idx = vocabList.findIndex(v => v.sheetRow === row);
-                    if (idx !== -1) {
-                        // Move to recycle
-                        if (moveToRecycle(idx, row)) {
-                            vocabList.splice(idx, 1);
-                            for (let i = 0; i < vocabList.length; i++) {
-                                if (vocabList[i].sheetRow > row) {
-                                    vocabList[i].sheetRow--;
+            // ---- CAPTURE THE ORIGINAL deleteVocabByRow ----
+            // We need to capture it before we override it.
+            // The function is defined earlier in the script.
+            // We'll capture it from the window object.
+            if (typeof origDeleteVocabByRow !== 'function') {
+                if (typeof window.deleteVocabByRow === 'function') {
+                    origDeleteVocabByRow = window.deleteVocabByRow;
+                    // Override it with our version that moves to recycle
+                    window.deleteVocabByRow = async function(row) {
+                        const idx = vocabList.findIndex(v => v.sheetRow === row);
+                        if (idx !== -1) {
+                            if (moveToRecycle(idx, row)) {
+                                vocabList.splice(idx, 1);
+                                for (let i = 0; i < vocabList.length; i++) {
+                                    if (vocabList[i].sheetRow > row) {
+                                        vocabList[i].sheetRow--;
+                                    }
                                 }
+                                buildFirstCharCache();
+                                saveAllData();
+                                renderSidebarUI();
+                                showToast(`🗑️ Moved to Recycle Bin`);
+                                return { result: 'success', message: 'Moved to recycle' };
+                            } else {
+                                showToast('⚠️ Item already in recycle');
+                                return { result: 'error', message: 'Already in recycle' };
                             }
-                            buildFirstCharCache();
-                            saveAllData();
-                            renderSidebarUI();
-                            showToast(`🗑️ Moved to Recycle Bin`);
-                            return { result: 'success', message: 'Moved to recycle' };
                         } else {
-                            showToast('⚠️ Item already in recycle');
-                            return { result: 'error', message: 'Already in recycle' };
+                            const inRecycle = recycleBin.find(r => r.sheetRow === row);
+                            if (inRecycle) {
+                                return { result: 'success', message: 'Already in recycle' };
+                            }
+                            if (typeof origDeleteVocabByRow === 'function') {
+                                return await origDeleteVocabByRow(row);
+                            } else {
+                                showToast('❌ Cannot delete: API not available');
+                                throw new Error('API not available');
+                            }
                         }
-                    } else {
-                        // Item not found in vocabList - check recycle
-                        const inRecycle = recycleBin.find(r => r.sheetRow === row);
-                        if (inRecycle) {
-                            return { result: 'success', message: 'Already in recycle' };
-                        }
-                        // Fallback to original delete
-                        if (typeof origDeleteVocabByRow === 'function') {
-                            return await origDeleteVocabByRow(row);
-                        } else {
-                            showToast('❌ Cannot delete: API not available');
-                            throw new Error('API not available');
-                        }
-                    }
-                };
-                console.log('✅ deleteVocabByRow overridden with recycle support');
+                    };
+                    console.log('✅ deleteVocabByRow overridden with recycle support');
+                }
             }
         };
 
@@ -7237,60 +7127,11 @@
             }
         };
 
-        // ---- Capture the original deleteVocabByRow if not already captured ----
-        // Since the onload handler might not have captured it yet, we'll capture it here.
-        // But we need to make sure we don't capture it twice.
-        if (typeof origDeleteVocabByRow !== 'function') {
-            // The function might be defined as a declaration or as a variable.
-            // We'll try to capture it from the window object.
-            if (typeof window.deleteVocabByRow === 'function') {
-                origDeleteVocabByRow = window.deleteVocabByRow;
-                // Override it
-                window.deleteVocabByRow = async function(row) {
-                    const idx = vocabList.findIndex(v => v.sheetRow === row);
-                    if (idx !== -1) {
-                        if (moveToRecycle(idx, row)) {
-                            vocabList.splice(idx, 1);
-                            for (let i = 0; i < vocabList.length; i++) {
-                                if (vocabList[i].sheetRow > row) {
-                                    vocabList[i].sheetRow--;
-                                }
-                            }
-                            buildFirstCharCache();
-                            saveAllData();
-                            renderSidebarUI();
-                            showToast(`🗑️ Moved to Recycle Bin`);
-                            return { result: 'success', message: 'Moved to recycle' };
-                        } else {
-                            showToast('⚠️ Item already in recycle');
-                            return { result: 'error', message: 'Already in recycle' };
-                        }
-                    } else {
-                        const inRecycle = recycleBin.find(r => r.sheetRow === row);
-                        if (inRecycle) {
-                            return { result: 'success', message: 'Already in recycle' };
-                        }
-                        if (typeof origDeleteVocabByRow === 'function') {
-                            return await origDeleteVocabByRow(row);
-                        } else {
-                            showToast('❌ Cannot delete: API not available');
-                            throw new Error('API not available');
-                        }
-                    }
-                };
-                console.log('✅ deleteVocabByRow overridden with recycle support (window)');
-            }
-        }
+        // ---- Ensure recycle functions use the correct API ----
+        // The functions permanentDeleteFromRecycle and emptyRecycleBin already use origDeleteVocabByRow or callApi.
+        // They will work correctly.
 
-        // Also make sure the recycle bin functions use the original API call
-        // The permanentDeleteFromRecycle and emptyRecycleBin functions already use origDeleteVocabByRow
-        // or callApi directly.
-
-        // ---- Add a fallback for the API call in recycle functions ----
-        // If origDeleteVocabByRow is not available, use callApi directly.
-        // This is already handled in the functions.
-
-        console.log('✅ Recycle bin fix applied: Empty Recycle now removes items from sheet');
+        console.log('✅ Recycle bin fix applied: Empty Recycle now removes items from sheet and syncs.');
     </script>
 </body>
 </html>
