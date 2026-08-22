@@ -6,8 +6,9 @@
     <title>📖 Vocab Master – Fixed Auto Timer</title>
     <link rel="icon" href="/static/ABAicon.png" type="image/png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/static/ABAicon.png" />
-    <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js">
-    </script>
+    <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
+<script src="/static/config.js"></script>  <!-- ← NEW: loads DEFAULT_SHEET_ID -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         /* ===== All existing @font-face and base styles remain unchanged ===== */
         @font-face {
@@ -2914,7 +2915,7 @@
             popupMessageSpan = null,
             copyTimer = null;
         const GOOGLE_SHEET_URL = "",
-            DEFAULT_SHEET_ID = "14TIknZTVUyw40Suhj74UzgzXRZaJVX_qg17EeCBsZWM";
+           
         let sheetHistory = [];
 
         function loadSheetHistory() {
