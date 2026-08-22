@@ -4858,7 +4858,7 @@
                     showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
                     setTimeout(() => btn.classList.remove('copy-mode'), 800);
                 }
-            }, 800); // 0.8s hold
+            }, 500); // 0.8s hold
         };
 
         const endLongPress = (e) => {
