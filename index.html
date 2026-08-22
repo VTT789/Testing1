@@ -6345,11 +6345,26 @@
         }
 
         function toggleMenu(e) {
-            e ? (document.getElementById("floatingMenu").style.display = "none", document.getElementById(
-                    "minimizedTrigger").style.display = "flex") : (document.getElementById("floatingMenu")
-                .style.display = "block", document.getElementById("minimizedTrigger").style.display = "none"),
-                e && applyStoredGearPosition()
-        }
+    const gear = document.getElementById("minimizedTrigger");
+    const menu = document.getElementById("floatingMenu");
+    
+    if (e) {
+        // Hide menu, show gear
+        menu.style.display = "none";
+        gear.style.display = "flex";
+        // IMPORTANT: Do NOT reset gear position!
+    } else {
+        // Show menu, hide gear
+        menu.style.display = "block";
+        gear.style.display = "none";
+        // Restore menu position
+        applyStoredMenuPosition();
+    }
+}
+
+// Remove the originalToggleMenu override completely
+// Just keep: window.toggleMenu = toggleMenu; (if needed)
+window.toggleMenu = toggleMenu;
         window.addEventListener("resize", (() => { resizeDebounce && clearTimeout(resizeDebounce), resizeDebounce =
                 setTimeout((() => { forceShrink(), applyBottomAutoScale() }), 150) })), window.addEventListener(
             "orientationchange", (() => { setTimeout((() => { forceShrink(), applyBottomAutoScale() }), 100) }));
@@ -7075,9 +7090,15 @@
         }
 
         function saveGearPosition() {
-            if (gearElemDrag) { const e = gearElemDrag.offsetLeft,
-                    t = gearElemDrag.offsetTop; if (!isNaN(e) && !isNaN(t)) { safeSetItem("gearPosLeft", e);
-                    safeSetItem("gearPosTop", t); } } }
+    if (gearElemDrag) { 
+        const e = gearElemDrag.offsetLeft,
+            t = gearElemDrag.offsetTop; 
+        if (!isNaN(e) && !isNaN(t)) { 
+            safeSetItem("gearPosLeft", e);
+            safeSetItem("gearPosTop", t); 
+        } 
+    } 
+}
 
         function applyStoredGearPosition() {
             let e = parseFloat(safeGetItem("gearPosLeft", "auto")),
@@ -7559,24 +7580,7 @@
 
             updateRecycleBinBadge();
         };
-        const originalToggleMenu = toggleMenu;
-        window.toggleMenu = function(e) {
-            originalToggleMenu(e);
-            if (e) {
-                const gear = document.getElementById("minimizedTrigger");
-                if (gear && gear.style.display === "flex") {
-                    const left = window.innerWidth - 80;
-                    const top = window.innerHeight - 120;
-                    gear.style.left = left + "px";
-                    gear.style.top = top + "px";
-                    gear.style.right = "auto";
-                    gear.style.bottom = "auto";
-                    gearLeft = left;
-                    gearTop = top;
-                    saveGearPosition();
-                }
-            }
-        };
+      // No override needed - the toggleMenu function above handles everything
     </script>
 </body>
 </html>
