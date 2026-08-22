@@ -2309,10 +2309,10 @@
             background: #ef4444;
             color: #fff;
             border-radius: 30px;
-            padding: 1px 8px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            margin-left: 4px;
+            padding: 2px 9px;
+            font-size: 0.50rem;
+            font-weight: 500;
+            margin-left: 24px;
         }
         /* Batch action buttons */
         .rb-batch-actions {
@@ -2351,24 +2351,29 @@
             opacity: 0.4;
             pointer-events: none;
         }
-        /* ---- New recycle bin button in modals ---- */
-        .recycle-bin-modal-btn {
-            background: #dc2626;
-            color: #fff;
-            border: none;
-            border-radius: 40px;
-            padding: 12px 16px;
-            font-weight: 700;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
-            transition: background .2s, transform .1s;
-            flex: 0 0 auto;
-        }
+        /* ---- New recycle bin button in modals (compact) ---- */
+     .edit-group-buttons .recycle-bin-modal-btn {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    border-radius: 40px;
+    padding: 12px 16px !important;        /* adjust as needed */
+    font-weight: 500 !important;
+    font-size: 1rem !important;       /* smaller text for count */
+    cursor: pointer;
+    display: inline-flex;
+    flex-direction: column;             /* ← stack vertically */
+    align-items: center;                /* ← center horizontally */
+    justify-content: center;            /* ← center vertically */
+    gap: 0px !important;                /* remove gap between items */
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
+    transition: background .2s, transform .1s;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    line-height: 1.2;                   /* tighten spacing */
+}
         .recycle-bin-modal-btn:hover {
             background: #b91c1c;
             transform: scale(0.98);
@@ -4805,7 +4810,7 @@
         }
         window.refreshAddModalSearch = refreshAddModalSearch;
 
-        // ---- Long-press copy for "/" button ----
+        // ---- Long-press copy for "/" button (0.8s hold, no insertion) ----
         function setupInsertSymbolLongPress() {
             document.querySelectorAll('.insert-symbol-icon-inside').forEach(btn => {
                 let longPressTimer = null;
@@ -4823,7 +4828,7 @@
 
                     longPressTimer = setTimeout(() => {
                         isLongPress = true;
-                        // Copy text to clipboard
+                        // Copy text to clipboard without inserting " / "
                         if (navigator.clipboard && navigator.clipboard.writeText) {
                             navigator.clipboard.writeText(text).then(() => {
                                 btn.classList.add('copy-mode');
@@ -4853,7 +4858,7 @@
                             showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
                             setTimeout(() => btn.classList.remove('copy-mode'), 800);
                         }
-                    }, 800); // CHANGED: 1500 -> 800 (0.8s)
+                    }, 800); // 0.8s hold
                 };
 
                 const endLongPress = (e) => {
@@ -5002,7 +5007,7 @@
             showToast("Both layers reset");
         }
 
-        // ---- MODIFIED: showAddNewModal with heading row (button outside h3) and recycle bin icon ----
+        // ---- MODIFIED: showAddNewModal with compact recycle bin button (icon+count) ----
         function showAddNewModal() {
             if (!editUnlocked) return void showPasswordModal((() => { showAddNewModal() }));
             const e = document.createElement("div");
@@ -5025,7 +5030,7 @@
                     </div>
                     <div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>
                     <div class="edit-group-buttons" style="display:flex; gap:12px; align-items:center;">
-                        <button id="recycleBinAddBtn" class="recycle-bin-modal-btn">🗑️ <span class="recycle-bin-count" id="rbCountAddModal">${softDeletedIndices.size}</span></button>
+                        <button id="recycleBinAddBtn" class="recycle-bin-modal-btn"><span class="recycle-bin-count" id="rbCountAddModal">${softDeletedIndices.size}</span> 🗑️</button>
                         <button id="confirmAddBtn" style="background:#1a1a1a !important; color:#ffffff !important; border:1px solid #333333 !important; flex:1;">✅ ADD TO SHEET (last row)</button>
                     </div>
                     <button id="closeAddModalBtn" class="cancel-icon">✕</button>
@@ -5094,7 +5099,7 @@
                 }
             };
 
-            // ===== MODIFIED: confirmAddBtn with optimistic update and SIMPLE TOAST on error (no retry) =====
+            // ===== confirmAddBtn with optimistic update =====
             document.getElementById("confirmAddBtn").onclick = () => {
                 const chinese = chineseInput.value.trim();
                 const khmer = khmerInput.value.trim();
@@ -5158,11 +5163,22 @@
                 if (input) input.focus();
             }, 150);
 
-            // ---- Attach long-press handler for recycle bin button ----
+            // ---- Recycle bin button: click -> show modal; long-press -> delete all and refresh search ----
             const rbBtn = document.getElementById('recycleBinAddBtn');
             if (rbBtn) {
+                // Click: show recycle bin modal
+                rbBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showRecycleBinModal();
+                });
+                // Long-press (0.5s) -> delete all and refresh search results
                 attachRecycleBinLongPress(rbBtn, async () => {
                     await permanentlyDeleteAllSoftDeleted();
+                    // Refresh search results in this modal
+                    const input = document.getElementById('addChineseInput');
+                    if (input && window.addModalPerformSearch) {
+                        window.addModalPerformSearch(input.value);
+                    }
                     updateRecycleBinCountInModals();
                 }, 500);
             }
@@ -5400,7 +5416,7 @@
             }, 50);
         };
 
-        // ---- MODIFIED: showEditModal with heading row (button outside h3) and recycle bin icon ----
+        // ---- MODIFIED: showEditModal with compact recycle bin button (icon+count) ----
         window.showEditModal = function(e, t, n, o) {
             if (!editUnlocked) return void showPasswordModal((() => { showEditModal(e, t, n, o) }));
             const i = getDisplayNumberFromArrayIndex(e),
@@ -5424,7 +5440,7 @@
                     </div>
                     <div id="vocabSearchResultsEdit" style="max-height:200px; overflow-y:auto; margin-top:8px; margin-bottom:12px;"></div>
                     <div class="edit-group-buttons" style="display:flex; gap:12px; align-items:center;">
-                        <button id="recycleBinEditBtn" class="recycle-bin-modal-btn">🗑️ <span class="recycle-bin-count" id="rbCountEditModal">${softDeletedIndices.size}</span></button>
+                        <button id="recycleBinEditBtn" class="recycle-bin-modal-btn"><span class="recycle-bin-count" id="rbCountEditModal">${softDeletedIndices.size}</span> 🗑️</button>
                         <button id="confirmUpdateBtn" style="background:#1a1a1a !important; color:#ffffff !important; border:1px solid #333333 !important; flex:1;">💾 UPDATE SHEET</button>
                     </div>
                     <div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${i}</button></div>
@@ -5490,7 +5506,7 @@
                 requestOpenSheetRow(window.currentEdit.row);
             };
 
-            // ===== MODIFIED: confirmUpdate with optimistic update and retry (kept as original) =====
+            // ===== confirmUpdate with optimistic update and retry =====
             const confirmUpdate = () => {
                 const ch = editChineseInput.value.trim();
                 const km = editKhmerInput.value.trim();
@@ -5556,11 +5572,19 @@
                 if (input) input.focus();
             }, 150);
 
-            // ---- Attach long-press handler for recycle bin button ----
+            // ---- Recycle bin button: click -> show modal; long-press -> delete all and refresh search ----
             const rbBtn = document.getElementById('recycleBinEditBtn');
             if (rbBtn) {
+                rbBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showRecycleBinModal();
+                });
                 attachRecycleBinLongPress(rbBtn, async () => {
                     await permanentlyDeleteAllSoftDeleted();
+                    const input = document.getElementById('editChineseInput');
+                    if (input && window.editModalPerformSearch) {
+                        window.editModalPerformSearch(input.value);
+                    }
                     updateRecycleBinCountInModals();
                 }, 500);
             }
