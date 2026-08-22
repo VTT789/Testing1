@@ -2889,34 +2889,33 @@
 
         // ======================== ORIGINAL GLOBALS =========================
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || "MacIntel" === navigator.platform && navigator
-        .maxTouchPoints > 1;
-        let editUnlocked = !0,
-            activePasswordModal = null,
-            searchTerm = "",
-            currentEmojiText = "",
-            emojiFontSize = 32,
-            emojiContainer = null,
-            isPinchingEmoji = !1,
-            initialEmojiDistance = 0,
-            initialEmojiFontSize = 32,
-            emojiDragActive = !1,
-            emojiStartMouseX = 0,
-            emojiStartMouseY = 0,
-            emojiStartLeft = 0,
-            emojiStartTop = 0,
-            emojiX = 50,
-            emojiY = 70,
-            emojiLeftPx = null,
-            emojiTopPx = null,
-            copyLocked = !1,
-            pendingCopyText = "",
-            copyPopup = null,
-            copyBtn = null,
-            popupMessageSpan = null,
-            copyTimer = null;
-        const GOOGLE_SHEET_URL = "",
-           
-        let sheetHistory = [];
+.maxTouchPoints > 1;
+let editUnlocked = !0,
+    activePasswordModal = null,
+    searchTerm = "",
+    currentEmojiText = "",
+    emojiFontSize = 32,
+    emojiContainer = null,
+    isPinchingEmoji = !1,
+    initialEmojiDistance = 0,
+    initialEmojiFontSize = 32,
+    emojiDragActive = !1,
+    emojiStartMouseX = 0,
+    emojiStartMouseY = 0,
+    emojiStartLeft = 0,
+    emojiStartTop = 0,
+    emojiX = 50,
+    emojiY = 70,
+    emojiLeftPx = null,
+    emojiTopPx = null,
+    copyLocked = !1,
+    pendingCopyText = "",
+    copyPopup = null,
+    copyBtn = null,
+    popupMessageSpan = null,
+    copyTimer = null;
+const GOOGLE_SHEET_URL = "";
+let sheetHistory = [];
 
         function loadSheetHistory() {
             const stored = safeGetItem('sheetHistory', '[]');
