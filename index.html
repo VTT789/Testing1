@@ -2351,6 +2351,40 @@
             opacity: 0.4;
             pointer-events: none;
         }
+        /* ---- New recycle bin button in modals ---- */
+        .recycle-bin-modal-btn {
+            background: #dc2626;
+            color: #fff;
+            border: none;
+            border-radius: 40px;
+            padding: 12px 16px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
+            transition: background .2s, transform .1s;
+            flex: 0 0 auto;
+        }
+        .recycle-bin-modal-btn:hover {
+            background: #b91c1c;
+            transform: scale(0.98);
+        }
+        .recycle-bin-modal-btn:active {
+            transform: scale(0.95);
+        }
+        body.night-mode .recycle-bin-modal-btn {
+            background: #ef4444;
+        }
+        body.night-mode .recycle-bin-modal-btn:hover {
+            background: #dc2626;
+        }
+        .edit-group-buttons .recycle-bin-modal-btn {
+            margin-right: 8px;
+        }
     </style>
     <style>
         #floatingMenu {
@@ -4178,7 +4212,41 @@
             }
         }
 
-        // ---- Batch actions ----
+        // ---- NEW: permanently delete all soft-deleted items (without closing any modal) ----
+        async function permanentlyDeleteAllSoftDeleted() {
+            const count = softDeletedIndices.size;
+            if (count === 0) {
+                showToast("Recycle bin is empty");
+                return;
+            }
+            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
+
+            const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
+            let successCount = 0,
+                failCount = 0;
+            for (const idx of indices) {
+                if (!softDeletedIndices.has(idx)) continue;
+                const result = await permanentlyDeleteSoftDeleted(idx);
+                if (result) { successCount++; } else { failCount++;
+                    softDeletedIndices.delete(idx);
+                    softDeletedData.delete(idx); }
+            }
+            renderSidebarUI();
+            updateRecycleBinBadge();
+            if (vocabList.length === 0) {
+                updateChineseDisplay("");
+                document.getElementById("khmerWord").innerText = "";
+            } else {
+                const nextIdx = findNextAvailableIndex(0);
+                if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+            }
+            saveAllData();
+            showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
+            // Update any open modals' recycle bin count
+            updateRecycleBinCountInModals();
+        }
+
+        // ---- Batch actions (kept for recycle bin modal) ----
         async function restoreAllSoftDeletedAndClose() {
             const count = softDeletedIndices.size;
             if (count === 0) {
@@ -4205,7 +4273,6 @@
                 }
             }
             saveAllData();
-            // Clean toast message - no " / "
             showToast(`↩️ Restored ${count} items`);
             // Close the modal immediately
             const modal = document.querySelector('.modal-overlay');
@@ -4218,41 +4285,33 @@
                 showToast("Recycle bin is empty");
                 return;
             }
-            // Single batch confirmation for all items
             if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
-            const indices = Array.from(softDeletedIndices).sort((a, b) => b - a); // descending
-            let successCount = 0;
-            let failCount = 0;
+            const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
+            let successCount = 0,
+                failCount = 0;
             for (const idx of indices) {
-                // Check if still soft-deleted
                 if (!softDeletedIndices.has(idx)) continue;
                 const result = await permanentlyDeleteSoftDeleted(idx);
-                if (result) {
-                    successCount++;
-                } else {
-                    failCount++;
-                    // Remove from set to avoid loop issues if deletion failed but item was removed
+                if (result) { successCount++; } else { failCount++;
                     softDeletedIndices.delete(idx);
-                    softDeletedData.delete(idx);
-                }
+                    softDeletedData.delete(idx); }
             }
-            // After loop, re-render
             renderSidebarUI();
             updateRecycleBinBadge();
             if (vocabList.length === 0) {
                 updateChineseDisplay("");
                 document.getElementById("khmerWord").innerText = "";
             } else {
-                // Find a valid word
                 const nextIdx = findNextAvailableIndex(0);
                 if (nextIdx !== -1) loadWordByMode(nextIdx, true);
             }
             saveAllData();
             showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
-            // Close the modal immediately (no waiting)
             const modal = document.querySelector('.modal-overlay');
             if (modal) modal.remove();
+            // Update any other modals (e.g., add/edit) that might be open
+            updateRecycleBinCountInModals();
         }
 
         function updateRecycleBinBadge() {
@@ -4268,6 +4327,17 @@
                 const count = softDeletedIndices.size;
                 btn.innerHTML = `🗑️ Recycle Bin <span class="recycle-bin-count" id="rbCountBadge">${count}</span>`;
             }
+            // Update modal counts
+            updateRecycleBinCountInModals();
+        }
+
+        function updateRecycleBinCountInModals() {
+            const counts = document.querySelectorAll('.recycle-bin-count');
+            const count = softDeletedIndices.size;
+            counts.forEach(el => {
+                el.textContent = count;
+                el.style.display = count > 0 ? 'inline-block' : 'none';
+            });
         }
 
         // ---- Show Recycle Bin Modal ----
@@ -4485,12 +4555,12 @@
                     searchTerm = e, "normal" === appMode) { normalCurrentPage = 0;
                     normalCurrentIdx = 0;
                     renderNormalSidebar(); } else if ("" === searchTerm.trim()) { if (null !== previousWordBeforeSearch &&
-                        vocabList[previousWordBeforeSearch] && !pendingDeletions.has(previousWordBeforeSearch) && !
-                        softDeletedIndices.has(previousWordBeforeSearch)) {
+                        vocabList[previousWordBeforeSearch] && !pendingDeletions.has(previousWordBeforeSearch) && !softDeletedIndices
+                        .has(previousWordBeforeSearch)) {
                         loadWordByMode(previousWordBeforeSearch, !0);
                         previousWordBeforeSearch = null } else if (sidebarIndices.length && void 0 !== sidebarIndices[
-                        sidebarFocusIdx] && !pendingDeletions.has(sidebarIndices[sidebarFocusIdx]) && !
-                        softDeletedIndices.has(sidebarIndices[sidebarFocusIdx]))
+                        sidebarFocusIdx] && !pendingDeletions.has(sidebarIndices[sidebarFocusIdx]) && !softDeletedIndices
+                        .has(sidebarIndices[sidebarFocusIdx]))
                     renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
                     else vocabList.length ? pickRandom() : renderSidebarUI(!0) } else { const t = filterVocabBySearch(
                         vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx))
@@ -4662,8 +4732,8 @@
                     i.onclick = function(e) {
                         e.preventDefault();
                         if (longPressNext) { longPressNext = !1; return; }
-                        const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !
-                            softDeletedIndices.has(idx));
+                        const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                            .has(idx));
                         const pageCount = Math.ceil(t.length / 40);
                         if (normalCurrentPage + 1 < pageCount) {
                             normalCurrentPage++;
@@ -4783,7 +4853,7 @@
                             showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
                             setTimeout(() => btn.classList.remove('copy-mode'), 800);
                         }
-                    }, 1500);
+                    }, 800); // CHANGED: 1500 -> 800 (0.8s)
                 };
 
                 const endLongPress = (e) => {
@@ -4932,8 +5002,7 @@
             showToast("Both layers reset");
         }
 
-        // ---- MODIFIED: showAddNewModal with heading row (button outside h3) and optimistic update ----
-        // ---- REMOVED retry on add error: now just shows a toast message ----
+        // ---- MODIFIED: showAddNewModal with heading row (button outside h3) and recycle bin icon ----
         function showAddNewModal() {
             if (!editUnlocked) return void showPasswordModal((() => { showAddNewModal() }));
             const e = document.createElement("div");
@@ -4955,7 +5024,10 @@
                         </div>
                     </div>
                     <div id="vocabSearchResults" style="max-height:200px; overflow-y:auto; margin-top:8px;"></div>
-                    <div class="edit-group-buttons"><button id="confirmAddBtn" style="background:#1a1a1a !important; color:#ffffff !important; border:1px solid #333333 !important;">✅ ADD TO SHEET (last row)</button></div>
+                    <div class="edit-group-buttons" style="display:flex; gap:12px; align-items:center;">
+                        <button id="recycleBinAddBtn" class="recycle-bin-modal-btn">🗑️ <span class="recycle-bin-count" id="rbCountAddModal">${softDeletedIndices.size}</span></button>
+                        <button id="confirmAddBtn" style="background:#1a1a1a !important; color:#ffffff !important; border:1px solid #333333 !important; flex:1;">✅ ADD TO SHEET (last row)</button>
+                    </div>
                     <button id="closeAddModalBtn" class="cancel-icon">✕</button>
                 </div>`,
                 document.body.appendChild(e);
@@ -5085,6 +5157,15 @@
                 const input = document.getElementById('addChineseInput');
                 if (input) input.focus();
             }, 150);
+
+            // ---- Attach long-press handler for recycle bin button ----
+            const rbBtn = document.getElementById('recycleBinAddBtn');
+            if (rbBtn) {
+                attachRecycleBinLongPress(rbBtn, async () => {
+                    await permanentlyDeleteAllSoftDeleted();
+                    updateRecycleBinCountInModals();
+                }, 500);
+            }
         }
 
         function resetTopLayer() { topLayerX = 0; topLayerY = 0; applyLayerTransforms(); saveAllDragPositions(); showToast(
@@ -5319,7 +5400,7 @@
             }, 50);
         };
 
-        // ---- MODIFIED: showEditModal with heading row (button outside h3) and optimistic update ----
+        // ---- MODIFIED: showEditModal with heading row (button outside h3) and recycle bin icon ----
         window.showEditModal = function(e, t, n, o) {
             if (!editUnlocked) return void showPasswordModal((() => { showEditModal(e, t, n, o) }));
             const i = getDisplayNumberFromArrayIndex(e),
@@ -5342,7 +5423,10 @@
                         </div>
                     </div>
                     <div id="vocabSearchResultsEdit" style="max-height:200px; overflow-y:auto; margin-top:8px; margin-bottom:12px;"></div>
-                    <div class="edit-group-buttons" style="margin-bottom:12px;"><button id="confirmUpdateBtn" style="background:#1a1a1a !important; color:#ffffff !important; border:1px solid #333333 !important;">💾 UPDATE SHEET</button></div>
+                    <div class="edit-group-buttons" style="display:flex; gap:12px; align-items:center;">
+                        <button id="recycleBinEditBtn" class="recycle-bin-modal-btn">🗑️ <span class="recycle-bin-count" id="rbCountEditModal">${softDeletedIndices.size}</span></button>
+                        <button id="confirmUpdateBtn" style="background:#1a1a1a !important; color:#ffffff !important; border:1px solid #333333 !important; flex:1;">💾 UPDATE SHEET</button>
+                    </div>
                     <div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${i}</button></div>
                     <button id="closeEditModalBtn" class="cancel-icon">✕</button>
                 </div>`,
@@ -5471,7 +5555,52 @@
                 const input = document.getElementById('editChineseInput');
                 if (input) input.focus();
             }, 150);
+
+            // ---- Attach long-press handler for recycle bin button ----
+            const rbBtn = document.getElementById('recycleBinEditBtn');
+            if (rbBtn) {
+                attachRecycleBinLongPress(rbBtn, async () => {
+                    await permanentlyDeleteAllSoftDeleted();
+                    updateRecycleBinCountInModals();
+                }, 500);
+            }
         };
+
+        // ---- Recycle bin long-press handler helper ----
+        function attachRecycleBinLongPress(button, callback, duration = 500) {
+            if (!button) return;
+            let timer = null;
+            let moved = false;
+            const start = (e) => {
+                // For touch events, do not prevent default to allow scrolling if needed
+                moved = false;
+                timer = setTimeout(() => {
+                    if (!moved) {
+                        callback();
+                    }
+                }, duration);
+                // Track movement to cancel
+                const moveHandler = (ev) => {
+                    moved = true;
+                    clearTimeout(timer);
+                    window.removeEventListener('mousemove', moveHandler);
+                    window.removeEventListener('touchmove', moveHandler);
+                };
+                const endHandler = () => {
+                    clearTimeout(timer);
+                    window.removeEventListener('mousemove', moveHandler);
+                    window.removeEventListener('touchmove', moveHandler);
+                    window.removeEventListener('mouseup', endHandler);
+                    window.removeEventListener('touchend', endHandler);
+                };
+                window.addEventListener('mousemove', moveHandler);
+                window.addEventListener('touchmove', moveHandler, { passive: true });
+                window.addEventListener('mouseup', endHandler);
+                window.addEventListener('touchend', endHandler);
+            };
+            button.addEventListener('mousedown', start);
+            button.addEventListener('touchstart', start, { passive: true });
+        }
 
         const tripleHtmlCache = new Map;
 
