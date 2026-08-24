@@ -7140,55 +7140,56 @@ window.toggleMenu = toggleMenu;
         }
 
         function setupQRPopup() {
-            const e = document.getElementById("qrPopupOverlay"),
-                t = document.getElementById("qrCloseBtn");
-            t && t.addEventListener("click", (() => e.style.display = "none")), e.addEventListener("click", (t => { t
-                    .target === e && (e.style.display = "none") }));
+    const e = document.getElementById("qrPopupOverlay"),
+        t = document.getElementById("qrCloseBtn");
+    t && t.addEventListener("click", (() => e.style.display = "none")), e.addEventListener("click", (t => { t
+            .target === e && (e.style.display = "none") }));
 
-            // ---- QR image hold (0.3s) to load sheet, then hide overlay and menu ----
-            const qrImg = document.querySelector('#qrPopupOverlay .qr-card img');
-            if (qrImg) {
-                let holdTimer = null;
-                let holdTriggered = false;
+    // ---- QR image hold (0.3s) to load sheet, then hide overlay and menu IMMEDIATELY ----
+    const qrImg = document.querySelector('#qrPopupOverlay .qr-card img');
+    if (qrImg) {
+        let holdTimer = null;
+        let holdTriggered = false;
 
-                const startHold = async function(ev) {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                    holdTriggered = false;
-                    holdTimer = setTimeout(async () => {
-                        holdTriggered = true;
-                        // Load the default sheet
-                        const sheetId = DEFAULT_SHEET_ID;
-                        const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
-                        currentSheetId = sheetId;
-                        currentSheetUrl = sheetUrl;
-                        addSheetToHistory(sheetId);
-                        showToast(`📥 Loading default sheet...`);
-                        await loadSheetData(true);
-                        // Hide QR overlay
-                        const overlay = document.getElementById('qrPopupOverlay');
-                        if (overlay) overlay.style.display = 'none';
-                        // Hide floatingMenu (show gear)
-                        toggleMenu(true);
-                    }, 300);
-                };
+        const startHold = async function(ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            holdTriggered = false;
+            holdTimer = setTimeout(async () => {
+                holdTriggered = true;
+                
+                // --- IMMEDIATELY hide QR overlay and menu ---
+                const overlay = document.getElementById('qrPopupOverlay');
+                if (overlay) overlay.style.display = 'none';
+                toggleMenu(true);
+                
+                // --- THEN load the sheet in background ---
+                const sheetId = DEFAULT_SHEET_ID;
+                const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+                currentSheetId = sheetId;
+                currentSheetUrl = sheetUrl;
+                addSheetToHistory(sheetId);
+                showToast(`📥 Loading default sheet...`);
+                await loadSheetData(true);
+            }, 300);
+        };
 
-                const endHold = function(ev) {
-                    if (holdTimer) {
-                        clearTimeout(holdTimer);
-                        holdTimer = null;
-                    }
-                    // If hold wasn't triggered, this is a tap - do nothing
-                };
-
-                qrImg.addEventListener('mousedown', startHold);
-                qrImg.addEventListener('mouseup', endHold);
-                qrImg.addEventListener('mouseleave', endHold);
-                qrImg.addEventListener('touchstart', startHold, { passive: false });
-                qrImg.addEventListener('touchend', endHold);
-                qrImg.addEventListener('touchcancel', endHold);
+        const endHold = function(ev) {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
             }
-        }
+            // If hold wasn't triggered, this is a tap - do nothing
+        };
+
+        qrImg.addEventListener('mousedown', startHold);
+        qrImg.addEventListener('mouseup', endHold);
+        qrImg.addEventListener('mouseleave', endHold);
+        qrImg.addEventListener('touchstart', startHold, { passive: false });
+        qrImg.addEventListener('touchend', endHold);
+        qrImg.addEventListener('touchcancel', endHold);
+    }
+}
 
         function applyRateDisplay() {
             const e = document.getElementById("zhRateSlider"),
