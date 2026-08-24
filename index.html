@@ -2391,52 +2391,6 @@
         .edit-group-buttons .recycle-bin-modal-btn {
             margin-right: 8px;
         }
-
-        /* ===== LOADING OVERLAY ===== */
-        #loadingOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0f172a;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 99999;
-            transition: opacity 0.6s ease;
-            font-family: Inter, system-ui, sans-serif;
-        }
-        #loadingOverlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        #loadingOverlay img {
-            width: 80px;
-            height: 80px;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            margin-bottom: 24px;
-        }
-        #loadingOverlay .loader-text {
-            color: #f1f5f9;
-            font-size: 1.2rem;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-        }
-        #loadingOverlay .loader-spinner {
-            margin-top: 20px;
-            width: 32px;
-            height: 32px;
-            border: 3px solid rgba(255,255,255,0.15);
-            border-top-color: #3b82f6;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
     </style>
     <style>
         #floatingMenu {
@@ -2561,13 +2515,6 @@
     </style>
 </head>
 <body>
-    <!-- ===== LOADING OVERLAY ===== -->
-    <div id="loadingOverlay">
-        <img src="/static/ABAicon.png" alt="Loading">
-        <div class="loader-text">Loading vocabulary...</div>
-        <div class="loader-spinner"></div>
-    </div>
-
     <div class=main-layout>
         <div class=content-area id=bgClickArea>
             <div id=minimizedTrigger><span class=gear-icon>⚙️</span></div>
@@ -2943,32 +2890,32 @@
         // ======================== ORIGINAL GLOBALS =========================
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || "MacIntel" === navigator.platform && navigator
 .maxTouchPoints > 1;
-let editUnlocked = !0,
-    activePasswordModal = null,
-    searchTerm = "",
-    currentEmojiText = "",
-    emojiFontSize = 32,
-    emojiContainer = null,
-    isPinchingEmoji = !1,
-    initialEmojiDistance = 0,
-    initialEmojiFontSize = 32,
-    emojiDragActive = !1,
-    emojiStartMouseX = 0,
-    emojiStartMouseY = 0,
-    emojiStartLeft = 0,
-    emojiStartTop = 0,
-    emojiX = 50,
-    emojiY = 70,
-    emojiLeftPx = null,
-    emojiTopPx = null,
-    copyLocked = !1,
-    pendingCopyText = "",
-    copyPopup = null,
-    copyBtn = null,
-    popupMessageSpan = null,
-    copyTimer = null;
-const GOOGLE_SHEET_URL = "";
-let sheetHistory = [];
+        let editUnlocked = !0,
+            activePasswordModal = null,
+            searchTerm = "",
+            currentEmojiText = "",
+            emojiFontSize = 32,
+            emojiContainer = null,
+            isPinchingEmoji = !1,
+            initialEmojiDistance = 0,
+            initialEmojiFontSize = 32,
+            emojiDragActive = !1,
+            emojiStartMouseX = 0,
+            emojiStartMouseY = 0,
+            emojiStartLeft = 0,
+            emojiStartTop = 0,
+            emojiX = 50,
+            emojiY = 70,
+            emojiLeftPx = null,
+            emojiTopPx = null,
+            copyLocked = !1,
+            pendingCopyText = "",
+            copyPopup = null,
+            copyBtn = null,
+            popupMessageSpan = null,
+            copyTimer = null;
+        const GOOGLE_SHEET_URL = "";
+        let sheetHistory = [];
 
         function loadSheetHistory() {
             const stored = safeGetItem('sheetHistory', '[]');
@@ -3223,14 +3170,16 @@ let sheetHistory = [];
         function initCopyPopup() {
             copyPopup = document.getElementById("copyPopup"), copyBtn = document.getElementById("copyActionBtn"),
                 popupMessageSpan = document.getElementById("popupMessage"), copyBtn.addEventListener("click", (function(e) {
-                    e.stopPropagation(), pendingCopyText && navigator.clipboard.writeText(pendingCopyText).then((() => { showToast("Copied ✔"), copyPopup.style.display = "none", copyLocked = !1,
-                                pendingCopyText = "", popupMessageSpan.innerText = "📋 Ready to copy",
-                                copyBtn.innerText = "Copy" })).catch((() => { const e = document
+                    e.stopPropagation(), pendingCopyText && navigator.clipboard.writeText(pendingCopyText).then((() => { showToast(
+                                "Copied ✔"), copyPopup.style.display = "none", copyLocked = !1,
+                            pendingCopyText = "", popupMessageSpan.innerText = "📋 Ready to copy",
+                            copyBtn.innerText = "Copy" })).catch((() => { const e = document
                             .createElement("textarea");
                         e.value = pendingCopyText, document.body.appendChild(e), e.select(), document
                             .execCommand("copy"), document.body.removeChild(e), showToast("Copied ✔"),
                             copyPopup.style.display = "none", copyLocked = !1, pendingCopyText = "",
-                            popupMessageSpan.innerText = "📋 Ready to copy", copyBtn.innerText = "Copy" })) }))
+                            popupMessageSpan.innerText = "📋 Ready to copy", copyBtn.innerText = "Copy" }))
+                }))
         }
 
         function showCopyPopupWithButton(e, t) {
@@ -3534,8 +3483,7 @@ let sheetHistory = [];
                 sheetId: currentSheetId,
                 sheetName: "Sheet1" };
             try { const e = await fetch(detectedApiUrl, { method: "POST", headers: { "Content-Type": "text/plain" },
-                        body: JSON.stringify(n) }),
-                    o = await e.text();
+                        body: JSON.stringify(n) }), o = await e.text();
                 let i = o;
                 try { i = JSON.parse(o) } catch (e) {}
                 if (e.ok && "success" === i.result) {
@@ -5453,8 +5401,7 @@ let sheetHistory = [];
         function getPinyinForText(e) {
             if (!e || void 0 === window.pinyinPro) return e.split("").map((e => ({ char: e, pinyin: "" })));
             try { const t = window.pinyinPro.pinyin(e, { toneType: "symbol", type: "array", multiple: !1,
-                        pattern: "pinyin" }),
-                    n = [];
+                        pattern: "pinyin" }), n = [];
                 for (let o = 0; o < e.length; o++) { const i = e[o];
                     let a = t[o] && t[o] !== i ? t[o] : "";
                     if (a && !a.match(/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/)) { const e = window.pinyinPro.pinyin(i, { toneType: "symbol",
@@ -6395,69 +6342,27 @@ let sheetHistory = [];
             }), { passive: !1 })
         }
 
-        let gearLeft = 20,
-            gearTop = 20,
-            currentMenuTransform = { x: 0, y: 0 };
-        const floatingMenuDiv = document.getElementById("floatingMenu"),
-            gearElemDrag = document.getElementById("minimizedTrigger");
-
         function toggleMenu(e) {
-            const gear = document.getElementById("minimizedTrigger");
-            const menu = document.getElementById("floatingMenu");
-            
-            if (e) {
-                // Hide menu, show gear
-                menu.style.display = "none";
-                gear.style.display = "flex";
-                // IMPORTANT: Do NOT reset gear position!
-            } else {
-                // Show menu, hide gear
-                menu.style.display = "block";
-                gear.style.display = "none";
-                // Restore menu position
-                applyStoredMenuPosition();
-            }
-        }
-        window.toggleMenu = toggleMenu;
+    const gear = document.getElementById("minimizedTrigger");
+    const menu = document.getElementById("floatingMenu");
+    
+    if (e) {
+        // Hide menu, show gear
+        menu.style.display = "none";
+        gear.style.display = "flex";
+        // IMPORTANT: Do NOT reset gear position!
+    } else {
+        // Show menu, hide gear
+        menu.style.display = "block";
+        gear.style.display = "none";
+        // Restore menu position
+        applyStoredMenuPosition();
+    }
+}
 
-        function applyStoredMenuPosition() {
-            const e = parseFloat(safeGetItem("menuPosX", "0")) || 0,
-                t = parseFloat(safeGetItem("menuPosY", "0")) || 0;
-            if (!isNaN(e) && !isNaN(t)) {
-                currentMenuTransform.x = e;
-                currentMenuTransform.y = t;
-                floatingMenuDiv.style.transform = `translate3d(${e}px, ${t}px, 0)`;
-            }
-        }
-
-        function saveMenuPosition() {
-            safeSetItem("menuPosX", currentMenuTransform.x);
-            safeSetItem("menuPosY", currentMenuTransform.y);
-        }
-
-        function saveGearPosition() {
-            if (gearElemDrag) { 
-                const e = gearElemDrag.offsetLeft,
-                    t = gearElemDrag.offsetTop; 
-                if (!isNaN(e) && !isNaN(t)) { 
-                    safeSetItem("gearPosLeft", e);
-                    safeSetItem("gearPosTop", t); 
-                } 
-            } 
-        }
-
-        function applyStoredGearPosition() {
-            let e = parseFloat(safeGetItem("gearPosLeft", "auto")),
-                t = parseFloat(safeGetItem("gearPosTop", "auto"));
-            if (isNaN(e) || isNaN(t)) { e = window.innerWidth - 80;
-                t = window.innerHeight - 120; } else { e = Math.min(Math.max(5, e), window.innerWidth - 65);
-                t = Math.min(Math.max(5, t), window.innerHeight - 75); }
-            gearLeft = e;
-            gearTop = t;
-            if (gearElemDrag) { gearElemDrag.style.left = e + "px";
-                gearElemDrag.style.top = t + "px"; }
-        }
-
+// Remove the originalToggleMenu override completely
+// Just keep: window.toggleMenu = toggleMenu; (if needed)
+window.toggleMenu = toggleMenu;
         window.addEventListener("resize", (() => { resizeDebounce && clearTimeout(resizeDebounce), resizeDebounce =
                 setTimeout((() => { forceShrink(), applyBottomAutoScale() }), 150) })), window.addEventListener(
             "orientationchange", (() => { setTimeout((() => { forceShrink(), applyBottomAutoScale() }), 100) }));
@@ -6567,60 +6472,21 @@ let sheetHistory = [];
         }
 
         function onKhmerPointerDown(e) {
-            // Do NOT prevent default for touchstart – allows click to fire
-            if (e.type === 'touchstart') {
-                // Passive: true so we don't block click
-                e.stopPropagation();
-            } else {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            let timer = null;
-            let moved = false;
-
-            const onMove = (ev) => {
-                moved = true;
-                if (timer) clearTimeout(timer);
-                // If moved, we are dragging; we should not trigger long-press
-            };
-
-            const onEnd = () => {
-                if (timer) clearTimeout(timer);
-                // Reset flag after a short delay
-                setTimeout(() => {
-                    khmerLongPressTriggered = false;
-                }, 150);
-                window.removeEventListener("mousemove", onMove);
-                window.removeEventListener("touchmove", onMove);
-                window.removeEventListener("mouseup", onEnd);
-                window.removeEventListener("touchend", onEnd);
-            };
-
-            timer = setTimeout(async () => {
-                if (!moved && !copyLocked) {
-                    const text = khmerElement.innerText;
-                    if (text) {
-                        khmerLongPressTriggered = true;
-                        if (isIOS) {
-                            showCopyPopupWithButton(text, "Khmer");
-                        } else {
-                            await copyTextDirectly(text, "Khmer");
-                        }
-                    }
-                }
-                onEnd();
-            }, 500);
-
-            // For touch, we need to listen to touchmove/touchend
-            if (e.type === 'touchstart') {
-                window.addEventListener("touchmove", onMove);
-                window.addEventListener("touchend", onEnd);
-            } else {
-                window.addEventListener("mousemove", onMove);
-                window.addEventListener("mouseup", onEnd);
-            }
+            e.preventDefault(), e.stopPropagation();
+            let t = null,
+                n = !1;
+            const o = () => { n = !0, t && clearTimeout(t) },
+                i = () => { t && clearTimeout(t), window.removeEventListener("mousemove", o), window
+                        .removeEventListener("touchmove", o), window.removeEventListener("mouseup", i),
+                        window.removeEventListener("touchend", i) };
+            t = setTimeout((async () => {
+                if (!n && !copyLocked) { const e = khmerElement.innerText;
+                    e && (isIOS ? showCopyPopupWithButton(e, "Khmer") : await copyTextDirectly(e,
+                        "Khmer")) }
+                i()
+            }), 500), window.addEventListener("mousemove", o), window.addEventListener("touchmove", o),
+                window.addEventListener("mouseup", i), window.addEventListener("touchend", i)
         }
-        let khmerLongPressTriggered = false;
 
         function onPressMove(e) {
             const t = e.clientX ?? (e.touches ? e.touches[0].clientX : 0),
@@ -6725,6 +6591,63 @@ let sheetHistory = [];
         function initKhmerDrag() {
             khmerElement = document.getElementById("khmerWord");
             if (!khmerElement) return;
+            // Add a closure flag to track long press for Khmer
+            let khmerLongPressTriggered = false;
+
+            // Modified long-press handler: do NOT preventDefault on touchstart,
+            // so that click event can fire on tap.
+            const newOnKhmerPointerDown = function(e) {
+                // Only prevent default for mouse to avoid text selection, but not for touch
+                if (e.type === 'mousedown') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                } else if (e.type === 'touchstart') {
+                    // Do NOT preventDefault or stopPropagation – let click fire
+                    // But we need to prevent scrolling on drag later.
+                    // We'll handle touchmove separately.
+                }
+                let timer = null;
+                let moved = false;
+                const onMove = (ev) => {
+                    moved = true;
+                    if (timer) clearTimeout(timer);
+                };
+                const onEnd = () => {
+                    if (timer) clearTimeout(timer);
+                    // Reset flag after a short delay so click event can run first
+                    setTimeout(() => {
+                        khmerLongPressTriggered = false;
+                    }, 150);
+                    window.removeEventListener("mousemove", onMove);
+                    window.removeEventListener("touchmove", onMove);
+                    window.removeEventListener("mouseup", onEnd);
+                    window.removeEventListener("touchend", onEnd);
+                };
+                // For touch, we need to detect long press without blocking click.
+                // We'll set a timer, but if the user taps (quick), the timer won't fire.
+                timer = setTimeout(async () => {
+                    if (!moved && !copyLocked) {
+                        const text = khmerElement.innerText;
+                        if (text) {
+                            khmerLongPressTriggered = true;
+                            if (isIOS) {
+                                showCopyPopupWithButton(text, "Khmer");
+                            } else {
+                                await copyTextDirectly(text, "Khmer");
+                            }
+                        }
+                    }
+                    onEnd();
+                }, 500);
+                // For touch, we need to listen to touchmove/touchend
+                if (e.type === 'touchstart') {
+                    window.addEventListener("touchmove", onMove);
+                    window.addEventListener("touchend", onEnd);
+                } else {
+                    window.addEventListener("mousemove", onMove);
+                    window.addEventListener("mouseup", onEnd);
+                }
+            };
 
             khmerElement.style.position = "absolute";
             khmerElement.style.left = khmerX + "%";
@@ -6748,8 +6671,8 @@ let sheetHistory = [];
             }));
 
             // Use the new pointer down handler for both mouse and touch
-            khmerElement.addEventListener("mousedown", onKhmerPointerDown);
-            khmerElement.addEventListener("touchstart", onKhmerPointerDown, { passive: true }); // passive: true to allow click
+            khmerElement.addEventListener("mousedown", newOnKhmerPointerDown);
+            khmerElement.addEventListener("touchstart", newOnKhmerPointerDown, { passive: true }); // passive: true to allow click
 
             khmerElement.addEventListener("touchstart", (e => handlePinchStart(e, "khmer")), { passive: false });
             khmerElement.addEventListener("touchmove", (e => handlePinchMove(e, "khmer")), { passive: false });
@@ -6774,13 +6697,10 @@ let sheetHistory = [];
             let hasMovedLocal = false;
 
             const onKhmerDragStart = (ev) => {
-                // Only prevent default for mouse to avoid text selection
-                if (ev.type === 'mousedown') {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                } else {
-                    ev.stopPropagation();
-                }
+                // Only prevent default if we are starting a drag, but we can't know yet.
+                // We'll use a timer to start drag, but we need to track movement.
+                // Instead, we'll use a simpler approach: on mousedown/touchstart, record initial position,
+                // and if move > threshold, start dragging and prevent default on touchmove.
                 const touch = ev.clientX !== undefined ? ev : (ev.touches ? ev.touches[0] : null);
                 if (!touch) return;
                 const cx = touch.clientX || 0;
@@ -7146,6 +7066,49 @@ let sheetHistory = [];
                 "mouseup", l), d.addEventListener("touchstart", r, { passive: !1 }), window.addEventListener(
                 "touchmove", s, { passive: !1 }), window.addEventListener("touchend", l)
         }
+        let gearLeft = 20,
+            gearTop = 20,
+            currentMenuTransform = { x: 0, y: 0 };
+        const floatingMenuDiv = document.getElementById("floatingMenu"),
+            gearElemDrag = document.getElementById("minimizedTrigger");
+
+        function applyStoredMenuPosition() {
+            const e = parseFloat(safeGetItem("menuPosX", "0")) || 0,
+                t = parseFloat(safeGetItem("menuPosY", "0")) || 0;
+            if (!isNaN(e) && !isNaN(t)) {
+                currentMenuTransform.x = e;
+                currentMenuTransform.y = t;
+                floatingMenuDiv.style.transform = `translate3d(${e}px, ${t}px, 0)`;
+            }
+        }
+
+        function saveMenuPosition() {
+            safeSetItem("menuPosX", currentMenuTransform.x);
+            safeSetItem("menuPosY", currentMenuTransform.y);
+        }
+
+        function saveGearPosition() {
+    if (gearElemDrag) { 
+        const e = gearElemDrag.offsetLeft,
+            t = gearElemDrag.offsetTop; 
+        if (!isNaN(e) && !isNaN(t)) { 
+            safeSetItem("gearPosLeft", e);
+            safeSetItem("gearPosTop", t); 
+        } 
+    } 
+}
+
+        function applyStoredGearPosition() {
+            let e = parseFloat(safeGetItem("gearPosLeft", "auto")),
+                t = parseFloat(safeGetItem("gearPosTop", "auto"));
+            if (isNaN(e) || isNaN(t)) { e = window.innerWidth - 80;
+                t = window.innerHeight - 120; } else { e = Math.min(Math.max(5, e), window.innerWidth - 65);
+                t = Math.min(Math.max(5, t), window.innerHeight - 75); }
+            gearLeft = e;
+            gearTop = t;
+            if (gearElemDrag) { gearElemDrag.style.left = e + "px";
+                gearElemDrag.style.top = t + "px"; }
+        }
 
         function initNightMode() {
             const isNight = safeGetItem("vocabMaster_NightMode", "false") === "true";
@@ -7177,62 +7140,48 @@ let sheetHistory = [];
             t && t.addEventListener("click", (() => e.style.display = "none")), e.addEventListener("click", (t => { t
                     .target === e && (e.style.display = "none") }));
 
-            // ---- QR image click: load default sheet with LONG PRESS (0.5s hold) ----
+            // ---- QR image click: load default sheet on HOLD (0.3s) then hide overlay and menu ----
             const qrImg = document.querySelector('#qrPopupOverlay .qr-card img');
             if (qrImg) {
-                let qrTimer = null;
-                let qrMoved = false;
+                let holdTimer = null;
+                let holdTriggered = false;
 
-                const startQrPress = (ev) => {
+                const startHold = async function(ev) {
                     ev.preventDefault();
                     ev.stopPropagation();
-                    qrMoved = false;
-                    qrTimer = setTimeout(async () => {
-                        if (!qrMoved) {
-                            // LONG PRESS: load default sheet
-                            const overlay = document.getElementById('qrPopupOverlay');
-                            const sheetId = DEFAULT_SHEET_ID;
-                            const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
-                            currentSheetId = sheetId;
-                            currentSheetUrl = sheetUrl;
-                            addSheetToHistory(sheetId);
-                            showToast(`📥 Loading default sheet...`);
-                            await loadSheetData(true);
-                            // Close QR overlay
-                            if (overlay) overlay.style.display = 'none';
-                            // Minimize floating menu (show gear, hide menu)
-                            toggleMenu(true);
-                            // Hide ABA icon inline
-                            const abaIcon = document.getElementById('abaIconInline');
-                            if (abaIcon) {
-                                abaIcon.style.display = 'none';
-                            }
-                            showToast('✅ Vocabulary loaded!');
-                        }
-                    }, 500);
+                    holdTriggered = false;
+                    holdTimer = setTimeout(async () => {
+                        holdTriggered = true;
+                        // Load the default sheet
+                        const sheetId = DEFAULT_SHEET_ID;
+                        const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+                        currentSheetId = sheetId;
+                        currentSheetUrl = sheetUrl;
+                        addSheetToHistory(sheetId);
+                        showToast(`📥 Loading default sheet...`);
+                        await loadSheetData(true);
+                        // Hide QR overlay
+                        const overlay = document.getElementById('qrPopupOverlay');
+                        if (overlay) overlay.style.display = 'none';
+                        // Hide floatingMenu (show gear)
+                        toggleMenu(true);
+                    }, 300);
                 };
 
-                const moveQrPress = (ev) => {
-                    qrMoved = true;
-                    if (qrTimer) {
-                        clearTimeout(qrTimer);
-                        qrTimer = null;
+                const endHold = function(ev) {
+                    if (holdTimer) {
+                        clearTimeout(holdTimer);
+                        holdTimer = null;
                     }
+                    // If hold wasn't triggered, this is a tap - do nothing (no click behavior)
                 };
 
-                const endQrPress = (ev) => {
-                    if (qrTimer) {
-                        clearTimeout(qrTimer);
-                        qrTimer = null;
-                    }
-                };
-
-                qrImg.addEventListener('mousedown', startQrPress);
-                qrImg.addEventListener('touchstart', startQrPress, { passive: false });
-                qrImg.addEventListener('mousemove', moveQrPress);
-                qrImg.addEventListener('touchmove', moveQrPress, { passive: true });
-                qrImg.addEventListener('mouseup', endQrPress);
-                qrImg.addEventListener('touchend', endQrPress);
+                qrImg.addEventListener('mousedown', startHold);
+                qrImg.addEventListener('mouseup', endHold);
+                qrImg.addEventListener('mouseleave', endHold);
+                qrImg.addEventListener('touchstart', startHold, { passive: false });
+                qrImg.addEventListener('touchend', endHold);
+                qrImg.addEventListener('touchcancel', endHold);
             }
         }
 
@@ -7384,9 +7333,28 @@ let sheetHistory = [];
                     historyNext()) : "ArrowDown" === e.code ? (e.preventDefault(), moveSidebarFocus(1)) :
                 "ArrowUp" === e.code && (e.preventDefault(), moveSidebarFocus(-1)) : e.stopPropagation()
         })), window.onload = async () => {
-            // ===== SHOW LOADING OVERLAY =====
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            if (loadingOverlay) loadingOverlay.classList.remove('hidden');
+            // Show loading overlay with ABA icon
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'loadingOverlay';
+            loadingOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: #0f172a;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999;
+                transition: opacity 0.5s ease;
+            `;
+            loadingOverlay.innerHTML = `
+                <img src="/static/ABAicon.png" alt="ABA Icon" style="width:80px; height:80px; border-radius:16px; margin-bottom:20px;">
+                <div style="color:white; font-size:1.4rem; font-weight:600; font-family:Inter, system-ui, sans-serif;">Loading...</div>
+            `;
+            document.body.appendChild(loadingOverlay);
 
             initCopyPopup();
             emojiContainer = document.getElementById("emojiContainer");
@@ -7426,7 +7394,7 @@ let sheetHistory = [];
             // Setup long-press copy for symbols
             setTimeout(setupInsertSymbolLongPress, 300);
 
-            // --- Build cache and render if vocab exists ---
+            // --- Build cache and render ---
             if (vocabList.length > 0) {
                 buildFirstCharCache();
                 if (appMode === "random") {
@@ -7451,6 +7419,14 @@ let sheetHistory = [];
                 updateChineseDisplay("");
                 document.getElementById("khmerWord").innerText = "";
                 document.getElementById("studioTitleSpan").innerText = "Vocab Master";
+            }
+
+            // --- Remove loading overlay ---
+            if (loadingOverlay) {
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    if (loadingOverlay.parentNode) loadingOverlay.parentNode.removeChild(loadingOverlay);
+                }, 500);
             }
 
             initNightMode();
@@ -7498,7 +7474,6 @@ let sheetHistory = [];
                     toggleNightMode(); }, { passive: false });
             }
 
-            // ---- ABA icon: show QR overlay (no auto-load) ----
             const abaIcon = document.getElementById("abaIconInline");
             if (abaIcon) {
                 const newAba = abaIcon.cloneNode(true);
@@ -7508,14 +7483,14 @@ let sheetHistory = [];
                     e.stopPropagation();
                     const overlay = document.getElementById("qrPopupOverlay");
                     if (overlay) overlay.style.display = "flex";
-                    // DO NOT auto-load sheet here — user must long-press QR image to load
+                    // DO NOT auto-load sheet here — user must tap QR image to load
                 });
                 newAba.addEventListener("touchstart", async function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     const overlay = document.getElementById("qrPopupOverlay");
                     if (overlay) overlay.style.display = "flex";
-                    // DO NOT auto-load sheet here — user must long-press QR image to load
+                    // DO NOT auto-load sheet here — user must tap QR image to load
                 }, { passive: false });
             }
 
@@ -7653,14 +7628,6 @@ let sheetHistory = [];
             });
 
             updateRecycleBinBadge();
-
-            // ===== HIDE LOADING OVERLAY =====
-            if (loadingOverlay) {
-                loadingOverlay.classList.add('hidden');
-                setTimeout(() => {
-                    loadingOverlay.style.display = 'none';
-                }, 600);
-            }
         };
       // No override needed - the toggleMenu function above handles everything
     </script>
