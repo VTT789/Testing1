@@ -6220,139 +6220,172 @@
         }
 
         function setupBackgroundClick() {
-            const area = document.getElementById("bgClickArea");
-            let longPressTimer = null;
-            let isLongPress = false;
-            let hasMoved = false;
-            let pressStartX = 0,
-                pressStartY = 0;
-            let tapProcessed = false;
-            let touchInProgress = false;
-            let lastTouchEndTime = 0;
+    const area = document.getElementById("bgClickArea");
+    if (!area) return;
+    
+    let longPressTimer = null;
+    let isLongPress = false;
+    let hasMoved = false;
+    let pressStartX = 0, pressStartY = 0;
+    let tapProcessed = false;
+    let touchInProgress = false;
+    let lastTouchEndTime = 0;
+    let isSwiping = false;
 
-            const shouldHandle = (target) => {
-                return !target.closest('#floatingMenu') &&
-                    !target.closest('.chinese-word') &&
-                    !target.closest('.khmer-text') &&
-                    !target.closest('.emoji-container') &&
-                    !target.closest('.sidebar') &&
-                    !target.closest('.resizer') &&
-                    !target.closest('.modal-overlay') &&
-                    !target.closest('#minimizedTrigger');
-            };
+    const shouldHandle = (target) => {
+        return !target.closest('#floatingMenu') &&
+            !target.closest('.chinese-word') &&
+            !target.closest('.khmer-text') &&
+            !target.closest('.emoji-container') &&
+            !target.closest('.sidebar') &&
+            !target.closest('.resizer') &&
+            !target.closest('.modal-overlay') &&
+            !target.closest('#minimizedTrigger');
+    };
 
-            const startPress = (e) => {
-                if (e.type === 'mousedown' && Date.now() - lastTouchEndTime < 300) {
-                    return;
-                }
-                const touch = e.touches ? e.touches[0] : e;
-                const target = e.target;
-                if (!shouldHandle(target)) return;
-                if (e.type === 'mousedown' && touchInProgress) return;
-                tapProcessed = false;
-                if (e.type === 'touchstart') {
-                    touchInProgress = true;
-                }
-                pressStartX = touch.clientX;
-                pressStartY = touch.clientY;
-                hasMoved = false;
-                isSwiping = false;
-                isLongPress = false;
-                if (longPressTimer) clearTimeout(longPressTimer);
-                longPressTimer = setTimeout(() => {
-                    if (!hasMoved && !isSwiping && shouldHandle(target)) {
-                        requestAddNewVocab();
-                        isLongPress = true;
-                    }
-                    longPressTimer = null;
-                }, 500);
-            };
+    // --- OPTIMIZED: Use requestAnimationFrame for smoother performance ---
+    const handleTap = () => {
+        const floatingMenu = document.getElementById('floatingMenu');
+        const isMenuVisible = floatingMenu && floatingMenu.style.display !== 'none';
+        
+        // Use requestAnimationFrame to avoid layout thrashing
+        requestAnimationFrame(() => {
+            if (isMenuVisible) {
+                toggleMenu(true);
+            } else {
+                pickRandom();
+            }
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || 
+                document.activeElement.tagName === 'TEXTAREA')) {
+                document.activeElement.blur();
+            }
+        });
+    };
 
-            const movePress = (e) => {
-                if (longPressTimer) {
-                    const touch = e.touches ? e.touches[0] : e;
-                    const dx = touch.clientX - pressStartX;
-                    const dy = touch.clientY - pressStartY;
-                    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
-                        hasMoved = true;
-                        isSwiping = true;
-                        clearTimeout(longPressTimer);
-                        longPressTimer = null;
-                    }
-                }
-            };
+    const startPress = (e) => {
+        if (e.type === 'mousedown' && Date.now() - lastTouchEndTime < 300) return;
+        
+        const touch = e.touches ? e.touches[0] : e;
+        const target = e.target;
+        if (!shouldHandle(target)) return;
+        
+        if (e.type === 'mousedown' && touchInProgress) return;
+        
+        tapProcessed = false;
+        if (e.type === 'touchstart') touchInProgress = true;
+        
+        pressStartX = touch.clientX;
+        pressStartY = touch.clientY;
+        hasMoved = false;
+        isSwiping = false;
+        isLongPress = false;
+        
+        if (longPressTimer) clearTimeout(longPressTimer);
+        
+        // --- Slightly longer delay to avoid accidental triggers ---
+        longPressTimer = setTimeout(() => {
+            if (!hasMoved && !isSwiping && shouldHandle(target)) {
+                // Use requestAnimationFrame for the modal
+                requestAnimationFrame(() => {
+                    requestAddNewVocab();
+                });
+                isLongPress = true;
+            }
+            longPressTimer = null;
+        }, 600); // Increased from 500ms to 600ms for better touch detection
+    };
 
-            const endPress = (e) => {
-                if (e.type === 'mouseup' && Date.now() - lastTouchEndTime < 300) {
-                    return;
-                }
-                if (tapProcessed) return;
-                if (e.type === 'mouseup' && touchInProgress) {
-                    return;
-                }
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-                if (isLongPress || isSwiping || hasMoved) {
-                    isLongPress = false;
-                    isSwiping = false;
-                    hasMoved = false;
-                    tapProcessed = true;
-                    if (e.type === 'touchend') {
-                        touchInProgress = false;
-                        lastTouchEndTime = Date.now();
-                    }
-                    return;
-                }
-                const target = e.target;
-                if (!shouldHandle(target)) {
-                    tapProcessed = true;
-                    if (e.type === 'touchend') {
-                        touchInProgress = false;
-                        lastTouchEndTime = Date.now();
-                    }
-                    return;
-                }
-                const floatingMenu = document.getElementById('floatingMenu');
-                const isMenuVisible = floatingMenu && floatingMenu.style.display !== 'none';
-                if (isMenuVisible) {
-                    toggleMenu(true);
-                } else {
-                    pickRandom();
-                }
-                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement
-                        .tagName === 'TEXTAREA')) {
-                    document.activeElement.blur();
-                }
-                tapProcessed = true;
-                if (e.type === 'touchend') {
-                    touchInProgress = false;
-                    lastTouchEndTime = Date.now();
-                }
-            };
-
-            area.addEventListener('mousedown', startPress);
-            area.addEventListener('touchstart', startPress, { passive: true });
-            area.addEventListener('mousemove', movePress);
-            area.addEventListener('touchmove', movePress, { passive: true });
-            area.addEventListener('mouseup', endPress);
-            area.addEventListener('touchend', endPress);
-            area.addEventListener('wheel', (e) => {
-                if (!e.ctrlKey) {
-                    if (e.deltaY < 0) {
-                        e.preventDefault();
-                        if (appMode === 'random') historyNext();
-                        else goNextNormal();
-                    } else if (e.deltaY > 0) {
-                        e.preventDefault();
-                        if (appMode === 'random') historyPrev();
-                        else goPrevNormal();
-                    }
-                    blurSearchInput();
-                }
-            }, { passive: false });
+    const movePress = (e) => {
+        if (longPressTimer) {
+            const touch = e.touches ? e.touches[0] : e;
+            const dx = touch.clientX - pressStartX;
+            const dy = touch.clientY - pressStartY;
+            if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                hasMoved = true;
+                isSwiping = true;
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
         }
+    };
+
+    const endPress = (e) => {
+        if (e.type === 'mouseup' && Date.now() - lastTouchEndTime < 300) return;
+        if (tapProcessed) return;
+        if (e.type === 'mouseup' && touchInProgress) return;
+        
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        
+        if (isLongPress || isSwiping || hasMoved) {
+            isLongPress = false;
+            isSwiping = false;
+            hasMoved = false;
+            tapProcessed = true;
+            if (e.type === 'touchend') {
+                touchInProgress = false;
+                lastTouchEndTime = Date.now();
+            }
+            return;
+        }
+        
+        const target = e.target;
+        if (!shouldHandle(target)) {
+            tapProcessed = true;
+            if (e.type === 'touchend') {
+                touchInProgress = false;
+                lastTouchEndTime = Date.now();
+            }
+            return;
+        }
+        
+        // --- Handle tap with optimized function ---
+        handleTap();
+        
+        tapProcessed = true;
+        if (e.type === 'touchend') {
+            touchInProgress = false;
+            lastTouchEndTime = Date.now();
+        }
+    };
+
+    // --- Use passive: false only when needed for performance ---
+    area.addEventListener('mousedown', startPress);
+    area.addEventListener('touchstart', startPress, { passive: true });
+    area.addEventListener('mousemove', movePress);
+    area.addEventListener('touchmove', movePress, { passive: true });
+    area.addEventListener('mouseup', endPress);
+    area.addEventListener('touchend', endPress);
+    
+    // --- OPTIMIZED wheel handler with throttle ---
+    let wheelTimeout = null;
+    area.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey) {
+            e.preventDefault();
+            
+            // Throttle to prevent excessive calls
+            if (wheelTimeout) return;
+            
+            wheelTimeout = setTimeout(() => {
+                wheelTimeout = null;
+            }, 150);
+            
+            // Use requestAnimationFrame for smooth navigation
+            requestAnimationFrame(() => {
+                if (e.deltaY < 0) {
+                    if (appMode === 'random') historyNext();
+                    else goNextNormal();
+                } else if (e.deltaY > 0) {
+                    if (appMode === 'random') historyPrev();
+                    else goPrevNormal();
+                }
+                blurSearchInput();
+            });
+        }
+    }, { passive: false });
+}
 
         function setupSidebarWheelNavigation() {
             const e = document.getElementById("sidebarList");
