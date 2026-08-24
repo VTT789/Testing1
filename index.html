@@ -6052,7 +6052,7 @@
                     if (t.kmVoice) document.getElementById("kmVoiceSelect").value = t.kmVoice;
                     if (void 0 !== t.zhRate) document.getElementById("zhRateSlider").value = t.zhRate;
                     if (t.pinyinFont) document.getElementById("pinyinFont").value = t.pinyinFont;
-                    if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#ffffff";
+                    if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#fbbf24";
                     if (void 0 !== t.pinyinBold) {
                         const e = document.getElementById("pinyinBold");
                         t.pinyinBold ? e.classList.add("active") : e.classList.remove("active");
@@ -6064,7 +6064,7 @@
                     if (t.pinyinSpacing) document.getElementById("pinyinSpacing").value = t.pinyinSpacing;
                     if (t.bottomFont) document.getElementById("bottomFont").value = t.bottomFont;
                     if (t.bottomCharColor) document.getElementById("bottomCharColor").value = t.bottomCharColor ||
-                        "#ffffff";
+                        "#60a5fa";
                     if (void 0 !== t.bottomBold) {
                         const e = document.getElementById("bottomBold");
                         t.bottomBold ? e.classList.add("active") : e.classList.remove("active");
@@ -6096,14 +6096,14 @@
                 } catch (e) { console.warn("Settings parse error:", e); }
             } else {
                 document.getElementById("pinyinFont").value = "'Baguette Simplified'";
-                document.getElementById("pinyinColor").value = "#ffffff";
+                document.getElementById("pinyinColor").value = "#fbbf24";
                 document.getElementById("pinyinSizePx").value = "55";
                 userSetPinyinFontSize = 55;
                 document.getElementById("pinyinSpacing").value = "0";
                 document.getElementById("bottomSizePx").value = "55";
                 userSetBottomFontSize = 55;
                 document.getElementById("mKmColor").value = "#ffffff";
-                document.getElementById("bottomCharColor").value = "#ffffff";
+                document.getElementById("bottomCharColor").value = "#60a5fa";
                 document.getElementById("shadowSlider").value = "3";
                 sidebarVisible = false;
                 document.getElementById("rightSide").classList.add("hidden");
