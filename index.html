@@ -120,6 +120,22 @@
             --emoji-font-size: 32px;
             --pagination-color: #0f172a;
         }
+		 /* === FIX: Remove Android default tap highlight === */
+    * {
+        -webkit-tap-highlight-color: transparent !important;
+        -webkit-touch-callout: none !important;
+    }
+    .content-area,
+    .display-area,
+    #bgClickArea {
+        -webkit-tap-highlight-color: transparent !important;
+    }
+    .content-area:active,
+    .display-area:active,
+    #bgClickArea:active {
+        background-color: inherit !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
         body,
         html {
             margin: 0;
