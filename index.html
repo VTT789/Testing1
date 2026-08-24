@@ -1218,8 +1218,8 @@
             border-color: #475569;
             color: #94a3b8;
         }
-        /* Mode toggle - NORMAL mode: BLUE background */
-        .mode-normal-active {
+        /* Mode toggle - SEQUENTIAL mode: BLUE background */
+        .mode-sequential-active {
             background: #2563eb !important;
             color: #fff !important;
             border: 1px solid #2563eb !important;
@@ -1230,7 +1230,7 @@
             color: #fff !important;
             border: 1px solid #94a3b8 !important;
         }
-        body.night-mode .mode-normal-active {
+        body.night-mode .mode-sequential-active {
             background: #3b82f6 !important;
             border-color: #3b82f6 !important;
             color: #fff !important;
@@ -2452,7 +2452,7 @@
             color: #fff !important;
             border-color: #2563eb !important;
         }
-        #floatingMenu .mode-normal-active {
+        #floatingMenu .mode-sequential-active {
             background: #2563eb !important;
             color: #fff !important;
             border-color: #2563eb !important;
@@ -2554,7 +2554,7 @@
                                     <option value="'Hanyi Changyi'">Hanyi Changyi</option>
                                     <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                                     <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
-                                </select><input type=color id=mZhColor value=#000000><button id=mZhBold class=bold-icon-btn onclick='toggleBold("mZhBold",applyChineseMainStyle)'><span>BOLD</span></button></div>
+                                </select><input type=color id=mZhColor value=#ffffff><button id=mZhBold class=bold-icon-btn onclick='toggleBold("mZhBold",applyChineseMainStyle)'><span>BOLD</span></button></div>
                             <div class=size-row><label>Main Char Size (vh)</label><input type=range id=mZhSize class=size-slider min=2 max=150 value=42><span id=mZhSizeVal>42vh</span></div>
                             <div class=shadow-style-grid>
                                 <label>Shadow</label>
@@ -2568,7 +2568,7 @@
                                 <option value="'KHROSAPSRA'">Rosapsra</option>
                                 <option value="'KHMithSalaPali'">MithSalaPali</option>
                                 <option value="'KHSAMADY'">Samady KS</option>
-                            </select><input type=color id=mKmColor value=#000000><button id=mKmBold class=bold-icon-btn onclick='toggleBold("mKmBold",applyStyles)'><span>BOLD</span></button></div>
+                            </select><input type=color id=mKmColor value=#ffffff><button id=mKmBold class=bold-icon-btn onclick='toggleBold("mKmBold",applyStyles)'><span>BOLD</span></button></div>
                         <div class=size-row><label>KM Size (vh)</label><input type=range id=mKmSize class=size-slider min=2 max=150 value=42><span id=mKmSizeVal>42vh</span></div>
                         <!-- Recycle Bin button added here -->
                         <div style="display:flex; gap:8px; margin-top:8px;">
@@ -2614,8 +2614,8 @@
                     <div id=sideControls class=control-group>
                         <button id=sidebarToggleBtn class="btn-main btn-accent" style=margin-bottom:10px;width:100% onclick=toggleSidebar()>SHOW SIDEBAR</button>
                         <div id=sidebarControlsContainer>
-                            <div class=side-style-grid><label>ZH Font</label><select id=sZhFont class=font-select><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'Pinyin'">FZPY01</option></select><input type=color id=sZhColor value=#000000></div>
-                            <div class=side-style-grid><label>KM Font</label><select id=sKmFont class=font-select><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type=color id=sKmColor value=#000000></div>
+                            <div class=side-style-grid><label>ZH Font</label><select id=sZhFont class=font-select><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'Pinyin'">FZPY01</option></select><input type=color id=sZhColor value=#ffffff></div>
+                            <div class=side-style-grid><label>KM Font</label><select id=sKmFont class=font-select><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type=color id=sKmColor value=#ffffff></div>
                             <div class=size-row><label>ZH Side Size</label><input type=range id=sZhSize min=0.5 max=4 step=0.1 value=1.1></div>
                             <div class=size-row><label>KM Side Size</label><input type=range id=sKmSize min=0.5 max=4 step=0.1 value=0.9></div>
                             <div class=size-row><label>📋 Vocab Spacing</label><input type=range id=sVocabSpacing min=0 max=30 step=1 value=8><span id=vocabSpacingVal>8px</span></div>
@@ -2644,7 +2644,7 @@
                                         <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
                                         <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
                                     </select>
-                                    <input type=color id=pinyinColor value=#000000>
+                                    <input type=color id=pinyinColor value=#ffffff>
                                     <button id=pinyinBold class="bold-icon-btn active" onclick='toggleBold("pinyinBold",applyPinyinStyles)'><span>BOLD</span></button>
                                 </div>
                                 <div class=size-row><label>Size (px)</label><input type=range id=pinyinSizePx class=size-slider min=20 max=120 value=55><span id=pinyinSizeVal>55px</span></div>
@@ -2670,7 +2670,7 @@
                                             <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti</option>
                                             <option value="'Hanyi Extra Bold'">Hanyi Extra Bold</option>
                                         </select>
-                                        <input type=color id=bottomCharColor value=#000000>
+                                        <input type=color id=bottomCharColor value=#ffffff>
                                         <button id=bottomBold class=bold-icon-btn onclick='toggleBold("bottomBold",applyBottomStyles)'><span>BOLD</span></button>
                                     </div>
                                     <div class=size-row><label>Size (px)</label><input type=range id=bottomSizePx class=size-slider min=20 max=120 value=55><span id=bottomSizeVal>55px</span></div>
@@ -3779,10 +3779,10 @@
             autoTimer && (clearTimeout(autoTimer), autoTimer = null);
             const e = document.getElementById("modeToggleBtn");
             if ("random" === appMode) {
-                appMode = "normal";
-                e.innerText = "NORMAL";
+                appMode = "sequential";
+                e.innerText = "SEQUENTIAL";
                 e.classList.remove("mode-random-active");
-                e.classList.add("mode-normal-active");
+                e.classList.add("mode-sequential-active");
                 const t = document.getElementById("chineseWord").getAttribute("data-plain") || "";
                 let n = vocabList.findIndex((e => e.chinese === t));
                 -1 === n && vocabList.length && (n = 0);
@@ -3794,7 +3794,7 @@
             } else {
                 appMode = "random";
                 e.innerText = "RANDOM";
-                e.classList.remove("mode-normal-active");
+                e.classList.remove("mode-sequential-active");
                 e.classList.add("mode-random-active");
                 const t = document.getElementById("chineseWord").getAttribute("data-plain") || "";
                 let n = vocabList.findIndex((e => e.chinese === t));
@@ -4608,10 +4608,10 @@
             document.addEventListener("click", (function(e) { s.contains(e.target) || e.target === i || e.target === a || (
                     s.style.display = "none") }));
             o.querySelector("#modeIconsContainer").innerHTML =
-                `<button id="modeRandomIconHeader" class="mode-icon-small ${"random"===appMode?"active":""}">🎲</button><button id="modeNormalIconHeader" class="mode-icon-small ${"normal"===appMode?"active":""}">📋</button>`;
+                `<button id="modeRandomIconHeader" class="mode-icon-small ${"random"===appMode?"active":""}">🎲</button><button id="modeNormalIconHeader" class="mode-icon-small ${"sequential"===appMode?"active":""}">📋</button>`;
             document.getElementById("modeRandomIconHeader")?.addEventListener("click", (() => { "random" !== appMode &&
                     toggleAppMode() }));
-            document.getElementById("modeNormalIconHeader")?.addEventListener("click", (() => { "normal" !== appMode &&
+            document.getElementById("modeNormalIconHeader")?.addEventListener("click", (() => { "sequential" !== appMode &&
                     toggleAppMode() }));
             updatePaginationControlsInside(o.querySelector("#paginationContainer"));
             let u = sidebarIndices;
@@ -6031,8 +6031,8 @@
                     userSetKhmerFontSize = t.mKmSize || 42;
                     document.getElementById("mZhSize").value = userSetChineseFontSize;
                     document.getElementById("mKmSize").value = userSetKhmerFontSize;
-                    document.getElementById("mZhColor").value = t.mZhColor || "#000000";
-                    document.getElementById("mKmColor").value = t.mKmColor || "#000000";
+                    document.getElementById("mZhColor").value = t.mZhColor || "#ffffff";
+                    document.getElementById("mKmColor").value = t.mKmColor || "#ffffff";
                     document.getElementById("zhReps").value = t.zhReps || 1;
                     document.getElementById("kmReps").value = t.kmReps || 1;
                     let n = void 0 !== t.autoDelay ? t.autoDelay : 1;
@@ -6042,8 +6042,8 @@
                     if (t.sKmFont) document.getElementById("sKmFont").value = t.sKmFont;
                     if (t.sZhSize) document.getElementById("sZhSize").value = t.sZhSize;
                     if (t.sKmSize) document.getElementById("sKmSize").value = t.sKmSize;
-                    if (t.sZhColor) document.getElementById("sZhColor").value = t.sZhColor || "#000000";
-                    if (t.sKmColor) document.getElementById("sKmColor").value = t.sKmColor || "#000000";
+                    if (t.sZhColor) document.getElementById("sZhColor").value = t.sZhColor || "#ffffff";
+                    if (t.sKmColor) document.getElementById("sKmColor").value = t.sKmColor || "#ffffff";
                     document.getElementById("sVocabSpacing").value = t.vocabSpacing || 8;
                     document.body.style.setProperty("--vocab-spacing", (t.vocabSpacing || 8) + "px");
                     document.getElementById("vocabSpacingVal").innerText = (t.vocabSpacing || 8) + "px";
@@ -6052,7 +6052,7 @@
                     if (t.kmVoice) document.getElementById("kmVoiceSelect").value = t.kmVoice;
                     if (void 0 !== t.zhRate) document.getElementById("zhRateSlider").value = t.zhRate;
                     if (t.pinyinFont) document.getElementById("pinyinFont").value = t.pinyinFont;
-                    if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#000000";
+                    if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#ffffff";
                     if (void 0 !== t.pinyinBold) {
                         const e = document.getElementById("pinyinBold");
                         t.pinyinBold ? e.classList.add("active") : e.classList.remove("active");
@@ -6064,7 +6064,7 @@
                     if (t.pinyinSpacing) document.getElementById("pinyinSpacing").value = t.pinyinSpacing;
                     if (t.bottomFont) document.getElementById("bottomFont").value = t.bottomFont;
                     if (t.bottomCharColor) document.getElementById("bottomCharColor").value = t.bottomCharColor ||
-                        "#000000";
+                        "#ffffff";
                     if (void 0 !== t.bottomBold) {
                         const e = document.getElementById("bottomBold");
                         t.bottomBold ? e.classList.add("active") : e.classList.remove("active");
@@ -6075,15 +6075,15 @@
                     }
                     if (void 0 !== t.topPinyinVisible) topPinyinVisible = t.topPinyinVisible;
                     bottomCharVisible = void 0 === t.bottomCharVisible || t.bottomCharVisible;
-                    if ("normal" === t.appMode) {
-                        appMode = "normal";
-                        document.getElementById("modeToggleBtn").innerText = "NORMAL";
+                    if ("sequential" === t.appMode) {
+                        appMode = "sequential";
+                        document.getElementById("modeToggleBtn").innerText = "SEQUENTIAL";
                         document.getElementById("modeToggleBtn").classList.remove("mode-random-active");
-                        document.getElementById("modeToggleBtn").classList.add("mode-normal-active");
+                        document.getElementById("modeToggleBtn").classList.add("mode-sequential-active");
                     } else {
                         appMode = "random";
                         document.getElementById("modeToggleBtn").innerText = "RANDOM";
-                        document.getElementById("modeToggleBtn").classList.remove("mode-normal-active");
+                        document.getElementById("modeToggleBtn").classList.remove("mode-sequential-active");
                         document.getElementById("modeToggleBtn").classList.add("mode-random-active");
                     }
                     normalCurrentIdx = t.normalCurrentIdx || 0;
@@ -6096,19 +6096,23 @@
                 } catch (e) { console.warn("Settings parse error:", e); }
             } else {
                 document.getElementById("pinyinFont").value = "'Baguette Simplified'";
-                document.getElementById("pinyinColor").value = "#000000";
+                document.getElementById("pinyinColor").value = "#ffffff";
                 document.getElementById("pinyinSizePx").value = "55";
                 userSetPinyinFontSize = 55;
                 document.getElementById("pinyinSpacing").value = "0";
                 document.getElementById("bottomSizePx").value = "55";
                 userSetBottomFontSize = 55;
-                document.getElementById("mKmColor").value = "#000000";
-                document.getElementById("bottomCharColor").value = "#000000";
+                document.getElementById("mKmColor").value = "#ffffff";
+                document.getElementById("bottomCharColor").value = "#ffffff";
                 document.getElementById("shadowSlider").value = "3";
                 sidebarVisible = false;
                 document.getElementById("rightSide").classList.add("hidden");
                 document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
                 bottomCharVisible = true;
+                // Default to dark mode
+                document.body.classList.add("night-mode");
+                const darkBtn = document.getElementById("dragDarkModeBtn");
+                if (darkBtn) darkBtn.innerHTML = "☀️";
             }
 
             // ---- Load soft-deleted data ----
@@ -7111,7 +7115,8 @@ window.toggleMenu = toggleMenu;
         }
 
         function initNightMode() {
-            const isNight = safeGetItem("vocabMaster_NightMode", "false") === "true";
+            // Set default to dark mode
+            const isNight = safeGetItem("vocabMaster_NightMode", "true") === "true";
             if (isNight) document.body.classList.add("night-mode");
             const e = document.getElementById("dragDarkModeBtn");
             e && e.innerHTML && (e.innerHTML = document.body.classList.contains("night-mode") ? "☀️" : "🌙")
@@ -7140,7 +7145,7 @@ window.toggleMenu = toggleMenu;
             t && t.addEventListener("click", (() => e.style.display = "none")), e.addEventListener("click", (t => { t
                     .target === e && (e.style.display = "none") }));
 
-            // ---- QR image click: load default sheet on HOLD (0.3s) then hide overlay and menu ----
+            // ---- QR image hold (0.3s) to load sheet, then hide overlay and menu ----
             const qrImg = document.querySelector('#qrPopupOverlay .qr-card img');
             if (qrImg) {
                 let holdTimer = null;
@@ -7173,7 +7178,7 @@ window.toggleMenu = toggleMenu;
                         clearTimeout(holdTimer);
                         holdTimer = null;
                     }
-                    // If hold wasn't triggered, this is a tap - do nothing (no click behavior)
+                    // If hold wasn't triggered, this is a tap - do nothing
                 };
 
                 qrImg.addEventListener('mousedown', startHold);
