@@ -4745,208 +4745,132 @@
                     `<div class="side-number-col"><div class="side-number">#${a}</div><div class="side-icons-row"><button class="edit-side-icon ${s}" onclick="event.stopPropagation(); requestEditModal(${n}, ${r}, '${escapeHtml(vocabList[n].khmer)}', '${escapeHtml(vocabList[n].chinese)}')" title="Edit">✏️</button><button class="sheet-row-icon ${s}" onclick="event.stopPropagation(); requestOpenSheetRow(${r})" title="Open Sheet Row ${r} (Khmer cell)">📊</button></div></div><div class="word-wrapper" onclick="if(!softDeletedIndices.has(${n})) { loadWordByMode(${n}, true); } else { showToast('⚠️ This word is in the recycle bin'); } event.stopPropagation()"><span class="side-zh">${escapeHtml(vocabList[n].chinese)} ${delBadge}</span><span class="side-km">${escapeHtml(vocabList[n].khmer)}</span></div>`;
                 t.appendChild(o);
             }
-            applySidebarStyles();
-            scrollToActiveSidebarItem();
-            updateRecycleBinBadge();
-            
-            // ---- CRITICAL FIX: Attach pagination handlers after DOM update ----
-            const paginationContainer = document.getElementById('paginationContainer');
-            if (paginationContainer) {
-                setTimeout(() => {
-                    attachPaginationHandlers(paginationContainer);
-                }, 100);
-            }
+
+    
+    applySidebarStyles();
+    scrollToActiveSidebarItem();
+    updateRecycleBinBadge();
+    
+    // ---- REMOVED: attachPaginationHandlers call ----
+    // The pagination container is already rendered with long-press support
+    // by updatePaginationControlsInside above.
         }
 
 		
 		
 		
- function updatePaginationControlsInside(e) {
+		
+		
+
+		
+function updatePaginationControlsInside(e) {
     if (!e) return;
     const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-    if (t.length > 1) {
+    if (t.length > 40) {
         const n = Math.ceil(t.length / 40);
         e.style.display = "block";
         e.innerHTML =
-            `<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info"><input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${n}" value="${normalCurrentPage+1}" style="width:80px; text-align:center; background:transparent; border:2px solid var(--border); border-radius:6px; color:var(--text-primary); font-size:1.1rem; padding:6px 8px; font-weight:600;"> / ${n}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`;
+            `<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info"><input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${n}" value="${normalCurrentPage+1}" style="width:50px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;"> / ${n}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`;
 
         const prevBtn = document.getElementById("prevPageBtnSide");
         const nextBtn = document.getElementById("nextPageBtnSide");
         const jumpInput = document.getElementById("pageJumpInput");
 
-        // ---- SIMPLE WORKING PREV BUTTON ----
+        let prevTimer = null,
+            nextTimer = null;
+        let longPressPrev = false,
+            longPressNext = false;
+
+        // ---- JUMP TO FIRST WORD (Long Press on Prev) ----
+        const jumpToFirst = () => {
+            const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+            if (filtered.length) {
+                const firstIdx = vocabList.findIndex((v) => v === filtered[0]);
+                if (firstIdx !== -1) {
+                    loadWordByMode(firstIdx, true);
+                    normalCurrentPage = 0;
+                    renderNormalSidebar();
+                    showToast("📖 Jumped to FIRST word");
+                    setTimeout(syncPageInput, 50);
+                }
+            }
+        };
+
+        // ---- JUMP TO LAST WORD (Long Press on Next) ----
+        const jumpToLast = () => {
+            const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+            if (filtered.length) {
+                const lastIdx = vocabList.findIndex((v) => v === filtered[filtered.length - 1]);
+                if (lastIdx !== -1) {
+                    loadWordByMode(lastIdx, true);
+                    normalCurrentPage = Math.ceil(filtered.length / 40) - 1;
+                    renderNormalSidebar();
+                    showToast("📖 Jumped to LAST word");
+                    setTimeout(syncPageInput, 50);
+                }
+            }
+        };
+
+        // ---- PREV BUTTON ----
         if (prevBtn) {
-            // Remove all existing listeners
+            // Remove existing listeners by cloning
             const newPrev = prevBtn.cloneNode(true);
             prevBtn.parentNode.replaceChild(newPrev, prevBtn);
-            
-            let prevPressTimer = null;
-            let prevIsLongPress = false;
-            let prevMoved = false;
 
-            // Mouse events
-            newPrev.addEventListener('mousedown', function(e) {
-                prevIsLongPress = false;
-                prevMoved = false;
-                prevPressTimer = setTimeout(function() {
-                    if (!prevMoved) {
-                        prevIsLongPress = true;
-                        // JUMP TO FIRST WORD
-                        const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                        if (filtered.length) {
-                            const firstIdx = vocabList.findIndex((t => t === filtered[0]));
-                            if (firstIdx !== -1) {
-                                loadWordByMode(firstIdx, true);
-                                normalCurrentPage = 0;
-                                renderNormalSidebar();
-                                showToast("📖 Jumped to FIRST word");
-                                setTimeout(syncPageInput, 50);
-                            }
-                        }
-                    }
-                }, 300);
-            });
-
-            newPrev.addEventListener('mousemove', function() {
-                prevMoved = true;
-                if (prevPressTimer) {
-                    clearTimeout(prevPressTimer);
-                    prevPressTimer = null;
-                }
-            });
-
-            newPrev.addEventListener('mouseup', function(e) {
-                if (prevPressTimer) {
-                    clearTimeout(prevPressTimer);
-                    prevPressTimer = null;
-                }
-                if (prevIsLongPress) {
-                    e.stopPropagation();
-                    prevIsLongPress = false;
+            // Short click: previous page
+            newPrev.onclick = function(e) {
+                e.preventDefault();
+                if (longPressPrev) {
+                    longPressPrev = false;
                     return;
                 }
-                // SHORT CLICK: previous page
                 if (normalCurrentPage > 0) {
                     normalCurrentPage--;
                     renderNormalSidebar();
                     setTimeout(syncPageInput, 50);
                 }
-            });
+            };
 
-            newPrev.addEventListener('mouseleave', function() {
-                if (prevPressTimer) {
-                    clearTimeout(prevPressTimer);
-                    prevPressTimer = null;
-                }
-            });
-
-            // Touch events
-            newPrev.addEventListener('touchstart', function(e) {
-                prevIsLongPress = false;
-                prevMoved = false;
-                prevPressTimer = setTimeout(function() {
-                    if (!prevMoved) {
-                        prevIsLongPress = true;
-                        const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                        if (filtered.length) {
-                            const firstIdx = vocabList.findIndex((t => t === filtered[0]));
-                            if (firstIdx !== -1) {
-                                loadWordByMode(firstIdx, true);
-                                normalCurrentPage = 0;
-                                renderNormalSidebar();
-                                showToast("📖 Jumped to FIRST word");
-                                setTimeout(syncPageInput, 50);
-                            }
-                        }
-                    }
-                }, 300);
-            }, { passive: true });
-
-            newPrev.addEventListener('touchmove', function() {
-                prevMoved = true;
-                if (prevPressTimer) {
-                    clearTimeout(prevPressTimer);
-                    prevPressTimer = null;
-                }
-            }, { passive: true });
-
-            newPrev.addEventListener('touchend', function(e) {
-                if (prevPressTimer) {
-                    clearTimeout(prevPressTimer);
-                    prevPressTimer = null;
-                }
-                if (prevIsLongPress) {
-                    e.preventDefault();
-                    prevIsLongPress = false;
-                    return;
-                }
-                // SHORT CLICK: previous page
-                if (normalCurrentPage > 0) {
-                    normalCurrentPage--;
-                    renderNormalSidebar();
+            // Long press: jump to first word (300ms hold)
+            const startPrevPress = function(e) {
+                e.preventDefault();
+                longPressPrev = false;
+                prevTimer = setTimeout(() => {
+                    longPressPrev = true;
+                    jumpToFirst();
+                    prevTimer = null;
                     setTimeout(syncPageInput, 50);
-                }
-            });
+                }, 300);
+            };
 
-            newPrev.addEventListener('touchcancel', function() {
-                if (prevPressTimer) {
-                    clearTimeout(prevPressTimer);
-                    prevPressTimer = null;
+            const endPrevPress = function() {
+                if (prevTimer) {
+                    clearTimeout(prevTimer);
+                    prevTimer = null;
                 }
-            });
+            };
+
+            newPrev.addEventListener("mousedown", startPrevPress);
+            newPrev.addEventListener("touchstart", startPrevPress, { passive: false });
+            newPrev.addEventListener("mouseup", endPrevPress);
+            newPrev.addEventListener("touchend", endPrevPress);
+            newPrev.addEventListener("mouseleave", endPrevPress);
+            newPrev.addEventListener("touchcancel", endPrevPress);
         }
 
-        // ---- SIMPLE WORKING NEXT BUTTON ----
+        // ---- NEXT BUTTON ----
         if (nextBtn) {
+            // Remove existing listeners by cloning
             const newNext = nextBtn.cloneNode(true);
             nextBtn.parentNode.replaceChild(newNext, nextBtn);
-            
-            let nextPressTimer = null;
-            let nextIsLongPress = false;
-            let nextMoved = false;
 
-            // Mouse events
-            newNext.addEventListener('mousedown', function(e) {
-                nextIsLongPress = false;
-                nextMoved = false;
-                nextPressTimer = setTimeout(function() {
-                    if (!nextMoved) {
-                        nextIsLongPress = true;
-                        // JUMP TO LAST WORD
-                        const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                        if (filtered.length) {
-                            const lastIdx = vocabList.findIndex((t => t === filtered[filtered.length - 1]));
-                            if (lastIdx !== -1) {
-                                loadWordByMode(lastIdx, true);
-                                normalCurrentPage = Math.ceil(filtered.length / 40) - 1;
-                                renderNormalSidebar();
-                                showToast("📖 Jumped to LAST word");
-                                setTimeout(syncPageInput, 50);
-                            }
-                        }
-                    }
-                }, 300);
-            });
-
-            newNext.addEventListener('mousemove', function() {
-                nextMoved = true;
-                if (nextPressTimer) {
-                    clearTimeout(nextPressTimer);
-                    nextPressTimer = null;
-                }
-            });
-
-            newNext.addEventListener('mouseup', function(e) {
-                if (nextPressTimer) {
-                    clearTimeout(nextPressTimer);
-                    nextPressTimer = null;
-                }
-                if (nextIsLongPress) {
-                    e.stopPropagation();
-                    nextIsLongPress = false;
+            // Short click: next page
+            newNext.onclick = function(e) {
+                e.preventDefault();
+                if (longPressNext) {
+                    longPressNext = false;
                     return;
                 }
-                // SHORT CLICK: next page
                 const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
                 const pageCount = Math.ceil(filtered.length / 40);
                 if (normalCurrentPage + 1 < pageCount) {
@@ -4954,78 +4878,40 @@
                     renderNormalSidebar();
                     setTimeout(syncPageInput, 50);
                 }
-            });
+            };
 
-            newNext.addEventListener('mouseleave', function() {
-                if (nextPressTimer) {
-                    clearTimeout(nextPressTimer);
-                    nextPressTimer = null;
-                }
-            });
-
-            // Touch events
-            newNext.addEventListener('touchstart', function(e) {
-                nextIsLongPress = false;
-                nextMoved = false;
-                nextPressTimer = setTimeout(function() {
-                    if (!nextMoved) {
-                        nextIsLongPress = true;
-                        const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                        if (filtered.length) {
-                            const lastIdx = vocabList.findIndex((t => t === filtered[filtered.length - 1]));
-                            if (lastIdx !== -1) {
-                                loadWordByMode(lastIdx, true);
-                                normalCurrentPage = Math.ceil(filtered.length / 40) - 1;
-                                renderNormalSidebar();
-                                showToast("📖 Jumped to LAST word");
-                                setTimeout(syncPageInput, 50);
-                            }
-                        }
-                    }
-                }, 300);
-            }, { passive: true });
-
-            newNext.addEventListener('touchmove', function() {
-                nextMoved = true;
-                if (nextPressTimer) {
-                    clearTimeout(nextPressTimer);
-                    nextPressTimer = null;
-                }
-            }, { passive: true });
-
-            newNext.addEventListener('touchend', function(e) {
-                if (nextPressTimer) {
-                    clearTimeout(nextPressTimer);
-                    nextPressTimer = null;
-                }
-                if (nextIsLongPress) {
-                    e.preventDefault();
-                    nextIsLongPress = false;
-                    return;
-                }
-                // SHORT CLICK: next page
-                const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                const pageCount = Math.ceil(filtered.length / 40);
-                if (normalCurrentPage + 1 < pageCount) {
-                    normalCurrentPage++;
-                    renderNormalSidebar();
+            // Long press: jump to last word (300ms hold)
+            const startNextPress = function(e) {
+                e.preventDefault();
+                longPressNext = false;
+                nextTimer = setTimeout(() => {
+                    longPressNext = true;
+                    jumpToLast();
+                    nextTimer = null;
                     setTimeout(syncPageInput, 50);
-                }
-            });
+                }, 300);
+            };
 
-            newNext.addEventListener('touchcancel', function() {
-                if (nextPressTimer) {
-                    clearTimeout(nextPressTimer);
-                    nextPressTimer = null;
+            const endNextPress = function() {
+                if (nextTimer) {
+                    clearTimeout(nextTimer);
+                    nextTimer = null;
                 }
-            });
+            };
+
+            newNext.addEventListener("mousedown", startNextPress);
+            newNext.addEventListener("touchstart", startNextPress, { passive: false });
+            newNext.addEventListener("mouseup", endNextPress);
+            newNext.addEventListener("touchend", endNextPress);
+            newNext.addEventListener("mouseleave", endNextPress);
+            newNext.addEventListener("touchcancel", endNextPress);
         }
 
         // ---- PAGE JUMP INPUT ----
         if (jumpInput) {
             const newJump = jumpInput.cloneNode(true);
             jumpInput.parentNode.replaceChild(newJump, jumpInput);
-            
+
             const handleJump = function() {
                 let val = parseInt(this.value);
                 const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
@@ -5040,6 +4926,7 @@
                 }
                 this.value = normalCurrentPage + 1;
             };
+
             newJump.addEventListener('change', handleJump);
             newJump.addEventListener('keypress', function(ev) {
                 if (ev.key === 'Enter') {
@@ -5058,6 +4945,12 @@
         e.innerHTML = "";
     }
 }
+
+
+
+
+
+
 
 
 
