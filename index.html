@@ -3471,8 +3471,21 @@
                 // Clear soft-deleted indices on fresh load (they are no longer valid)
                 softDeletedIndices.clear();
                 softDeletedData.clear();
-                "random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length ||
-                    pickRandom(), sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
+                "random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length || (
+                    // Find a non-deleted word
+                    function() {
+                        const available = vocabList.filter((_, idx) => !softDeletedIndices.has(idx));
+                        if (available.length > 0) {
+                            const idx = vocabList.indexOf(available[Math.floor(Math.random() * available.length)]);
+                            if (idx !== -1) {
+                                history = [idx];
+                                historyIndex = 0;
+                                renderRandomSidebar(idx);
+                            }
+                        } else if (vocabList.length) {
+                            pickRandom();
+                        }
+                    })(), sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
                     vocabList.length && pickRandom()) : (normalCurrentIdx >= vocabList.length && (normalCurrentIdx = 0),
                     normalCurrentPage = getNormalPageForIndex(normalCurrentIdx), renderNormalSidebar());
                 const m = await getFileNameFromApi();
@@ -4501,6 +4514,87 @@
             renderSidebarUI();
         };
 
+        // ---- FIXED PAGINATION HANDLING ----
+        function attachPaginationHandlers(container) {
+            const prevBtn = container ? container.querySelector('#prevPageBtnSide') : document.getElementById('prevPageBtnSide');
+            const nextBtn = container ? container.querySelector('#nextPageBtnSide') : document.getElementById('nextPageBtnSide');
+            const jumpInput = container ? container.querySelector('#pageJumpInput') : document.getElementById('pageJumpInput');
+
+            // Handle Prev button
+            if (prevBtn && !prevBtn._handlersAttached) {
+                const newPrev = prevBtn.cloneNode(true);
+                prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+                newPrev._handlersAttached = true;
+                newPrev.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                    if (normalCurrentPage > 0) {
+                        normalCurrentPage--;
+                        renderNormalSidebar();
+                        setTimeout(syncPageInput, 50);
+                    }
+                });
+            }
+
+            // Handle Next button
+            if (nextBtn && !nextBtn._handlersAttached) {
+                const newNext = nextBtn.cloneNode(true);
+                nextBtn.parentNode.replaceChild(newNext, nextBtn);
+                newNext._handlersAttached = true;
+                newNext.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                    const totalPages = Math.ceil(filtered.length / 40);
+                    if (normalCurrentPage + 1 < totalPages) {
+                        normalCurrentPage++;
+                        renderNormalSidebar();
+                        setTimeout(syncPageInput, 50);
+                    }
+                });
+            }
+
+            // Handle Jump Input
+            if (jumpInput && !jumpInput._handlersAttached) {
+                const newJump = jumpInput.cloneNode(true);
+                jumpInput.parentNode.replaceChild(newJump, jumpInput);
+                newJump._handlersAttached = true;
+                const handleJump = function() {
+                    let val = parseInt(this.value);
+                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                    const maxPages = Math.ceil(filtered.length / 40) || 1;
+                    if (isNaN(val) || val < 1) val = 1;
+                    if (val > maxPages) val = maxPages;
+                    const newPage = val - 1;
+                    if (newPage !== normalCurrentPage) {
+                        normalCurrentPage = newPage;
+                        renderNormalSidebar();
+                        setTimeout(syncPageInput, 50);
+                    }
+                    this.value = normalCurrentPage + 1;
+                };
+                newJump.addEventListener('change', handleJump);
+                newJump.addEventListener('keypress', function(ev) {
+                    if (ev.key === 'Enter') {
+                        ev.preventDefault();
+                        handleJump.call(this);
+                    }
+                });
+            }
+        }
+
+        function syncPageInput() {
+            const input = document.getElementById('pageJumpInput');
+            if (input) {
+                const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                const totalPages = Math.ceil(filtered.length / 40);
+                input.value = normalCurrentPage + 1;
+                input.max = totalPages;
+            }
+        }
+
+        // ---- MODIFIED: renderSidebarUI with proper pagination event handling ----
         function renderSidebarUI(e = !0) {
             const t = document.getElementById("sidebarList"),
                 n = currentSearchInputElement ? currentSearchInputElement.value : searchTerm;
@@ -4654,152 +4748,149 @@
             applySidebarStyles();
             scrollToActiveSidebarItem();
             updateRecycleBinBadge();
+            
+            // ---- CRITICAL FIX: Attach pagination handlers after DOM update ----
+            const paginationContainer = document.getElementById('paginationContainer');
+            if (paginationContainer) {
+                setTimeout(() => {
+                    attachPaginationHandlers(paginationContainer);
+                }, 100);
+            }
         }
 
         function updatePaginationControlsInside(e) {
-            if (!e) return;
-            const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-            if ("normal" === appMode && t.length > 40) {
-                const n = Math.ceil(t.length / 40);
-                e.style.display = "block", e.innerHTML =
-                    `<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info"><input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${n}" value="${normalCurrentPage+1}" style="width:50px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;"> / ${n}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`;
-                const o = document.getElementById("prevPageBtnSide"),
-                    i = document.getElementById("nextPageBtnSide"),
-                    jumpInput = document.getElementById("pageJumpInput");
-                let a = null,
-                    r = null,
-                    s = !1,
-                    l = !1;
-                let longPressPrev = !1,
-                    longPressNext = !1;
-                const d = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(
-                        idx) && !softDeletedIndices.has(idx));
-                    if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[0])), !0), showToast(
-                            "📖 Jumped to FIRST word") } },
-                    c = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(
-                            idx) && !softDeletedIndices.has(idx));
-                        if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[e.length - 1])), !0),
-                                showToast("📖 Jumped to LAST word") } };
+    if (!e) return;
+    const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+    // SHOW PAGINATION IN BOTH MODES when more than 1 item
+    if (t.length > 1) {
+        const n = Math.ceil(t.length / 40);
+        e.style.display = "block", e.innerHTML =
+            `<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info"><input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${n}" value="${normalCurrentPage+1}" style="width:80px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--text-primary); font-size:1.1rem; padding:6px 8px; font-weight:600;"> / ${n}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`;
+        const o = document.getElementById("prevPageBtnSide"),
+            i = document.getElementById("nextPageBtnSide"),
+            jumpInput = document.getElementById("pageJumpInput");
+        let a = null,
+            r = null,
+            s = !1,
+            l = !1;
+        let longPressPrev = !1,
+            longPressNext = !1;
+        const d = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(
+                idx) && !softDeletedIndices.has(idx));
+            if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[0])), !0), showToast(
+                    "📖 Jumped to FIRST word") } },
+            c = () => { const e = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(
+                    idx) && !softDeletedIndices.has(idx));
+                if (e.length) { loadWordByMode(vocabList.findIndex((t => t === e[e.length - 1])), !0),
+                        showToast("📖 Jumped to LAST word") } };
 
-                // Page jump input handler
-                if (jumpInput) {
-                    const handleJump = () => {
-                        let val = parseInt(jumpInput.value);
-                        const maxPages = n;
-                        if (isNaN(val) || val < 1) val = 1;
-                        if (val > maxPages) val = maxPages;
-                        const newPage = val - 1;
-                        if (newPage !== normalCurrentPage) {
-                            normalCurrentPage = newPage;
-                            renderNormalSidebar();
-                        }
-                        // Keep input in sync
-                        jumpInput.value = normalCurrentPage + 1;
-                    };
-                    jumpInput.addEventListener('change', handleJump);
-                    jumpInput.addEventListener('keypress', (ev) => {
-                        if (ev.key === 'Enter') {
-                            ev.preventDefault();
-                            handleJump();
-                        }
-                    });
+        // Page jump input handler
+        if (jumpInput) {
+            const handleJump = () => {
+                let val = parseInt(jumpInput.value);
+                const maxPages = n;
+                if (isNaN(val) || val < 1) val = 1;
+                if (val > maxPages) val = maxPages;
+                const newPage = val - 1;
+                if (newPage !== normalCurrentPage) {
+                    normalCurrentPage = newPage;
+                    renderNormalSidebar();
                 }
-
-                function syncPageInput() {
-                    const input = document.getElementById('pageJumpInput');
-                    if (input) {
-                        const totalPages = Math.ceil(filterVocabBySearch(vocabList).filter(idx => !pendingDeletions
-                            .has(idx) && !softDeletedIndices.has(idx)).length / 40);
-                        input.value = normalCurrentPage + 1;
-                        input.max = totalPages;
-                    }
+                // Keep input in sync
+                jumpInput.value = normalCurrentPage + 1;
+            };
+            jumpInput.addEventListener('change', handleJump);
+            jumpInput.addEventListener('keypress', (ev) => {
+                if (ev.key === 'Enter') {
+                    ev.preventDefault();
+                    handleJump();
                 }
-
-                if (o) {
-                    o.onclick = function(e) {
-                        e.preventDefault();
-                        if (longPressPrev) { longPressPrev = !1; return; }
-                        if (normalCurrentPage > 0) {
-                            normalCurrentPage--;
-                            renderNormalSidebar();
-                            setTimeout(syncPageInput, 50);
-                        }
-                    };
-                    // long press logic unchanged
-                    const prevStart = function(e) {
-                        e.preventDefault();
-                        s = !1;
-                        longPressPrev = !1;
-                        a = setTimeout(() => {
-                            s = !0;
-                            longPressPrev = !0;
-                            d();
-                            a = null;
-                            setTimeout(syncPageInput, 50);
-                        }, 500);
-                    };
-                    const prevEnd = function() {
-                        if (a) { clearTimeout(a);
-                            a = null; }
-                    };
-                    o.addEventListener("mousedown", prevStart);
-                    o.addEventListener("touchstart", prevStart, { passive: false });
-                    o.addEventListener("mouseup", prevEnd);
-                    o.addEventListener("touchend", prevEnd);
-                    o.addEventListener("mouseleave", prevEnd);
-                }
-                if (i) {
-                    i.onclick = function(e) {
-                        e.preventDefault();
-                        if (longPressNext) { longPressNext = !1; return; }
-                        const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
-                            .has(idx));
-                        const pageCount = Math.ceil(t.length / 40);
-                        if (normalCurrentPage + 1 < pageCount) {
-                            normalCurrentPage++;
-                            renderNormalSidebar();
-                            setTimeout(syncPageInput, 50);
-                        }
-                    };
-                    const nextStart = function(e) {
-                        e.preventDefault();
-                        l = !1;
-                        longPressNext = !1;
-                        r = setTimeout(() => {
-                            l = !0;
-                            longPressNext = !0;
-                            c();
-                            r = null;
-                            setTimeout(syncPageInput, 50);
-                        }, 500);
-                    };
-                    const nextEnd = function() {
-                        if (r) { clearTimeout(r);
-                            r = null; }
-                    };
-                    i.addEventListener("mousedown", nextStart);
-                    i.addEventListener("touchstart", nextStart, { passive: false });
-                    i.addEventListener("mouseup", nextEnd);
-                    i.addEventListener("touchend", nextEnd);
-                    i.addEventListener("mouseleave", nextEnd);
-                }
-
-                // Initial sync
-                setTimeout(syncPageInput, 100);
-            } else e.style.display = "none", e.innerHTML = ""
+            });
         }
 
-        // Global sync function
-        function syncPageInput() {
+        function syncPageInputLocal() {
             const input = document.getElementById('pageJumpInput');
             if (input) {
-                const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
-                    .has(idx));
-                const totalPages = Math.ceil(filtered.length / 40);
+                const totalPages = Math.ceil(filterVocabBySearch(vocabList).filter(idx => !pendingDeletions
+                    .has(idx) && !softDeletedIndices.has(idx)).length / 40);
                 input.value = normalCurrentPage + 1;
                 input.max = totalPages;
             }
         }
+
+        if (o) {
+            o.onclick = function(e) {
+                e.preventDefault();
+                if (longPressPrev) { longPressPrev = !1; return; }
+                if (normalCurrentPage > 0) {
+                    normalCurrentPage--;
+                    renderNormalSidebar();
+                    setTimeout(syncPageInputLocal, 50);
+                }
+            };
+            // long press logic unchanged
+            const prevStart = function(e) {
+                e.preventDefault();
+                s = !1;
+                longPressPrev = !1;
+                a = setTimeout(() => {
+                    s = !0;
+                    longPressPrev = !0;
+                    d();
+                    a = null;
+                    setTimeout(syncPageInputLocal, 50);
+                }, 500);
+            };
+            const prevEnd = function() {
+                if (a) { clearTimeout(a);
+                    a = null; }
+            };
+            o.addEventListener("mousedown", prevStart);
+            o.addEventListener("touchstart", prevStart, { passive: false });
+            o.addEventListener("mouseup", prevEnd);
+            o.addEventListener("touchend", prevEnd);
+            o.addEventListener("mouseleave", prevEnd);
+        }
+        if (i) {
+            i.onclick = function(e) {
+                e.preventDefault();
+                if (longPressNext) { longPressNext = !1; return; }
+                const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                    .has(idx));
+                const pageCount = Math.ceil(t.length / 40);
+                if (normalCurrentPage + 1 < pageCount) {
+                    normalCurrentPage++;
+                    renderNormalSidebar();
+                    setTimeout(syncPageInputLocal, 50);
+                }
+            };
+            const nextStart = function(e) {
+                e.preventDefault();
+                l = !1;
+                longPressNext = !1;
+                r = setTimeout(() => {
+                    l = !0;
+                    longPressNext = !0;
+                    c();
+                    r = null;
+                    setTimeout(syncPageInputLocal, 50);
+                }, 500);
+            };
+            const nextEnd = function() {
+                if (r) { clearTimeout(r);
+                    r = null; }
+            };
+            i.addEventListener("mousedown", nextStart);
+            i.addEventListener("touchstart", nextStart, { passive: false });
+            i.addEventListener("mouseup", nextEnd);
+            i.addEventListener("touchend", nextEnd);
+            i.addEventListener("mouseleave", nextEnd);
+        }
+
+        // Initial sync
+        setTimeout(syncPageInputLocal, 100);
+    } else e.style.display = "none", e.innerHTML = ""
+}
 
         // Patch renderNormalSidebar and renderSidebarUI to sync after rendering
         const origRenderNormalSidebar = renderNormalSidebar;
@@ -6966,61 +7057,80 @@ window.toggleMenu = toggleMenu;
         }
 
         function initSwipeNavigation() {
-            const area = document.getElementById("displayArea");
-            if (!area) return;
-            let startY = 0,
-                startX = 0,
-                moved = false;
+    const area = document.getElementById("displayArea");
+    if (!area) return;
+    let startY = 0,
+        startX = 0,
+        moved = false;
 
-            area.addEventListener("touchstart", function(e) {
-                const touch = e.touches[0];
-                if (window.innerHeight - touch.clientY < 80) {
-                    startY = 0;
-                    startX = 0;
-                    moved = false;
-                    return;
-                }
-                startY = touch.clientY;
-                startX = touch.clientX;
-                moved = false;
-                isSwiping = false;
-            }, { passive: true });
+    // Helper to check if touch started on draggable elements
+    const isDraggableElement = (target) => {
+        return target.closest('.khmer-text') || 
+               target.closest('.chinese-word') || 
+               target.closest('.emoji-container');
+    };
 
-            area.addEventListener("touchmove", function(e) {
-                if (!startY) return;
-                const touch = e.touches[0];
-                const deltaY = touch.clientY - startY;
-                const deltaX = touch.clientX - startX;
-                if (Math.abs(deltaY) > 30 && !moved) {
-                    moved = true;
-                    isSwiping = true;
-                    if (deltaY > 0) {
-                        if (appMode === "random") historyNext();
-                        else goNextNormal();
-                    } else {
-                        if (appMode === "random") historyPrev();
-                        else goPrevNormal();
-                    }
-                    e.preventDefault();
-                } else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
-                    moved = true;
-                    isSwiping = true;
-                    if (deltaX > 0) {
-                        moveSidebarFocus(1);
-                    } else {
-                        moveSidebarFocus(-1);
-                    }
-                    e.preventDefault();
-                }
-            }, { passive: false });
-
-            area.addEventListener("touchend", function() {
-                startY = 0;
-                startX = 0;
-                moved = false;
-                setTimeout(() => { isSwiping = false; }, 100);
-            });
+    area.addEventListener("touchstart", function(e) {
+        // IGNORE touches that start on draggable elements (khmerWord, chineseWord, emoji)
+        if (isDraggableElement(e.target)) {
+            startY = 0;
+            startX = 0;
+            moved = false;
+            return;
         }
+
+        const touch = e.touches[0];
+        if (window.innerHeight - touch.clientY < 80) {
+            startY = 0;
+            startX = 0;
+            moved = false;
+            return;
+        }
+        startY = touch.clientY;
+        startX = touch.clientX;
+        moved = false;
+        isSwiping = false;
+    }, { passive: true });
+
+    area.addEventListener("touchmove", function(e) {
+        // IGNORE if touch started on draggable elements
+        if (isDraggableElement(e.target)) {
+            return;
+        }
+        if (!startY) return;
+        const touch = e.touches[0];
+        const deltaY = touch.clientY - startY;
+        const deltaX = touch.clientX - startX;
+        if (Math.abs(deltaY) > 30 && !moved) {
+            moved = true;
+            isSwiping = true;
+            if (deltaY > 0) {
+                if (appMode === "random") historyNext();
+                else goNextNormal();
+            } else {
+                if (appMode === "random") historyPrev();
+                else goPrevNormal();
+            }
+            e.preventDefault();
+        } else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
+            moved = true;
+            isSwiping = true;
+            if (deltaX > 0) {
+                moveSidebarFocus(1);
+            } else {
+                moveSidebarFocus(-1);
+            }
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    area.addEventListener("touchend", function() {
+        startY = 0;
+        startX = 0;
+        moved = false;
+        setTimeout(() => { isSwiping = false; }, 100);
+    });
+}
 
         function addLog(e, t = !1) { console.log(e), t && showToast(`⚠️ ${e.substring(0,80)}`) }
         let longPressTriggered = !1;
