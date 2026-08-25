@@ -4875,188 +4875,202 @@
 			
 
 			
-	function updatePaginationControlsInside(e) {
-		if (!e) return;
-		const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-		if (t.length > 40) {
-			const n = Math.ceil(t.length / 40);
-			e.style.display = "block";
-			e.innerHTML =
-				`<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info"><input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${n}" value="${normalCurrentPage+1}" style="width:50px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;"> / ${n}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`;
+function updatePaginationControlsInside(e) {
+    if (!e) return;
+    const t = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+    if (t.length > 40) {
+        const n = Math.ceil(t.length / 40);
+        e.style.display = "block";
+        e.innerHTML =
+            `<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info"><input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${n}" value="${normalCurrentPage+1}" style="width:50px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;"> / ${n}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`;
 
-			const prevBtn = document.getElementById("prevPageBtnSide");
-			const nextBtn = document.getElementById("nextPageBtnSide");
-			const jumpInput = document.getElementById("pageJumpInput");
+        const prevBtn = document.getElementById("prevPageBtnSide");
+        const nextBtn = document.getElementById("nextPageBtnSide");
+        const jumpInput = document.getElementById("pageJumpInput");
 
-			let prevTimer = null,
-				nextTimer = null;
-			let longPressPrev = false,
-				longPressNext = false;
+        let prevTimer = null,
+            nextTimer = null;
+        let longPressPrev = false,
+            longPressNext = false;
 
-			// ---- JUMP TO FIRST WORD (Long Press on Prev) ----
-			const jumpToFirst = () => {
-				const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-				if (filtered.length) {
-					const firstIdx = vocabList.findIndex((v) => v === filtered[0]);
-					if (firstIdx !== -1) {
-						loadWordByMode(firstIdx, true);
-						normalCurrentPage = 0;
-						renderNormalSidebar();
-						showToast("📖 Jumped to FIRST word");
-						setTimeout(syncPageInput, 50);
-					}
-				}
-			};
+        // ---- JUMP TO FIRST WORD (Long Press on Prev) ----
+        const jumpToFirst = () => {
+            const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+            if (filtered.length) {
+                const firstIdx = vocabList.findIndex((v) => v === filtered[0]);
+                if (firstIdx !== -1) {
+                    loadWordByMode(firstIdx, true);
+                    normalCurrentPage = 0;
+                    renderNormalSidebar();
+                    showToast("📖 Jumped to FIRST word");
+                    setTimeout(syncPageInput, 50);
+                }
+            }
+        };
 
-			// ---- JUMP TO LAST WORD (Long Press on Next) ----
-			const jumpToLast = () => {
-				const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-				if (filtered.length) {
-					const lastIdx = vocabList.findIndex((v) => v === filtered[filtered.length - 1]);
-					if (lastIdx !== -1) {
-						loadWordByMode(lastIdx, true);
-						normalCurrentPage = Math.ceil(filtered.length / 40) - 1;
-						renderNormalSidebar();
-						showToast("📖 Jumped to LAST word");
-						setTimeout(syncPageInput, 50);
-					}
-				}
-			};
+        // ---- JUMP TO LAST WORD (Long Press on Next) ----
+        const jumpToLast = () => {
+            const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+            if (filtered.length) {
+                const lastIdx = vocabList.findIndex((v) => v === filtered[filtered.length - 1]);
+                if (lastIdx !== -1) {
+                    loadWordByMode(lastIdx, true);
+                    normalCurrentPage = Math.ceil(filtered.length / 40) - 1;
+                    renderNormalSidebar();
+                    showToast("📖 Jumped to LAST word");
+                    setTimeout(syncPageInput, 50);
+                }
+            }
+        };
 
-			// ---- PREV BUTTON ----
-			if (prevBtn) {
-				// Remove existing listeners by cloning
-				const newPrev = prevBtn.cloneNode(true);
-				prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+        // ---- PREV BUTTON ----
+        if (prevBtn) {
+            const newPrev = prevBtn.cloneNode(true);
+            prevBtn.parentNode.replaceChild(newPrev, prevBtn);
 
-				// Short click: previous page
-				newPrev.onclick = function(e) {
-					e.preventDefault();
-					if (longPressPrev) {
-						longPressPrev = false;
-						return;
-					}
-					if (normalCurrentPage > 0) {
-						normalCurrentPage--;
-						renderNormalSidebar();
-						setTimeout(syncPageInput, 50);
-					}
-				};
+            // Short click: previous page (for mouse)
+            newPrev.onclick = function(e) {
+                e.preventDefault();
+                if (longPressPrev) {
+                    longPressPrev = false;
+                    return;
+                }
+                if (normalCurrentPage > 0) {
+                    normalCurrentPage--;
+                    renderNormalSidebar();
+                    setTimeout(syncPageInput, 50);
+                }
+            };
 
-				// Long press: jump to first word (300ms hold)
-				const startPrevPress = function(e) {
-					e.preventDefault();
-					longPressPrev = false;
-					prevTimer = setTimeout(() => {
-						longPressPrev = true;
-						jumpToFirst();
-						prevTimer = null;
-						setTimeout(syncPageInput, 50);
-					}, 300);
-				};
+            // Long press: jump to first word (300ms hold)
+            const startPrevPress = function(e) {
+                e.preventDefault();
+                longPressPrev = false;
+                if (prevTimer) {
+                    clearTimeout(prevTimer);
+                    prevTimer = null;
+                }
+                prevTimer = setTimeout(() => {
+                    longPressPrev = true;
+                    jumpToFirst();
+                    prevTimer = null;
+                    setTimeout(syncPageInput, 50);
+                }, 300);
+            };
 
-				const endPrevPress = function() {
-					if (prevTimer) {
-						clearTimeout(prevTimer);
-						prevTimer = null;
-					}
-				};
+            const endPrevPress = function(e) {
+                if (e) e.preventDefault();
+                if (prevTimer) {
+                    clearTimeout(prevTimer);
+                    prevTimer = null;
+                }
+            };
 
-				newPrev.addEventListener("mousedown", startPrevPress);
-				newPrev.addEventListener("touchstart", startPrevPress, { passive: false });
-				newPrev.addEventListener("mouseup", endPrevPress);
-				newPrev.addEventListener("touchend", endPrevPress);
-				newPrev.addEventListener("mouseleave", endPrevPress);
-				newPrev.addEventListener("touchcancel", endPrevPress);
-			}
+            // Mouse events
+            newPrev.addEventListener("mousedown", startPrevPress);
+            newPrev.addEventListener("mouseup", endPrevPress);
+            newPrev.addEventListener("mouseleave", endPrevPress);
 
-			// ---- NEXT BUTTON ----
-			if (nextBtn) {
-				// Remove existing listeners by cloning
-				const newNext = nextBtn.cloneNode(true);
-				nextBtn.parentNode.replaceChild(newNext, nextBtn);
+            // Touch events - IMPORTANT: passive: false to allow preventDefault
+            newPrev.addEventListener("touchstart", startPrevPress, { passive: false });
+            newPrev.addEventListener("touchend", endPrevPress, { passive: false });
+            newPrev.addEventListener("touchcancel", endPrevPress, { passive: false });
+        }
 
-				// Short click: next page
-				newNext.onclick = function(e) {
-					e.preventDefault();
-					if (longPressNext) {
-						longPressNext = false;
-						return;
-					}
-					const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-					const pageCount = Math.ceil(filtered.length / 40);
-					if (normalCurrentPage + 1 < pageCount) {
-						normalCurrentPage++;
-						renderNormalSidebar();
-						setTimeout(syncPageInput, 50);
-					}
-				};
+        // ---- NEXT BUTTON ----
+        if (nextBtn) {
+            const newNext = nextBtn.cloneNode(true);
+            nextBtn.parentNode.replaceChild(newNext, nextBtn);
 
-				// Long press: jump to last word (300ms hold)
-				const startNextPress = function(e) {
-					e.preventDefault();
-					longPressNext = false;
-					nextTimer = setTimeout(() => {
-						longPressNext = true;
-						jumpToLast();
-						nextTimer = null;
-						setTimeout(syncPageInput, 50);
-					}, 300);
-				};
+            // Short click: next page (for mouse)
+            newNext.onclick = function(e) {
+                e.preventDefault();
+                if (longPressNext) {
+                    longPressNext = false;
+                    return;
+                }
+                const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                const pageCount = Math.ceil(filtered.length / 40);
+                if (normalCurrentPage + 1 < pageCount) {
+                    normalCurrentPage++;
+                    renderNormalSidebar();
+                    setTimeout(syncPageInput, 50);
+                }
+            };
 
-				const endNextPress = function() {
-					if (nextTimer) {
-						clearTimeout(nextTimer);
-						nextTimer = null;
-					}
-				};
+            // Long press: jump to last word (300ms hold)
+            const startNextPress = function(e) {
+                e.preventDefault();
+                longPressNext = false;
+                if (nextTimer) {
+                    clearTimeout(nextTimer);
+                    nextTimer = null;
+                }
+                nextTimer = setTimeout(() => {
+                    longPressNext = true;
+                    jumpToLast();
+                    nextTimer = null;
+                    setTimeout(syncPageInput, 50);
+                }, 300);
+            };
 
-				newNext.addEventListener("mousedown", startNextPress);
-				newNext.addEventListener("touchstart", startNextPress, { passive: false });
-				newNext.addEventListener("mouseup", endNextPress);
-				newNext.addEventListener("touchend", endNextPress);
-				newNext.addEventListener("mouseleave", endNextPress);
-				newNext.addEventListener("touchcancel", endNextPress);
-			}
+            const endNextPress = function(e) {
+                if (e) e.preventDefault();
+                if (nextTimer) {
+                    clearTimeout(nextTimer);
+                    nextTimer = null;
+                }
+            };
 
-			// ---- PAGE JUMP INPUT ----
-			if (jumpInput) {
-				const newJump = jumpInput.cloneNode(true);
-				jumpInput.parentNode.replaceChild(newJump, jumpInput);
+            // Mouse events
+            newNext.addEventListener("mousedown", startNextPress);
+            newNext.addEventListener("mouseup", endNextPress);
+            newNext.addEventListener("mouseleave", endNextPress);
 
-				const handleJump = function() {
-					let val = parseInt(this.value);
-					const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-					const maxPages = Math.ceil(filtered.length / 40) || 1;
-					if (isNaN(val) || val < 1) val = 1;
-					if (val > maxPages) val = maxPages;
-					const newPage = val - 1;
-					if (newPage !== normalCurrentPage) {
-						normalCurrentPage = newPage;
-						renderNormalSidebar();
-						setTimeout(syncPageInput, 50);
-					}
-					this.value = normalCurrentPage + 1;
-				};
+            // Touch events - IMPORTANT: passive: false to allow preventDefault
+            newNext.addEventListener("touchstart", startNextPress, { passive: false });
+            newNext.addEventListener("touchend", endNextPress, { passive: false });
+            newNext.addEventListener("touchcancel", endNextPress, { passive: false });
+        }
 
-				newJump.addEventListener('change', handleJump);
-				newJump.addEventListener('keypress', function(ev) {
-					if (ev.key === 'Enter') {
-						ev.preventDefault();
-						handleJump.call(this);
-					}
-				});
-				newJump.addEventListener('blur', function() {
-					this.value = normalCurrentPage + 1;
-				});
-			}
+        // ---- PAGE JUMP INPUT ----
+        if (jumpInput) {
+            const newJump = jumpInput.cloneNode(true);
+            jumpInput.parentNode.replaceChild(newJump, jumpInput);
 
-			setTimeout(syncPageInput, 100);
-		} else {
-			e.style.display = "none";
-			e.innerHTML = "";
-		}
-	}
+            const handleJump = function() {
+                let val = parseInt(this.value);
+                const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                const maxPages = Math.ceil(filtered.length / 40) || 1;
+                if (isNaN(val) || val < 1) val = 1;
+                if (val > maxPages) val = maxPages;
+                const newPage = val - 1;
+                if (newPage !== normalCurrentPage) {
+                    normalCurrentPage = newPage;
+                    renderNormalSidebar();
+                    setTimeout(syncPageInput, 50);
+                }
+                this.value = normalCurrentPage + 1;
+            };
+
+            newJump.addEventListener('change', handleJump);
+            newJump.addEventListener('keypress', function(ev) {
+                if (ev.key === 'Enter') {
+                    ev.preventDefault();
+                    handleJump.call(this);
+                }
+            });
+            newJump.addEventListener('blur', function() {
+                this.value = normalCurrentPage + 1;
+            });
+        }
+
+        setTimeout(syncPageInput, 100);
+    } else {
+        e.style.display = "none";
+        e.innerHTML = "";
+    }
+}
 
 
 
@@ -7648,28 +7662,61 @@ if (isMenuVisible) {
 						historyNext()) : "ArrowDown" === e.code ? (e.preventDefault(), moveSidebarFocus(1)) :
 					"ArrowUp" === e.code && (e.preventDefault(), moveSidebarFocus(-1)) : e.stopPropagation()
 			})), window.onload = async () => {
-				// Show loading overlay with ABA icon
-				const loadingOverlay = document.createElement('div');
-				loadingOverlay.id = 'loadingOverlay';
-				loadingOverlay.style.cssText = `
-					position: fixed;
-					top: 0;
-					left: 0;
-					width: 100%;
-					height: 100%;
-					background: #0f172a;
-					display: flex;
-					flex-direction: column;
-					align-items: center;
-					justify-content: center;
-					z-index: 99999;
-					transition: opacity 0.5s ease;
-				`;
-				loadingOverlay.innerHTML = `
-					<img src="/static/ABAicon.png" alt="ABA Icon" style="width:80px; height:80px; border-radius:16px; margin-bottom:20px;">
-					<div style="color:white; font-size:1.4rem; font-weight:600; font-family:Inter, system-ui, sans-serif;">Loading...</div>
-				`;
-				document.body.appendChild(loadingOverlay);
+    // Show loading overlay with ABA icon
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loadingOverlay';
+    loadingOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #0f172a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        transition: opacity 0.5s ease;
+    `;
+    
+    // Add style for loading dots animation
+    const style = document.createElement('style');
+    style.textContent = `
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+            100% { content: ''; }
+        }
+        .loading-dots {
+            display: inline-block;
+            min-width: 30px;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    loadingOverlay.innerHTML = `
+        <img src="/static/ABAicon.png" alt="ABA Icon" style="width:80px; height:80px; border-radius:16px; margin-bottom:20px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div style="color:white; font-size:1.4rem; font-weight:600; font-family:Inter, system-ui, sans-serif; margin-bottom:16px;">
+            Loading<span class="loading-dots"></span>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; background:rgba(251,191,36,0.08); padding:12px 28px; border-radius:12px; border:1px solid rgba(251,191,36,0.15);">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;">
+                <span style="color:#fbbf24; font-size:0.9rem; font-weight:500; font-family:Inter, system-ui, sans-serif;">⚠️ 本应用目前仅供测试。</span>
+                <span style="color:rgba(251,191,36,0.5); font-size:0.8rem;">•</span>
+                <span style="color:rgba(251,191,36,0.7); font-size:0.85rem; font-weight:400; font-family:'KHLazySmooth', 'Noto Sans Khmer', system-ui, sans-serif;">កម្មវិធីនេះកំពុងស្ថិតក្នុងការសាកល្បង។</span>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+    
+    // ... rest of your code ...
 
 				initCopyPopup();
 				emojiContainer = document.getElementById("emojiContainer");
