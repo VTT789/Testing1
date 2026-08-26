@@ -4882,7 +4882,11 @@ function updatePaginationControlsInside(e) {
         const n = Math.ceil(t.length / 40);
         e.style.display = "block";
         e.innerHTML =
-            `<div class="pagination-bar"><button id="prevPageBtnSide" class="pagination-btn">◀ Prev</button><span class="pagination-info"><input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${n}" value="${normalCurrentPage+1}" style="width:50px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;"> / ${n}</span><button id="nextPageBtnSide" class="pagination-btn">Next ▶</button></div>`;
+            `<div class="pagination-bar">
+                <button id="prevPageBtnSide" class="pagination-btn" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;">◀ Prev</button>
+                <span class="pagination-info"><input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${n}" value="${normalCurrentPage+1}" style="width:50px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;"> / ${n}</span>
+                <button id="nextPageBtnSide" class="pagination-btn" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;">Next ▶</button>
+            </div>`;
 
         // Get references to the buttons
         const prevBtn = document.getElementById("prevPageBtnSide");
@@ -4901,6 +4905,13 @@ function updatePaginationControlsInside(e) {
             let prevTouchStartX = 0;
             let prevTouchStartY = 0;
             
+            // Prevent text selection on long press
+            newPrev.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            });
+            
             // Long press: jump to first word
             const jumpToFirst = () => {
                 const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
@@ -4918,6 +4929,7 @@ function updatePaginationControlsInside(e) {
             
             // Start long press timer
             const startPrevPress = function(e) {
+                e.preventDefault();
                 if (e.type === 'touchstart') {
                     const touch = e.touches[0];
                     prevTouchStartX = touch.clientX;
@@ -4930,7 +4942,6 @@ function updatePaginationControlsInside(e) {
                     prevTimer = null;
                 }
                 prevTimer = setTimeout(() => {
-                    // Check if touch moved (scrolling)
                     if (e.type === 'touchstart' && prevTouchMoved) {
                         prevTimer = null;
                         return;
@@ -4943,6 +4954,10 @@ function updatePaginationControlsInside(e) {
             
             // End long press timer
             const endPrevPress = function(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
                 if (prevTimer) {
                     clearTimeout(prevTimer);
                     prevTimer = null;
@@ -4970,13 +4985,11 @@ function updatePaginationControlsInside(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                // If long press was triggered, skip
                 if (prevLongPress) {
                     prevLongPress = false;
                     return;
                 }
                 
-                // Normal click - go to previous page
                 if (normalCurrentPage > 0) {
                     normalCurrentPage--;
                     renderNormalSidebar();
@@ -4991,15 +5004,13 @@ function updatePaginationControlsInside(e) {
             newPrev.addEventListener('click', handlePrevAction);
             
             // Touch events
-            newPrev.addEventListener('touchstart', startPrevPress, { passive: true });
+            newPrev.addEventListener('touchstart', startPrevPress, { passive: false });
             newPrev.addEventListener('touchmove', movePrevPress, { passive: true });
             newPrev.addEventListener('touchend', function(e) {
                 endPrevPress(e);
-                // If not a long press, trigger click action
                 if (!prevLongPress && !prevTouchMoved) {
                     handlePrevAction(e);
                 }
-                // Reset flags
                 setTimeout(() => {
                     prevLongPress = false;
                     prevTouchMoved = false;
@@ -5020,6 +5031,13 @@ function updatePaginationControlsInside(e) {
             let nextTouchStartX = 0;
             let nextTouchStartY = 0;
             
+            // Prevent text selection on long press
+            newNext.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            });
+            
             // Long press: jump to last word
             const jumpToLast = () => {
                 const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
@@ -5037,6 +5055,7 @@ function updatePaginationControlsInside(e) {
             
             // Start long press timer
             const startNextPress = function(e) {
+                e.preventDefault();
                 if (e.type === 'touchstart') {
                     const touch = e.touches[0];
                     nextTouchStartX = touch.clientX;
@@ -5061,6 +5080,10 @@ function updatePaginationControlsInside(e) {
             
             // End long press timer
             const endNextPress = function(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
                 if (nextTimer) {
                     clearTimeout(nextTimer);
                     nextTimer = null;
@@ -5109,7 +5132,7 @@ function updatePaginationControlsInside(e) {
             newNext.addEventListener('click', handleNextAction);
             
             // Touch events
-            newNext.addEventListener('touchstart', startNextPress, { passive: true });
+            newNext.addEventListener('touchstart', startNextPress, { passive: false });
             newNext.addEventListener('touchmove', moveNextPress, { passive: true });
             newNext.addEventListener('touchend', function(e) {
                 endNextPress(e);
