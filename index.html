@@ -5111,6 +5111,7 @@ function updatePaginationControlsInside(e) {
 			// ---- Long-press copy for "/" button (0.8s hold, no insertion) ----
 			// ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
 // ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
+// ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
 function setupInsertSymbolLongPress() {
     document.querySelectorAll('.insert-symbol-icon-inside').forEach(btn => {
         let longPressTimer = null;
@@ -5161,30 +5162,47 @@ function setupInsertSymbolLongPress() {
                 longPressTriggered = true;
                 isLongPress = true;
                 
-                // Copy text to clipboard WITHOUT inserting " / "
+                // Copy text to clipboard
                 const copyText = text;
                 
-                // iOS Clipboard API
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(copyText).then(() => {
-                        btn.classList.add('copy-mode');
-                        showToast('📋 Copied: ' + (copyText.length > 20 ? copyText.substring(0, 20) + '...' : copyText));
-                        setTimeout(() => btn.classList.remove('copy-mode'), 800);
-                    }).catch(() => {
-                        // Fallback for iOS
-                        copyTextFallback(copyText);
-                    });
+                // Check if iOS
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                
+                if (isIOS) {
+                    // iOS: Show copy popup with the text
+                    showCopyPopupWithButton(copyText, "text");
+                    
+                    // Auto-click the copy button after a short delay
+                    setTimeout(() => {
+                        const copyBtn = document.getElementById('copyActionBtn');
+                        if (copyBtn) {
+                            copyBtn.click();
+                        }
+                    }, 300);
+                    
+                    btn.classList.add('copy-mode');
+                    setTimeout(() => btn.classList.remove('copy-mode'), 800);
                 } else {
-                    // Fallback
-                    copyTextFallback(copyText);
+                    // Non-iOS: Direct clipboard copy
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(copyText).then(() => {
+                            btn.classList.add('copy-mode');
+                            showToast('📋 Copied: ' + (copyText.length > 20 ? copyText.substring(0, 20) + '...' : copyText));
+                            setTimeout(() => btn.classList.remove('copy-mode'), 800);
+                        }).catch(() => {
+                            copyTextFallback(copyText);
+                        });
+                    } else {
+                        copyTextFallback(copyText);
+                    }
                 }
                 longPressTimer = null;
             }, 500); // 0.5s hold
         };
 
-        // iOS fallback copy method
+        // Fallback copy method for non-iOS
         const copyTextFallback = (text) => {
-            // For iOS, we need to use a textarea with proper styling
             const ta = document.createElement('textarea');
             ta.value = text;
             ta.style.position = 'fixed';
@@ -5195,7 +5213,6 @@ function setupInsertSymbolLongPress() {
             ta.style.opacity = '0';
             document.body.appendChild(ta);
             
-            // iOS requires the textarea to be focused and selected
             const range = document.createRange();
             range.selectNodeContents(ta);
             const selection = window.getSelection();
@@ -5277,7 +5294,6 @@ function setupInsertSymbolLongPress() {
             if (longPressTriggered || isLongPress) {
                 ev.preventDefault();
                 ev.stopPropagation();
-                // Ensure flags are reset
                 setTimeout(() => {
                     longPressTriggered = false;
                     isLongPress = false;
