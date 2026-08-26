@@ -5108,10 +5108,7 @@ function updatePaginationControlsInside(e) {
 			}
 			window.refreshAddModalSearch = refreshAddModalSearch;
 
-			// ---- Long-press copy for "/" button (0.8s hold, no insertion) ----
-			// ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
-// ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
-// ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
+// ---- Long-press copy for "/" button (0.4s hold, no insertion) ----
 function setupInsertSymbolLongPress() {
     document.querySelectorAll('.insert-symbol-icon-inside').forEach(btn => {
         let longPressTimer = null;
@@ -5136,72 +5133,15 @@ function setupInsertSymbolLongPress() {
                 longPressHandled = true;
                 isLongPress = true;
                 
-                // Copy the text
-                copyTextToClipboard(text, btn);
+                // Show copy popup with the text (NO auto-click)
+                showCopyPopupWithButton(text, "text");
+                
+                // Visual feedback on the button
+                btn.classList.add('copy-mode');
+                setTimeout(() => btn.classList.remove('copy-mode'), 800);
                 
                 longPressTimer = null;
-            }, 500);
-        };
-
-        const copyTextToClipboard = (text, button) => {
-            // Try using the Clipboard API first
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => {
-                    button.classList.add('copy-mode');
-                    showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
-                    setTimeout(() => button.classList.remove('copy-mode'), 800);
-                }).catch(() => {
-                    // Fallback for iOS
-                    copyWithTextarea(text, button);
-                });
-            } else {
-                // Fallback for iOS
-                copyWithTextarea(text, button);
-            }
-        };
-
-        const copyWithTextarea = (text, button) => {
-            // Create a temporary textarea
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.top = '0';
-            textarea.style.left = '0';
-            textarea.style.width = '1px';
-            textarea.style.height = '1px';
-            textarea.style.opacity = '0';
-            textarea.style.pointerEvents = 'none';
-            document.body.appendChild(textarea);
-            
-            // Select the text
-            textarea.focus();
-            textarea.select();
-            
-            try {
-                const success = document.execCommand('copy');
-                if (success) {
-                    button.classList.add('copy-mode');
-                    showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
-                    setTimeout(() => button.classList.remove('copy-mode'), 800);
-                } else {
-                    // If execCommand fails, use the popup
-                    showCopyPopupWithButton(text, "text");
-                    setTimeout(() => {
-                        const copyBtn = document.getElementById('copyActionBtn');
-                        if (copyBtn) copyBtn.click();
-                    }, 300);
-                }
-            } catch (err) {
-                // If error, use the popup
-                showCopyPopupWithButton(text, "text");
-                setTimeout(() => {
-                    const copyBtn = document.getElementById('copyActionBtn');
-                    if (copyBtn) copyBtn.click();
-                }, 300);
-            }
-            
-            // Clean up
-            document.body.removeChild(textarea);
+            }, 400); // Changed from 500 to 400ms
         };
 
         const endLongPress = (e) => {
@@ -5219,6 +5159,7 @@ function setupInsertSymbolLongPress() {
         };
 
         const handleClick = (ev) => {
+            // If long press was triggered, skip insertion
             if (isLongPress || longPressHandled) {
                 ev.preventDefault();
                 ev.stopPropagation();
@@ -5227,6 +5168,7 @@ function setupInsertSymbolLongPress() {
                 return;
             }
             
+            // Short click: insert " / "
             ev.preventDefault();
             ev.stopPropagation();
             const target = btn.getAttribute('data-target');
