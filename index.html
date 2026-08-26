@@ -5112,33 +5112,20 @@ function updatePaginationControlsInside(e) {
 			// ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
 // ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
 // ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
-// ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
 function setupInsertSymbolLongPress() {
     document.querySelectorAll('.insert-symbol-icon-inside').forEach(btn => {
         let longPressTimer = null;
-        let longPressTriggered = false;
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let isTouchDevice = false;
-
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        let isLongPress = false;
+        let longPressHandled = false;
 
         const startLongPress = (e) => {
-            if (e.type === 'touchstart') {
-                isTouchDevice = true;
-                const touch = e.touches[0];
-                touchStartX = touch.clientX;
-                touchStartY = touch.clientY;
-            }
-            
             const target = btn.getAttribute('data-target');
             const input = document.getElementById(target);
             if (!input) return;
             const text = input.value;
             if (!text) return;
 
-            longPressTriggered = false;
+            longPressHandled = false;
 
             if (longPressTimer) {
                 clearTimeout(longPressTimer);
@@ -5146,75 +5133,75 @@ function setupInsertSymbolLongPress() {
             }
 
             longPressTimer = setTimeout(() => {
-                if (e.type === 'touchstart') {
-                    const touch = e.touches[0];
-                    const dx = Math.abs(touch.clientX - touchStartX);
-                    const dy = Math.abs(touch.clientY - touchStartY);
-                    if (dx > 10 || dy > 10) {
-                        longPressTimer = null;
-                        return;
-                    }
-                }
+                longPressHandled = true;
+                isLongPress = true;
                 
-                longPressTriggered = true;
-                
-                // Copy text to clipboard
-                const copyText = text;
-                
-                // iOS: Use a hidden textarea with direct selection
-                const ta = document.createElement('textarea');
-                ta.value = copyText;
-                ta.style.position = 'fixed';
-                ta.style.top = '0';
-                ta.style.left = '0';
-                ta.style.width = '1px';
-                ta.style.height = '1px';
-                ta.style.opacity = '0';
-                ta.style.pointerEvents = 'none';
-                document.body.appendChild(ta);
-                
-                // Focus and select the text
-                ta.focus();
-                ta.select();
-                ta.setSelectionRange(0, copyText.length);
-                
-                try {
-                    // Try to copy
-                    const success = document.execCommand('copy');
-                    if (success) {
-                        btn.classList.add('copy-mode');
-                        showToast('📋 Copied: ' + (copyText.length > 20 ? copyText.substring(0, 20) + '...' : copyText));
-                        setTimeout(() => btn.classList.remove('copy-mode'), 800);
-                    } else {
-                        // If copy fails, try the popup method
-                        if (isIOS) {
-                            showCopyPopupWithButton(copyText, "text");
-                            setTimeout(() => {
-                                const copyBtn = document.getElementById('copyActionBtn');
-                                if (copyBtn) copyBtn.click();
-                            }, 300);
-                        }
-                    }
-                } catch (err) {
-                    // If error, try popup method
-                    if (isIOS) {
-                        showCopyPopupWithButton(copyText, "text");
-                        setTimeout(() => {
-                            const copyBtn = document.getElementById('copyActionBtn');
-                            if (copyBtn) copyBtn.click();
-                        }, 300);
-                    } else {
-                        showToast('⚠️ Copy failed');
-                    }
-                }
-                
-                // Clean up
-                setTimeout(() => {
-                    document.body.removeChild(ta);
-                }, 100);
+                // Copy the text
+                copyTextToClipboard(text, btn);
                 
                 longPressTimer = null;
             }, 500);
+        };
+
+        const copyTextToClipboard = (text, button) => {
+            // Try using the Clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    button.classList.add('copy-mode');
+                    showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
+                    setTimeout(() => button.classList.remove('copy-mode'), 800);
+                }).catch(() => {
+                    // Fallback for iOS
+                    copyWithTextarea(text, button);
+                });
+            } else {
+                // Fallback for iOS
+                copyWithTextarea(text, button);
+            }
+        };
+
+        const copyWithTextarea = (text, button) => {
+            // Create a temporary textarea
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.top = '0';
+            textarea.style.left = '0';
+            textarea.style.width = '1px';
+            textarea.style.height = '1px';
+            textarea.style.opacity = '0';
+            textarea.style.pointerEvents = 'none';
+            document.body.appendChild(textarea);
+            
+            // Select the text
+            textarea.focus();
+            textarea.select();
+            
+            try {
+                const success = document.execCommand('copy');
+                if (success) {
+                    button.classList.add('copy-mode');
+                    showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
+                    setTimeout(() => button.classList.remove('copy-mode'), 800);
+                } else {
+                    // If execCommand fails, use the popup
+                    showCopyPopupWithButton(text, "text");
+                    setTimeout(() => {
+                        const copyBtn = document.getElementById('copyActionBtn');
+                        if (copyBtn) copyBtn.click();
+                    }, 300);
+                }
+            } catch (err) {
+                // If error, use the popup
+                showCopyPopupWithButton(text, "text");
+                setTimeout(() => {
+                    const copyBtn = document.getElementById('copyActionBtn');
+                    if (copyBtn) copyBtn.click();
+                }, 300);
+            }
+            
+            // Clean up
+            document.body.removeChild(textarea);
         };
 
         const endLongPress = (e) => {
@@ -5222,20 +5209,21 @@ function setupInsertSymbolLongPress() {
                 clearTimeout(longPressTimer);
                 longPressTimer = null;
             }
-            if (longPressTriggered) {
+            if (isLongPress) {
                 e.preventDefault();
                 e.stopPropagation();
                 setTimeout(() => {
-                    longPressTriggered = false;
-                }, 150);
+                    isLongPress = false;
+                }, 100);
             }
         };
 
         const handleClick = (ev) => {
-            if (longPressTriggered) {
+            if (isLongPress || longPressHandled) {
                 ev.preventDefault();
                 ev.stopPropagation();
-                longPressTriggered = false;
+                longPressHandled = false;
+                isLongPress = false;
                 return;
             }
             
@@ -5264,18 +5252,10 @@ function setupInsertSymbolLongPress() {
         newBtn.addEventListener('mouseleave', endLongPress);
         newBtn.addEventListener('click', handleClick);
 
-        // Touch events
+        // Touch events - iOS friendly
         newBtn.addEventListener('touchstart', startLongPress, { passive: true });
         newBtn.addEventListener('touchend', endLongPress, { passive: false });
         newBtn.addEventListener('touchcancel', endLongPress, { passive: false });
-        
-        newBtn.addEventListener('click', function(ev) {
-            if (longPressTriggered) {
-                ev.preventDefault();
-                ev.stopPropagation();
-                longPressTriggered = false;
-            }
-        });
     });
 }
 			// --- Layer transforms using baseline font size for scaling ---
