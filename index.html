@@ -5109,111 +5109,183 @@ function updatePaginationControlsInside(e) {
 			window.refreshAddModalSearch = refreshAddModalSearch;
 
 			// ---- Long-press copy for "/" button (0.8s hold, no insertion) ----
-			function setupInsertSymbolLongPress() {
-		document.querySelectorAll('.insert-symbol-icon-inside').forEach(btn => {
-			let longPressTimer = null;
-			let isLongPress = false;
-			let isTouchDevice = false;
+			// ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
+// ---- Long-press copy for "/" button (0.5s hold, no insertion) ----
+function setupInsertSymbolLongPress() {
+    document.querySelectorAll('.insert-symbol-icon-inside').forEach(btn => {
+        let longPressTimer = null;
+        let isLongPress = false;
+        let longPressTriggered = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
 
-			// ---- LONG PRESS: copy text without inserting " / " ----
-			const startLongPress = (e) => {
-				isLongPress = false;
-				const target = btn.getAttribute('data-target');
-				const input = document.getElementById(target);
-				if (!input) return;
-				const text = input.value;
-				if (!text) return;
+        // ---- LONG PRESS: copy text without inserting " / " ----
+        const startLongPress = (e) => {
+            // Get touch position for iOS drag detection
+            if (e.type === 'touchstart') {
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+            }
+            
+            const target = btn.getAttribute('data-target');
+            const input = document.getElementById(target);
+            if (!input) return;
+            const text = input.value;
+            if (!text) {
+                // If no text, don't start long press timer
+                return;
+            }
 
-				longPressTimer = setTimeout(() => {
-					isLongPress = true;
-					// Copy text to clipboard WITHOUT inserting " / "
-					if (navigator.clipboard && navigator.clipboard.writeText) {
-						navigator.clipboard.writeText(text).then(() => {
-							btn.classList.add('copy-mode');
-							showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
-							setTimeout(() => btn.classList.remove('copy-mode'), 800);
-						}).catch(() => {
-							// Fallback
-							const ta = document.createElement('textarea');
-							ta.value = text;
-							document.body.appendChild(ta);
-							ta.select();
-							document.execCommand('copy');
-							document.body.removeChild(ta);
-							btn.classList.add('copy-mode');
-							showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
-							setTimeout(() => btn.classList.remove('copy-mode'), 800);
-						});
-					} else {
-						// Fallback
-						const ta = document.createElement('textarea');
-						ta.value = text;
-						document.body.appendChild(ta);
-						ta.select();
-						document.execCommand('copy');
-						document.body.removeChild(ta);
-						btn.classList.add('copy-mode');
-						showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
-						setTimeout(() => btn.classList.remove('copy-mode'), 800);
-					}
-				}, 500); // 0.8s hold
-			};
+            longPressTriggered = false;
+            isLongPress = false;
 
-			const endLongPress = (e) => {
-				if (longPressTimer) {
-					clearTimeout(longPressTimer);
-					longPressTimer = null;
-				}
-				// If it was a long press, prevent the click event from firing
-				if (isLongPress) {
-					e.preventDefault();
-					e.stopPropagation();
-					// Reset the flag after a short delay
-					setTimeout(() => {
-						isLongPress = false;
-					}, 100);
-				}
-			};
+            // Clear any existing timer
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
 
-			// ---- CLICK: insert " / " (only if NOT a long press) ----
-			const handleClick = (ev) => {
-				// If a long press just happened, skip insertion
-				if (isLongPress) {
-					ev.preventDefault();
-					ev.stopPropagation();
-					return;
-				}
-				ev.preventDefault();
-				ev.stopPropagation();
-				const target = btn.getAttribute('data-target');
-				const inp = document.getElementById(target);
-				if (!inp) return;
-				const start = inp.selectionStart || 0;
-				const end = inp.selectionEnd || 0;
-				const val = inp.value;
-				inp.value = val.substring(0, start) + " / " + val.substring(end);
-				inp.focus();
-				const newPos = start + " / ".length;
-				inp.setSelectionRange(newPos, newPos);
-				showToast("✓ inserted ' / '");
-			};
+            longPressTimer = setTimeout(() => {
+                // Check if user moved finger (iOS drag detection)
+                if (e.type === 'touchstart') {
+                    const touch = e.touches[0];
+                    const dx = Math.abs(touch.clientX - touchStartX);
+                    const dy = Math.abs(touch.clientY - touchStartY);
+                    if (dx > 10 || dy > 10) {
+                        longPressTimer = null;
+                        return; // User was scrolling/dragging
+                    }
+                }
+                
+                longPressTriggered = true;
+                isLongPress = true;
+                
+                // Copy text to clipboard WITHOUT inserting " / "
+                const copyText = text;
+                
+                // iOS Clipboard API
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(copyText).then(() => {
+                        btn.classList.add('copy-mode');
+                        showToast('📋 Copied: ' + (copyText.length > 20 ? copyText.substring(0, 20) + '...' : copyText));
+                        setTimeout(() => btn.classList.remove('copy-mode'), 800);
+                    }).catch(() => {
+                        // Fallback for iOS
+                        copyTextFallback(copyText);
+                    });
+                } else {
+                    // Fallback
+                    copyTextFallback(copyText);
+                }
+                longPressTimer = null;
+            }, 500); // 0.5s hold
+        };
 
-			// Remove any existing listeners by cloning
-			const newBtn = btn.cloneNode(true);
-			btn.parentNode.replaceChild(newBtn, btn);
+        // iOS fallback copy method
+        const copyTextFallback = (text) => {
+            // For iOS, we need to use a textarea with proper styling
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.top = '-9999px';
+            ta.style.left = '-9999px';
+            ta.style.width = '1px';
+            ta.style.height = '1px';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            
+            // iOS requires the textarea to be focused and selected
+            const range = document.createRange();
+            range.selectNodeContents(ta);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            ta.setSelectionRange(0, text.length);
+            
+            try {
+                document.execCommand('copy');
+                btn.classList.add('copy-mode');
+                showToast('📋 Copied: ' + (text.length > 20 ? text.substring(0, 20) + '...' : text));
+                setTimeout(() => btn.classList.remove('copy-mode'), 800);
+            } catch (err) {
+                showToast('⚠️ Copy failed');
+            }
+            document.body.removeChild(ta);
+        };
 
-			// Mouse events
-			newBtn.addEventListener('mousedown', startLongPress);
-			newBtn.addEventListener('mouseup', endLongPress);
-			newBtn.addEventListener('mouseleave', endLongPress);
-			newBtn.addEventListener('click', handleClick);
+        const endLongPress = (e) => {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            // If long press was triggered, prevent click
+            if (longPressTriggered) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Reset after a short delay
+                setTimeout(() => {
+                    longPressTriggered = false;
+                    isLongPress = false;
+                }, 100);
+            }
+        };
 
-			// Touch events
-			newBtn.addEventListener('touchstart', startLongPress, { passive: true });
-			newBtn.addEventListener('touchend', endLongPress, { passive: false });
-			newBtn.addEventListener('touchcancel', endLongPress, { passive: false });
-		});
-	}
+        // ---- CLICK: insert " / " (only if NOT a long press) ----
+        const handleClick = (ev) => {
+            // If a long press was triggered, skip insertion
+            if (longPressTriggered || isLongPress) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                longPressTriggered = false;
+                isLongPress = false;
+                return;
+            }
+            
+            ev.preventDefault();
+            ev.stopPropagation();
+            const target = btn.getAttribute('data-target');
+            const inp = document.getElementById(target);
+            if (!inp) return;
+            const start = inp.selectionStart || 0;
+            const end = inp.selectionEnd || 0;
+            const val = inp.value;
+            inp.value = val.substring(0, start) + " / " + val.substring(end);
+            inp.focus();
+            const newPos = start + " / ".length;
+            inp.setSelectionRange(newPos, newPos);
+            showToast("✓ inserted ' / '");
+        };
+
+        // Remove any existing listeners by cloning
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        // Mouse events
+        newBtn.addEventListener('mousedown', startLongPress);
+        newBtn.addEventListener('mouseup', endLongPress);
+        newBtn.addEventListener('mouseleave', endLongPress);
+        newBtn.addEventListener('click', handleClick);
+
+        // Touch events - iOS compatible
+        newBtn.addEventListener('touchstart', startLongPress, { passive: true });
+        newBtn.addEventListener('touchend', endLongPress, { passive: false });
+        newBtn.addEventListener('touchcancel', endLongPress, { passive: false });
+        
+        // iOS: Also handle click to prevent double action
+        newBtn.addEventListener('click', function(ev) {
+            if (longPressTriggered || isLongPress) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                // Ensure flags are reset
+                setTimeout(() => {
+                    longPressTriggered = false;
+                    isLongPress = false;
+                }, 50);
+            }
+        });
+    });
+}
 
 			// --- Layer transforms using baseline font size for scaling ---
 			let baselineFontSizePx = null; // pixel size when offsets were set
