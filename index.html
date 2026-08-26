@@ -5119,11 +5119,17 @@ function setupInsertSymbolLongPress() {
         let longPressTriggered = false;
         let touchStartX = 0;
         let touchStartY = 0;
+        let isTouchDevice = false;
+
+        // Check if this is a touch device
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
         // ---- LONG PRESS: copy text without inserting " / " ----
         const startLongPress = (e) => {
-            // Get touch position for iOS drag detection
+            // Store touch start position for drag detection
             if (e.type === 'touchstart') {
+                isTouchDevice = true;
                 const touch = e.touches[0];
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
@@ -5134,8 +5140,7 @@ function setupInsertSymbolLongPress() {
             if (!input) return;
             const text = input.value;
             if (!text) {
-                // If no text, don't start long press timer
-                return;
+                return; // No text to copy
             }
 
             longPressTriggered = false;
@@ -5148,7 +5153,7 @@ function setupInsertSymbolLongPress() {
             }
 
             longPressTimer = setTimeout(() => {
-                // Check if user moved finger (iOS drag detection)
+                // Check if user moved finger (drag detection)
                 if (e.type === 'touchstart') {
                     const touch = e.touches[0];
                     const dx = Math.abs(touch.clientX - touchStartX);
@@ -5165,12 +5170,9 @@ function setupInsertSymbolLongPress() {
                 // Copy text to clipboard
                 const copyText = text;
                 
-                // Check if iOS
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                
+                // For iOS: use the copy popup with auto-click
                 if (isIOS) {
-                    // iOS: Show copy popup with the text
+                    // Show the copy popup
                     showCopyPopupWithButton(copyText, "text");
                     
                     // Auto-click the copy button after a short delay
@@ -5179,10 +5181,11 @@ function setupInsertSymbolLongPress() {
                         if (copyBtn) {
                             copyBtn.click();
                         }
-                    }, 300);
+                    }, 400);
                     
+                    // Visual feedback
                     btn.classList.add('copy-mode');
-                    setTimeout(() => btn.classList.remove('copy-mode'), 800);
+                    setTimeout(() => btn.classList.remove('copy-mode'), 1000);
                 } else {
                     // Non-iOS: Direct clipboard copy
                     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -5244,7 +5247,7 @@ function setupInsertSymbolLongPress() {
                 setTimeout(() => {
                     longPressTriggered = false;
                     isLongPress = false;
-                }, 100);
+                }, 200);
             }
         };
 
@@ -5284,12 +5287,12 @@ function setupInsertSymbolLongPress() {
         newBtn.addEventListener('mouseleave', endLongPress);
         newBtn.addEventListener('click', handleClick);
 
-        // Touch events - iOS compatible
+        // Touch events
         newBtn.addEventListener('touchstart', startLongPress, { passive: true });
         newBtn.addEventListener('touchend', endLongPress, { passive: false });
         newBtn.addEventListener('touchcancel', endLongPress, { passive: false });
         
-        // iOS: Also handle click to prevent double action
+        // Prevent click after touch on iOS
         newBtn.addEventListener('click', function(ev) {
             if (longPressTriggered || isLongPress) {
                 ev.preventDefault();
@@ -5297,12 +5300,11 @@ function setupInsertSymbolLongPress() {
                 setTimeout(() => {
                     longPressTriggered = false;
                     isLongPress = false;
-                }, 50);
+                }, 100);
             }
         });
     });
 }
-
 			// --- Layer transforms using baseline font size for scaling ---
 			let baselineFontSizePx = null; // pixel size when offsets were set
 			let rowsSwapped = false; // track whether button rows are swapped
