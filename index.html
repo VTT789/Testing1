@@ -4897,6 +4897,9 @@ function updatePaginationControlsInside(e) {
             
             let prevTimer = null;
             let prevLongPress = false;
+            let prevTouchMoved = false;
+            let prevTouchStartX = 0;
+            let prevTouchStartY = 0;
             
             // Long press: jump to first word
             const jumpToFirst = () => {
@@ -4915,13 +4918,23 @@ function updatePaginationControlsInside(e) {
             
             // Start long press timer
             const startPrevPress = function(e) {
-                e.preventDefault();
+                if (e.type === 'touchstart') {
+                    const touch = e.touches[0];
+                    prevTouchStartX = touch.clientX;
+                    prevTouchStartY = touch.clientY;
+                    prevTouchMoved = false;
+                }
                 prevLongPress = false;
                 if (prevTimer) {
                     clearTimeout(prevTimer);
                     prevTimer = null;
                 }
                 prevTimer = setTimeout(() => {
+                    // Check if touch moved (scrolling)
+                    if (e.type === 'touchstart' && prevTouchMoved) {
+                        prevTimer = null;
+                        return;
+                    }
                     prevLongPress = true;
                     jumpToFirst();
                     prevTimer = null;
@@ -4930,43 +4943,68 @@ function updatePaginationControlsInside(e) {
             
             // End long press timer
             const endPrevPress = function(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
                 if (prevTimer) {
                     clearTimeout(prevTimer);
                     prevTimer = null;
                 }
-                // Reset long press flag after a short delay
-                setTimeout(() => {
-                    prevLongPress = false;
-                }, 100);
             };
             
-            // Short click: previous page
-            newPrev.addEventListener('click', function(e) {
+            // Track touch movement
+            const movePrevPress = function(e) {
+                if (e.type === 'touchmove') {
+                    const touch = e.touches[0];
+                    const dx = Math.abs(touch.clientX - prevTouchStartX);
+                    const dy = Math.abs(touch.clientY - prevTouchStartY);
+                    if (dx > 10 || dy > 10) {
+                        prevTouchMoved = true;
+                        if (prevTimer) {
+                            clearTimeout(prevTimer);
+                            prevTimer = null;
+                        }
+                    }
+                }
+            };
+            
+            // Click handler (for both mouse and touch)
+            const handlePrevAction = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                
+                // If long press was triggered, skip
                 if (prevLongPress) {
                     prevLongPress = false;
                     return;
                 }
+                
+                // Normal click - go to previous page
                 if (normalCurrentPage > 0) {
                     normalCurrentPage--;
                     renderNormalSidebar();
                     setTimeout(syncPageInput, 50);
                 }
-            });
+            };
             
-            // Mouse events for long press
+            // Mouse events
             newPrev.addEventListener('mousedown', startPrevPress);
             newPrev.addEventListener('mouseup', endPrevPress);
             newPrev.addEventListener('mouseleave', endPrevPress);
+            newPrev.addEventListener('click', handlePrevAction);
             
-            // Touch events for long press (mobile)
-            newPrev.addEventListener('touchstart', startPrevPress, { passive: false });
-            newPrev.addEventListener('touchend', endPrevPress, { passive: false });
+            // Touch events
+            newPrev.addEventListener('touchstart', startPrevPress, { passive: true });
+            newPrev.addEventListener('touchmove', movePrevPress, { passive: true });
+            newPrev.addEventListener('touchend', function(e) {
+                endPrevPress(e);
+                // If not a long press, trigger click action
+                if (!prevLongPress && !prevTouchMoved) {
+                    handlePrevAction(e);
+                }
+                // Reset flags
+                setTimeout(() => {
+                    prevLongPress = false;
+                    prevTouchMoved = false;
+                }, 100);
+            }, { passive: false });
             newPrev.addEventListener('touchcancel', endPrevPress, { passive: false });
         }
 
@@ -4978,6 +5016,9 @@ function updatePaginationControlsInside(e) {
             
             let nextTimer = null;
             let nextLongPress = false;
+            let nextTouchMoved = false;
+            let nextTouchStartX = 0;
+            let nextTouchStartY = 0;
             
             // Long press: jump to last word
             const jumpToLast = () => {
@@ -4996,13 +5037,22 @@ function updatePaginationControlsInside(e) {
             
             // Start long press timer
             const startNextPress = function(e) {
-                e.preventDefault();
+                if (e.type === 'touchstart') {
+                    const touch = e.touches[0];
+                    nextTouchStartX = touch.clientX;
+                    nextTouchStartY = touch.clientY;
+                    nextTouchMoved = false;
+                }
                 nextLongPress = false;
                 if (nextTimer) {
                     clearTimeout(nextTimer);
                     nextTimer = null;
                 }
                 nextTimer = setTimeout(() => {
+                    if (e.type === 'touchstart' && nextTouchMoved) {
+                        nextTimer = null;
+                        return;
+                    }
                     nextLongPress = true;
                     jumpToLast();
                     nextTimer = null;
@@ -5011,27 +5061,38 @@ function updatePaginationControlsInside(e) {
             
             // End long press timer
             const endNextPress = function(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
                 if (nextTimer) {
                     clearTimeout(nextTimer);
                     nextTimer = null;
                 }
-                setTimeout(() => {
-                    nextLongPress = false;
-                }, 100);
             };
             
-            // Short click: next page
-            newNext.addEventListener('click', function(e) {
+            // Track touch movement
+            const moveNextPress = function(e) {
+                if (e.type === 'touchmove') {
+                    const touch = e.touches[0];
+                    const dx = Math.abs(touch.clientX - nextTouchStartX);
+                    const dy = Math.abs(touch.clientY - nextTouchStartY);
+                    if (dx > 10 || dy > 10) {
+                        nextTouchMoved = true;
+                        if (nextTimer) {
+                            clearTimeout(nextTimer);
+                            nextTimer = null;
+                        }
+                    }
+                }
+            };
+            
+            // Click handler (for both mouse and touch)
+            const handleNextAction = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                
                 if (nextLongPress) {
                     nextLongPress = false;
                     return;
                 }
+                
                 const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
                 const pageCount = Math.ceil(filtered.length / 40);
                 if (normalCurrentPage + 1 < pageCount) {
@@ -5039,16 +5100,27 @@ function updatePaginationControlsInside(e) {
                     renderNormalSidebar();
                     setTimeout(syncPageInput, 50);
                 }
-            });
+            };
             
-            // Mouse events for long press
+            // Mouse events
             newNext.addEventListener('mousedown', startNextPress);
             newNext.addEventListener('mouseup', endNextPress);
             newNext.addEventListener('mouseleave', endNextPress);
+            newNext.addEventListener('click', handleNextAction);
             
-            // Touch events for long press (mobile)
-            newNext.addEventListener('touchstart', startNextPress, { passive: false });
-            newNext.addEventListener('touchend', endNextPress, { passive: false });
+            // Touch events
+            newNext.addEventListener('touchstart', startNextPress, { passive: true });
+            newNext.addEventListener('touchmove', moveNextPress, { passive: true });
+            newNext.addEventListener('touchend', function(e) {
+                endNextPress(e);
+                if (!nextLongPress && !nextTouchMoved) {
+                    handleNextAction(e);
+                }
+                setTimeout(() => {
+                    nextLongPress = false;
+                    nextTouchMoved = false;
+                }, 100);
+            }, { passive: false });
             newNext.addEventListener('touchcancel', endNextPress, { passive: false });
         }
 
@@ -5083,7 +5155,6 @@ function updatePaginationControlsInside(e) {
                 this.value = normalCurrentPage + 1;
             });
             
-            // Touch-friendly for mobile
             newJump.addEventListener('touchstart', function(e) {
                 this.focus();
             }, { passive: true });
