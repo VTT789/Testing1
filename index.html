@@ -5593,7 +5593,7 @@ function showAddNewModal() {
                 <h3>➕ ADD NEW <span id="editIconFromAdd" style="font-size:1.2rem; cursor:pointer; margin-left:12px;">✏️</span></h3>
                 <button id="openGoogleSheetBtnModal" class="sheet-btn">📊</button>
             </div>
-            <button id="closeAddModalBtn" style="position:absolute; top:-20px; left:50%; transform:translateX(-50%); background:#475569; color:#fff; border:none; border-radius:60px; width:40px; height:40px; font-size:1.5rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.3); transition:all .2s; z-index:10;">✕</button>
+            <button id="closeAddModalBtn" style="position:absolute; top:-45px; left:50%; transform:translateX(-50%); background:#475569; color:#fff; border:none; border-radius:60px; width:40px; height:40px; font-size:1.5rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.3); transition:all .2s; z-index:10;">✕</button>
             <div style="margin-bottom:16px;">
                 <div class="input-with-search" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
                     <button class="search-icon-btn" id="addChineseSearchBtn">🔍</button>
@@ -6003,7 +6003,7 @@ function resetTopLayer() {
 							<button id="confirmUpdateBtn" style="background:#1a1a1a !important; color:#ffffff !important; border:1px solid #333333 !important; flex:1;">💾 UPDATE SHEET</button>
 						</div>
 						<div class="delete-group-btn"><button id="deleteRowBtn">🗑️ DELETE Display #${i}</button></div>
-						<button id="closeEditModalBtn" style="position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:#475569; color:#fff; border:none; border-radius:60px; width:40px; height:40px; font-size:1.5rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.3); transition:all .2s; z-index:10;">✕</button>
+						<button id="closeEditModalBtn" style="position:absolute; top:-45px; left:50%; transform:translateX(-50%); background:#475569; color:#fff; border:none; border-radius:60px; width:40px; height:40px; font-size:1.5rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.3); transition:all .2s; z-index:10;">✕</button>
 					</div>`,
 					document.body.appendChild(a);
 				a.onclick = function(event) { if (event.target === a) { a.remove(); } };
