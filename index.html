@@ -5515,38 +5515,62 @@ function setupInsertSymbolLongPress() {
     });
     document.getElementById("openSheetRowBtn").onclick = () => { requestOpenSheetRow(window.currentEdit.row); };
     const confirmUpdate = () => {
-        const ch = editChineseInput.value.trim();
-        const km = editKhmerInput.value.trim();
-        if (!ch && !km) {
-            showToast("⚠️ At least one field required");
-            return;
-        }
-        a.remove();
-        const idx = window.currentEdit.idx;
-        const row = window.currentEdit.row;
-        const oldKhmer = vocabList[idx]?.khmer || '';
-        const oldChinese = vocabList[idx]?.chinese || '';
-        vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row };
-        buildFirstCharCache();
-        saveAllData();
-        renderSidebarUI();
-        updateDisplay();
-        showToast("✅ Updated successfully");
-        refreshAddModalSearch();
-        updateVocabByRow(row, km || oldKhmer, ch || oldChinese).catch(err => {
-            const retryFn = () => { return updateVocabByRow(row, km || oldKhmer, ch || oldChinese); };
-            showRetryToast("retry Tap ⟳", retryFn);
-        });
-    };
+    const ch = editChineseInput.value.trim();
+    const km = editKhmerInput.value.trim();
+    if (!ch && !km) {
+        showToast("⚠️ At least one field required");
+        return;
+    }
+    a.remove();
+    const idx = window.currentEdit.idx;
+    const row = window.currentEdit.row;
+    const oldKhmer = vocabList[idx]?.khmer || '';
+    const oldChinese = vocabList[idx]?.chinese || '';
+
+    vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row };
+    buildFirstCharCache();
+    saveAllData();
+    renderSidebarUI();
+    updateDisplay();
+    showToast("✅ Updated successfully");
+    refreshAddModalSearch();
+
+    // Refresh both modals' search results
+    const editInput = document.getElementById('editChineseInput');
+    if (editInput && window.editModalPerformSearch) {
+        window.editModalPerformSearch(editInput.value);
+    }
+    const addInput = document.getElementById('addChineseInput');
+    if (addInput && window.addModalPerformSearch) {
+        window.addModalPerformSearch(addInput.value);
+    }
+
+    updateVocabByRow(row, km || oldKhmer, ch || oldChinese).catch(err => {
+        const retryFn = () => {
+            return updateVocabByRow(row, km || oldKhmer, ch || oldChinese);
+        };
+        showRetryToast("retry Tap ⟳", retryFn);
+    });
+};
     document.getElementById("confirmUpdateBtn").onclick = () => showPasswordProtectionModal(confirmUpdate, "update vocabulary");
     const deleteAction = () => {
-        const idx = window.currentEdit.idx;
-        const row = window.currentEdit.row;
-        softDeleteVocab(idx, row);
-        a.remove();
-        renderSidebarUI();
-        refreshAddModalSearch();
-    };
+    const idx = window.currentEdit.idx;
+    const row = window.currentEdit.row;
+    softDeleteVocab(idx, row);
+    a.remove();
+    renderSidebarUI();
+    refreshAddModalSearch();
+
+    // Refresh both modals' search results
+    const editInput = document.getElementById('editChineseInput');
+    if (editInput && window.editModalPerformSearch) {
+        window.editModalPerformSearch(editInput.value);
+    }
+    const addInput = document.getElementById('addChineseInput');
+    if (addInput && window.addModalPerformSearch) {
+        window.addModalPerformSearch(addInput.value);
+    }
+};
     document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction, "delete vocabulary");
     document.getElementById("closeEditModalBtn").onclick = () => a.remove();
     const addIcon = document.getElementById("addIconInsideEdit");
@@ -6067,45 +6091,65 @@ function resetTopLayer() {
 
 				// ===== confirmUpdate with optimistic update and retry =====
 				const confirmUpdate = () => {
-					const ch = editChineseInput.value.trim();
-					const km = editKhmerInput.value.trim();
-					if (!ch && !km) {
-						showToast("⚠️ At least one field required");
-						return;
-					}
-					a.remove();
-					const idx = window.currentEdit.idx;
-					const row = window.currentEdit.row;
-					const oldKhmer = vocabList[idx]?.khmer || '';
-					const oldChinese = vocabList[idx]?.chinese || '';
+    const ch = editChineseInput.value.trim();
+    const km = editKhmerInput.value.trim();
+    if (!ch && !km) {
+        showToast("⚠️ At least one field required");
+        return;
+    }
+    a.remove();
+    const idx = window.currentEdit.idx;
+    const row = window.currentEdit.row;
+    const oldKhmer = vocabList[idx]?.khmer || '';
+    const oldChinese = vocabList[idx]?.chinese || '';
 
-					vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row };
-					buildFirstCharCache();
-					saveAllData();
-					renderSidebarUI();
-					updateDisplay();
-					showToast("✅ Updated successfully");
-					refreshAddModalSearch();
+    vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row };
+    buildFirstCharCache();
+    saveAllData();
+    renderSidebarUI();
+    updateDisplay();
+    showToast("✅ Updated successfully");
+    refreshAddModalSearch();
 
-					updateVocabByRow(row, km || oldKhmer, ch || oldChinese).catch(err => {
-						const retryFn = () => {
-							return updateVocabByRow(row, km || oldKhmer, ch || oldChinese);
-						};
-						showRetryToast("retry Tap ⟳", retryFn);
-					});
-				};
+    // Refresh both modals' search results
+    const editInput = document.getElementById('editChineseInput');
+    if (editInput && window.editModalPerformSearch) {
+        window.editModalPerformSearch(editInput.value);
+    }
+    const addInput = document.getElementById('addChineseInput');
+    if (addInput && window.addModalPerformSearch) {
+        window.addModalPerformSearch(addInput.value);
+    }
+
+    updateVocabByRow(row, km || oldKhmer, ch || oldChinese).catch(err => {
+        const retryFn = () => {
+            return updateVocabByRow(row, km || oldKhmer, ch || oldChinese);
+        };
+        showRetryToast("retry Tap ⟳", retryFn);
+    });
+};
 				document.getElementById("confirmUpdateBtn").onclick = () => showPasswordProtectionModal(confirmUpdate,
 					"update vocabulary");
 
 				// ---- DELETE now uses soft delete ----
 				const deleteAction = () => {
-					const idx = window.currentEdit.idx;
-					const row = window.currentEdit.row;
-					softDeleteVocab(idx, row);
-					a.remove();
-					renderSidebarUI();
-					refreshAddModalSearch();
-				};
+    const idx = window.currentEdit.idx;
+    const row = window.currentEdit.row;
+    softDeleteVocab(idx, row);
+    a.remove();
+    renderSidebarUI();
+    refreshAddModalSearch();
+
+    // Refresh both modals' search results
+    const editInput = document.getElementById('editChineseInput');
+    if (editInput && window.editModalPerformSearch) {
+        window.editModalPerformSearch(editInput.value);
+    }
+    const addInput = document.getElementById('addChineseInput');
+    if (addInput && window.addModalPerformSearch) {
+        window.addModalPerformSearch(addInput.value);
+    }
+};
 				document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction,
 					"delete vocabulary");
 				document.getElementById("closeEditModalBtn").onclick = () => a.remove();
