@@ -4318,44 +4318,120 @@
 
 			// ---- Batch permanent delete WITHOUT individual item confirmations ----
 			async function permanentlyDeleteSoftDeleted(idx) {
-				if (!softDeletedIndices.has(idx)) {
-					showToast("⚠️ Not in recycle bin");
-					return;
-				}
-				const item = vocabList[idx];
-				if (!item) return;
-				const rowToDelete = item.sheetRow;
-				// No confirm prompt for individual items - will be handled by batch
-				// Add to pending deletions for optimistic UI
-				pendingDeletions.add(idx);
-				try {
-					await deleteVocabByRow(rowToDelete);
-					// Success: remove from vocabList and soft-deleted data
-					pendingDeletions.delete(idx);
-					softDeletedIndices.delete(idx);
-					softDeletedData.delete(idx);
-					// Remove from vocabList
-					vocabList.splice(idx, 1);
-					// Update sheetRow for items after this one
-					for (let i = 0; i < vocabList.length; i++) {
-						if (vocabList[i].sheetRow > rowToDelete) {
-							vocabList[i].sheetRow--;
-						}
-					}
-					// Also update softDeletedData sheetRow values
-					for (let [k, v] of softDeletedData) {
-						if (v.sheetRow > rowToDelete) {
-							v.sheetRow--;
-							softDeletedData.set(k, v);
-						}
-					}
-					return true;
-				} catch (err) {
-					pendingDeletions.delete(idx);
-					console.warn("Delete failed for row", rowToDelete, err);
-					return false;
-				}
-			}
+    if (!softDeletedIndices.has(idx)) {
+        showToast("⚠️ Not in recycle bin");
+        return false;
+    }
+    const item = vocabList[idx];
+    if (!item) return false;
+    const rowToDelete = item.sheetRow;
+    
+    try {
+        // Step 1: Delete from Google Sheet (this updates the sheet)
+        await deleteVocabByRow(rowToDelete);
+        
+        // Step 2: Remove from vocabList FIRST (before updating sheetRow values)
+        vocabList.splice(idx, 1);
+        
+        // Step 3: Remove from soft-deleted collections
+        softDeletedIndices.delete(idx);
+        softDeletedData.delete(idx);
+        
+        // Step 4: Update sheetRow for all remaining items
+        // IMPORTANT: We must update BOTH the vocabList and softDeletedData
+        // After splice, the indices changed, so we need to rebuild the mapping
+        
+        // Update vocabList sheetRow values - subtract 1 from any row > rowToDelete
+        for (let i = 0; i < vocabList.length; i++) {
+            if (vocabList[i].sheetRow > rowToDelete) {
+                vocabList[i].sheetRow--;
+            }
+        }
+        
+        // Update softDeletedData sheetRow values
+        const newSoftData = new Map();
+        for (let [k, v] of softDeletedData) {
+            if (v.sheetRow > rowToDelete) {
+                v.sheetRow--;
+            }
+            // Key is the index in the ORIGINAL vocabList
+            // Since we spliced at idx, all keys >= idx need to shift down by 1
+            const newKey = k > idx ? k - 1 : k;
+            newSoftData.set(newKey, v);
+        }
+        softDeletedData = newSoftData;
+        
+        // Update softDeletedIndices set
+        const newSoftIndices = new Set();
+        for (let k of softDeletedIndices) {
+            const newKey = k > idx ? k - 1 : k;
+            newSoftIndices.add(newKey);
+        }
+        softDeletedIndices = newSoftIndices;
+        
+        // Remove any pending deletion flag
+        pendingDeletions.delete(idx);
+        
+        return true;
+    } catch (err) {
+        console.warn("Delete failed for row", rowToDelete, err);
+        showToast(`❌ Delete failed: ${err.message || 'Network error'}`);
+        return false;
+    }
+}
+async function retryFailedDeletion(idx) {
+    if (!softDeletedIndices.has(idx)) {
+        showToast("⚠️ Not in recycle bin");
+        return false;
+    }
+    const item = vocabList[idx];
+    if (!item) return false;
+    const rowToDelete = item.sheetRow;
+    
+    showToast(`⏳ Retrying deletion of #${getDisplayNumberFromArrayIndex(idx)}...`);
+    
+    try {
+        await deleteVocabByRow(rowToDelete);
+        
+        // Success - remove from all collections
+        vocabList.splice(idx, 1);
+        softDeletedIndices.delete(idx);
+        softDeletedData.delete(idx);
+        
+        // Update sheetRow values
+        for (let i = 0; i < vocabList.length; i++) {
+            if (vocabList[i].sheetRow > rowToDelete) {
+                vocabList[i].sheetRow--;
+            }
+        }
+        
+        // Update softDeletedData and indices (shift keys)
+        const newSoftData = new Map();
+        for (let [k, v] of softDeletedData) {
+            const newKey = k > idx ? k - 1 : k;
+            newSoftData.set(newKey, v);
+        }
+        softDeletedData = newSoftData;
+        
+        const newSoftIndices = new Set();
+        for (let k of softDeletedIndices) {
+            const newKey = k > idx ? k - 1 : k;
+            newSoftIndices.add(newKey);
+        }
+        softDeletedIndices = newSoftIndices;
+        
+        pendingDeletions.delete(idx);
+        
+        renderSidebarUI();
+        updateRecycleBinBadge();
+        saveAllData();
+        showToast(`✅ Successfully deleted #${getDisplayNumberFromArrayIndex(idx)}`);
+        return true;
+    } catch (err) {
+        showToast(`❌ Retry failed: ${err.message || 'Network error'}`);
+        return false;
+    }
+}
 
 			// ---- NEW: permanently delete all soft-deleted items (without closing any modal) ----
 			async function permanentlyDeleteAllSoftDeleted() {
@@ -4425,39 +4501,55 @@
 			}
 
 			async function permanentlyDeleteAllSoftDeletedAndClose() {
-				const count = softDeletedIndices.size;
-				if (count === 0) {
-					showToast("Recycle bin is empty");
-					return;
-				}
-				if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
+    const count = softDeletedIndices.size;
+    if (count === 0) {
+        showToast("Recycle bin is empty");
+        return;
+    }
+    if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
-				const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-				let successCount = 0,
-					failCount = 0;
-				for (const idx of indices) {
-					if (!softDeletedIndices.has(idx)) continue;
-					const result = await permanentlyDeleteSoftDeleted(idx);
-					if (result) { successCount++; } else { failCount++;
-						softDeletedIndices.delete(idx);
-						softDeletedData.delete(idx); }
-				}
-				renderSidebarUI();
-				updateRecycleBinBadge();
-				if (vocabList.length === 0) {
-					updateChineseDisplay("");
-					document.getElementById("khmerWord").innerText = "";
-				} else {
-					const nextIdx = findNextAvailableIndex(0);
-					if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-				}
-				saveAllData();
-				showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
-				const modal = document.querySelector('.modal-overlay');
-				if (modal) modal.remove();
-				// Update any other modals (e.g., add/edit) that might be open
-				updateRecycleBinCountInModals();
-			}
+    // Sort indices in DESCENDING order so we delete from the bottom up
+    // This prevents index shifting issues
+    const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
+    let successCount = 0, failCount = 0;
+    
+    for (const idx of indices) {
+        if (!softDeletedIndices.has(idx)) continue;
+        showToast(`⏳ Deleting #${getDisplayNumberFromArrayIndex(idx)}...`);
+        
+        const result = await permanentlyDeleteSoftDeleted(idx);
+        if (result) { 
+            successCount++; 
+        } else { 
+            failCount++;
+            // If failed, we need to clean up the indices manually
+            softDeletedIndices.delete(idx);
+            softDeletedData.delete(idx);
+        }
+        
+        // Small delay to prevent rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // Full re-render after all deletions
+    renderSidebarUI();
+    updateRecycleBinBadge();
+    
+    if (vocabList.length === 0) {
+        updateChineseDisplay("");
+        document.getElementById("khmerWord").innerText = "";
+    } else {
+        const nextIdx = findNextAvailableIndex(0);
+        if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+    }
+    
+    saveAllData();
+    showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
+    
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) modal.remove();
+    updateRecycleBinCountInModals();
+}
 
 			function updateRecycleBinBadge() {
 				const badge = document.getElementById('rbCountBadge');
@@ -4514,48 +4606,90 @@
 				const list = overlay.querySelector("#recycleBinList");
 				if (list) {
 					list.addEventListener('click', function(e) {
-						const restoreBtn = e.target.closest('.rb-restore');
-						const deleteBtn = e.target.closest('.rb-permadel');
+    const restoreBtn = e.target.closest('.rb-restore');
+    const deleteBtn = e.target.closest('.rb-permadel');
+    const retryBtn = e.target.closest('.rb-retry');
 
-						if (restoreBtn) {
-							e.stopPropagation();
-							const idx = parseInt(restoreBtn.dataset.idx);
-							if (!isNaN(idx)) {
-								restoreSoftDeleted(idx);
-								// Re-render the modal content
-								list.innerHTML = renderRecycleBinItems();
-								updateRecycleBinBadge();
-								// Update batch actions visibility
-								const actions = overlay.querySelector("#recycleBinActions");
-								if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
-								// If empty, close after short delay
-								if (softDeletedIndices.size === 0) {
-									setTimeout(() => overlay.remove(), 600);
-								}
-							}
-						}
+    if (restoreBtn) {
+        e.stopPropagation();
+        const idx = parseInt(restoreBtn.dataset.idx);
+        if (!isNaN(idx)) {
+            restoreSoftDeleted(idx);
+            // Re-render the modal content
+            list.innerHTML = renderRecycleBinItems();
+            updateRecycleBinBadge();
+            // Update batch actions visibility
+            const actions = overlay.querySelector("#recycleBinActions");
+            if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+            if (softDeletedIndices.size === 0) {
+                setTimeout(() => overlay.remove(), 600);
+            }
+        }
+    }
 
-						if (deleteBtn) {
-							e.stopPropagation();
-							const idx = parseInt(deleteBtn.dataset.idx);
-							if (!isNaN(idx)) {
-								// Individual delete - show confirmation for single items
-								if (softDeletedIndices.has(idx)) {
-									const item = vocabList[idx];
-									if (item && !confirm(`⚠️ Permanently delete Display #${getDisplayNumberFromArrayIndex(idx)} (${item.chinese || item.khmer}) from sheet?`)) return;
-								}
-								permanentlyDeleteSoftDeleted(idx).then(() => {
-									list.innerHTML = renderRecycleBinItems();
-									updateRecycleBinBadge();
-									const actions = overlay.querySelector("#recycleBinActions");
-									if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
-									if (softDeletedIndices.size === 0) {
-										setTimeout(() => overlay.remove(), 600);
-									}
-								});
-							}
-						}
-					});
+    if (deleteBtn) {
+        e.stopPropagation();
+        const idx = parseInt(deleteBtn.dataset.idx);
+        if (!isNaN(idx)) {
+            if (softDeletedIndices.has(idx)) {
+                const item = vocabList[idx];
+                if (item && !confirm(`⚠️ Permanently delete Display #${getDisplayNumberFromArrayIndex(idx)} (${item.chinese || item.khmer}) from sheet?`)) return;
+            }
+            // Show loading state
+            deleteBtn.textContent = '⏳';
+            deleteBtn.style.opacity = '0.6';
+            
+            permanentlyDeleteSoftDeleted(idx).then((result) => {
+                if (result) {
+                    list.innerHTML = renderRecycleBinItems();
+                    updateRecycleBinBadge();
+                    const actions = overlay.querySelector("#recycleBinActions");
+                    if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+                    if (softDeletedIndices.size === 0) {
+                        setTimeout(() => overlay.remove(), 600);
+                    }
+                } else {
+                    // Show retry button
+                    const itemEl = document.getElementById(`rb-item-${idx}`);
+                    if (itemEl) {
+                        const retryBtn = itemEl.querySelector('.rb-retry');
+                        if (retryBtn) retryBtn.style.display = 'inline-block';
+                        const delBtn = itemEl.querySelector('.rb-permadel');
+                        if (delBtn) {
+                            delBtn.textContent = '🗑️ Delete';
+                            delBtn.style.opacity = '1';
+                        }
+                        showToast('❌ Delete failed. Tap Retry ⟳');
+                    }
+                }
+            });
+        }
+    }
+
+    if (retryBtn) {
+        e.stopPropagation();
+        const idx = parseInt(retryBtn.dataset.idx);
+        if (!isNaN(idx) && softDeletedIndices.has(idx)) {
+            retryBtn.textContent = '⏳';
+            retryBtn.style.opacity = '0.6';
+            
+            retryFailedDeletion(idx).then((result) => {
+                if (result) {
+                    list.innerHTML = renderRecycleBinItems();
+                    updateRecycleBinBadge();
+                    const actions = overlay.querySelector("#recycleBinActions");
+                    if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+                    if (softDeletedIndices.size === 0) {
+                        setTimeout(() => overlay.remove(), 600);
+                    }
+                } else {
+                    retryBtn.textContent = '⟳ Retry';
+                    retryBtn.style.opacity = '1';
+                }
+            });
+        }
+    }
+});
 				}
 
 				// Batch action buttons - close modal immediately after action
@@ -4590,17 +4724,18 @@
 					const chinese = data.chinese || '';
 					const khmer = data.khmer || '';
 					html += `
-						<div class="recycle-bin-item">
-							<div class="rb-text">
-								<div class="rb-zh">#${displayNum} ${chinese}</div>
-								<div class="rb-km">${khmer}</div>
-							</div>
-							<div class="rb-actions">
-								<button class="rb-restore" data-idx="${idx}">↩️ Restore</button>
-								<button class="rb-permadel" data-idx="${idx}">🗑️ Delete</button>
-							</div>
-						</div>
-					`;
+    <div class="recycle-bin-item" id="rb-item-${idx}">
+        <div class="rb-text">
+            <div class="rb-zh">#${displayNum} ${chinese}</div>
+            <div class="rb-km">${khmer}</div>
+        </div>
+        <div class="rb-actions">
+            <button class="rb-restore" data-idx="${idx}">↩️ Restore</button>
+            <button class="rb-permadel" data-idx="${idx}">🗑️ Delete</button>
+            <button class="rb-retry" data-idx="${idx}" style="background:#f59e0b; color:#fff; border:none; border-radius:30px; padding:6px 14px; font-weight:700; font-size:0.75rem; cursor:pointer; display:none;">⟳ Retry</button>
+        </div>
+    </div>
+`;
 				}
 				return html;
 			}
