@@ -3203,7 +3203,7 @@
 					copyBtn.innerText = "Copy", copyPopup.style.display = "flex", copyTimer && clearTimeout(copyTimer),
 					copyTimer = setTimeout((() => { copyPopup && "flex" === copyPopup.style.display && (copyPopup.style
 							.display = "none", copyLocked = !1, pendingCopyText = "",
-							popupMessageSpan.innerText = "📋 Ready to copy", copyBtn.innerText = "Copy") }), 1200));
+							popupMessageSpan.innerText = "📋 Ready to copy", copyBtn.innerText = "Copy") }),1500));
 				if (isIOS) {
 					setTimeout(() => {
 						const outsideHandler = function(ev) {
@@ -3453,102 +3453,109 @@
 			}
 
 			async function loadSheetData(forceReload = false) {
-				if (!forceReload) return;
-				if (!currentSheetId) return void showToast("❌ Please enter a Google Sheet URL");
-				const e = `https://opensheet.elk.sh/${currentSheetId}/Sheet1`;
-				try {
-					const t = await fetch(e);
-					if (!t.ok) throw new Error(`HTTP ${t.status}`);
-					const n = await t.json();
-					if (!Array.isArray(n) || 0 === n.length) throw new Error("No data found in sheet");
-					lastSheetDataHash = computeSheetHash(n);
-					const o = n[0],
-						i = Object.keys(o);
-					let a = -1,
-						r = -1;
-					for (let e = 0; e < i.length; e++) { const t = i[e].toLowerCase();
-						(t.includes("khmer") || t.includes("km") || t.includes("ភាសា")) && (a = e), (t.includes(
-							"chinese") || t.includes("zh") || t.includes("中文")) && (r = e) } - 1 === a && i.length > 3 &&
-						(a = 3), -1 === r && i.length > 4 && (r = 4);
-					const s = [],
-						l = Object.values(o);
-					let d = -1 !== a && l.length > a && l[a] || "",
-						c = -1 !== r && l.length > r && l[r] || "";
-					s.push({ khmer: d.toString().trim(), chinese: c.toString().trim(), sheetRow: 2 });
-					for (let e = 1; e < n.length; e++) { const t = n[e],
-							o = Object.values(t),
-							i = -1 !== a && o.length > a && o[a] || "",
-							l = -1 !== r && o.length > r && o[r] || "";
-						(i || l) && s.push({ khmer: i.toString().trim(), chinese: l.toString().trim(), sheetRow: e + 2 }) }
-					vocabList = s, vocabularyData = vocabList, editUnlocked = !0, updateEditButtonsState();
-					await loadApiAndPasswordFromSheet();
-					buildFirstCharCache();
-					saveAllData();
-					// Save sheet ID to localStorage
-					if (currentSheetId) {
-						safeSetItem("vocabMaster_SheetId", currentSheetId);
-					}
-					// Clear soft-deleted indices on fresh load (they are no longer valid)
-					softDeletedIndices.clear();
-					softDeletedData.clear();
-					"random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length || (
-						// Find a non-deleted word
-						function() {
-							const available = vocabList.filter((_, idx) => !softDeletedIndices.has(idx));
-							if (available.length > 0) {
-								const idx = vocabList.indexOf(available[Math.floor(Math.random() * available.length)]);
-								if (idx !== -1) {
-									history = [idx];
-									historyIndex = 0;
-									renderRandomSidebar(idx);
-								}
-							} else if (vocabList.length) {
-								pickRandom();
-							}
-						})(), sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
-						vocabList.length && pickRandom()) : (normalCurrentIdx >= vocabList.length && (normalCurrentIdx = 0),
-						normalCurrentPage = getNormalPageForIndex(normalCurrentIdx), renderNormalSidebar());
-					const m = await getFileNameFromApi();
-// In loadSheetData function, replace the title update section:
-
-// Try to get sheet name from API
-let sheetName = await getFileNameFromApi();
-const u = document.getElementById("studioTitleSpan");
-
-if (u) {
-    // If API didn't return a name, try to get from localStorage
-    if (!sheetName || !sheetName.trim()) {
-        sheetName = safeGetItem('sheetName_' + currentSheetId, '');
-    }
-    
-    // If still no name, use a shortened sheet ID
-    if (!sheetName || !sheetName.trim()) {
-        sheetName = currentSheetId;
-        if (sheetName.length > 20) {
-            sheetName = sheetName.substring(0, 12) + '...' + sheetName.substring(sheetName.length - 8);
+    if (!forceReload) return;
+    if (!currentSheetId) return void showToast("❌ Please enter a Google Sheet URL");
+    const e = `https://opensheet.elk.sh/${currentSheetId}/Sheet1`;
+    try {
+        const t = await fetch(e);
+        if (!t.ok) throw new Error(`HTTP ${t.status}`);
+        const n = await t.json();
+        if (!Array.isArray(n) || 0 === n.length) throw new Error("No data found in sheet");
+        lastSheetDataHash = computeSheetHash(n);
+        const o = n[0],
+            i = Object.keys(o);
+        let a = -1, r = -1, g = -1;
+        for (let e = 0; e < i.length; e++) {
+            const t = i[e].toLowerCase();
+            (t.includes("khmer") || t.includes("km") || t.includes("ភាសា")) && (a = e);
+            (t.includes("chinese") || t.includes("zh") || t.includes("中文")) && (r = e);
+            (t.includes("group") || t.includes("topic") || t.includes("category")) && (g = e);
         }
-    }
-    
-    // Only update if it's not a URL
-    if (sheetName && sheetName.trim() && 
-        !sheetName.startsWith('http://') && 
-        !sheetName.startsWith('https://') && 
-        !sheetName.includes('docs.google.com')) {
-        let filename = sheetName.length > 20 ? sheetName.substring(0, 20) + "..." : sheetName;
-        u.innerText = "⠿ " + filename;
-    } else {
-        // If it's a URL, use the sheet ID instead
-        let shortId = currentSheetId;
-        if (shortId.length > 20) {
-            shortId = shortId.substring(0, 12) + '...' + shortId.substring(shortId.length - 8);
+        -1 === a && i.length > 3 && (a = 3);
+        -1 === r && i.length > 4 && (r = 4);
+        if (-1 === g && i.length > 5) {
+            const header = i[5]?.toLowerCase() || '';
+            if (header.includes('group') || header.includes('topic') || header.includes('category') || header === 'f') {
+                g = 5;
+            }
         }
-        u.innerText = "⠿ " + shortId;
-    }
+        
+        const s = [],
+            l = Object.values(o);
+        let d = -1 !== a && l.length > a && l[a] || "",
+            c = -1 !== r && l.length > r && l[r] || "",
+            grp = -1 !== g && l.length > g && l[g] || "";
+        s.push({ khmer: d.toString().trim(), chinese: c.toString().trim(), sheetRow: 2, group: grp.toString().trim() });
+        
+        for (let e = 1; e < n.length; e++) {
+            const t = n[e],
+                o = Object.values(t),
+                i = -1 !== a && o.length > a && o[a] || "",
+                l = -1 !== r && o.length > r && o[r] || "",
+                grpVal = -1 !== g && o.length > g && o[g] || "";
+            (i || l) && s.push({ 
+                khmer: i.toString().trim(), 
+                chinese: l.toString().trim(), 
+                sheetRow: e + 2,
+                group: grpVal.toString().trim()
+            });
+        }
+        vocabList = s, vocabularyData = vocabList, editUnlocked = !0, updateEditButtonsState();
+        await loadApiAndPasswordFromSheet();
+        buildFirstCharCache();
+        buildGroupCache();
+        saveAllData();
+        if (currentSheetId) {
+            safeSetItem("vocabMaster_SheetId", currentSheetId);
+        }
+        softDeletedIndices.clear();
+        softDeletedData.clear();
+        "random" === appMode ? (historyIndex >= 0 && history[historyIndex] < vocabList.length || (
+            function() {
+                const available = vocabList.filter((_, idx) => !softDeletedIndices.has(idx));
+                if (available.length > 0) {
+                    const idx = vocabList.indexOf(available[Math.floor(Math.random() * available.length)]);
+                    if (idx !== -1) {
+                        history = [idx];
+                        historyIndex = 0;
+                        renderRandomSidebar(idx);
+                    }
+                } else if (vocabList.length) {
+                    pickRandom();
+                }
+            })(), sidebarIndices.length > 0 ? renderRandomSidebar(sidebarIndices[sidebarFocusIdx] || 0) :
+            vocabList.length && pickRandom()) : (normalCurrentIdx >= vocabList.length && (normalCurrentIdx = 0),
+            normalCurrentPage = getNormalPageForIndex(normalCurrentIdx), renderNormalSidebar());
+        let sheetName = await getFileNameFromApi();
+        const u = document.getElementById("studioTitleSpan");
+        if (u) {
+            if (!sheetName || !sheetName.trim()) {
+                sheetName = safeGetItem('sheetName_' + currentSheetId, '');
+            }
+            if (!sheetName || !sheetName.trim()) {
+                sheetName = currentSheetId;
+                if (sheetName.length > 20) {
+                    sheetName = sheetName.substring(0, 12) + '...' + sheetName.substring(sheetName.length - 8);
+                }
+            }
+            if (sheetName && sheetName.trim() && 
+                !sheetName.startsWith('http://') && 
+                !sheetName.startsWith('https://') && 
+                !sheetName.includes('docs.google.com')) {
+                let filename = sheetName.length > 20 ? sheetName.substring(0, 20) + "..." : sheetName;
+                u.innerText = "⠿ " + filename;
+            } else {
+                let shortId = currentSheetId;
+                if (shortId.length > 20) {
+                    shortId = shortId.substring(0, 12) + '...' + shortId.substring(shortId.length - 8);
+                }
+                u.innerText = "⠿ " + shortId;
+            }
+        }
+        updateRecycleBinBadge();
+        showToast(`✅ Loaded ${vocabList.length} words`);
+    } catch (e) { console.error("Error loading sheet:", e), showToast(`❌ Error: ${e.message}`) }
 }
-					updateRecycleBinBadge();
-					showToast(`✅ Loaded ${vocabList.length} words`);
-				} catch (e) { console.error("Error loading sheet:", e), showToast(`❌ Error: ${e.message}`) }
-			}
 
 			async function callApi(e, t) {
 				if (!editUnlocked) return showPasswordModal((async n => { n && await callApi(e, t) })), !1;
@@ -3927,6 +3934,40 @@ n.onclick = async () => {
 				}
 				for (let [k, arr] of firstCharCache.entries()) arr.sort((a, b) => a - b);
 			}
+			// ---- GROUP CACHE ----
+let groupCache = new Map();
+let allGroups = [];
+
+function buildGroupCache() {
+    groupCache.clear();
+    allGroups = [];
+    for (let i = 0; i < vocabList.length; i++) {
+        const group = vocabList[i].group || '';
+        if (group) {
+            if (!groupCache.has(group)) {
+                groupCache.set(group, []);
+                allGroups.push(group);
+            }
+            groupCache.get(group).push(i);
+        }
+    }
+    allGroups.sort();
+}
+
+function getGroupNames() {
+    return allGroups;
+}
+
+function getIndicesForGroup(groupName) {
+    return groupCache.get(groupName) || [];
+}
+
+function getCurrentWordGroup(idx) {
+    if (idx >= 0 && idx < vocabList.length) {
+        return vocabList[idx].group || '';
+    }
+    return '';
+}
 
 			function getRelatedIndices(currentIdx) {
 				const currentWord = vocabList[currentIdx];
@@ -5628,7 +5669,7 @@ function setupInsertSymbolLongPress() {
                 }
                 
                 longPressTimer = null;
-            }, 400);
+            }, 500);
         };
 
         const endLongPress = (e) => {
