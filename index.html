@@ -6,9 +6,12 @@
     <title>📖 Vocab Master – Fixed Auto Timer</title>
     <link rel="icon" href="/static/ABAicon.png" type="image/png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/static/ABAicon.png" />
-    <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
-    <script src="/static/config.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js">
+    </script>
+    <script src="/static/config.js">
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js">
+    </script>
     <style>
         /* ===== All existing @font-face and base styles remain unchanged ===== */
         @font-face {
@@ -120,7 +123,7 @@
             --emoji-font-size: 32px;
             --pagination-color: #0f172a;
         }
-         /* === FIX: Remove Android default tap highlight === */
+        /* === FIX: Remove Android default tap highlight === */
         * {
             -webkit-tap-highlight-color: transparent !important;
             -webkit-touch-callout: none !important;
@@ -1130,8 +1133,12 @@
             transition: all .2s;
             flex-shrink: 0;
         }
-        .clear-filter-btn:active { transform: scale(0.95); }
-        .clear-filter-btn.hidden { display: none; }
+        .clear-filter-btn:active {
+            transform: scale(0.95);
+        }
+        .clear-filter-btn.hidden {
+            display: none;
+        }
         .vocab-item .side-group {
             font-size: 0.55rem;
             background: #334155;
@@ -1944,102 +1951,102 @@
             display: none
         }
         @media (max-width:700px) {
-    .chinese-word {
-        gap: 4px 8px;
-        padding: 8px 12px
-    }
-    .khmer-text {
-        font-size: 22px;
-        padding: 8px 12px
-    }
-    .choice-modal {
-        min-width: 85vw;
-        padding: 20px
-    }
-    #floatingMenu {
-        width: 320px
-    }
-    .side-number-col {
-        min-width: 40px;
-        margin-right: 6px;
-    }
-    .choice-search-area input {
-        font-size: .9rem;
-        padding: 10px
-    }
-    .pagination-btn {
-        padding: 8px 14px;
-        min-width: 60px;
-        font-size: .75rem
-    }
-    .pagination-info input {
-        width: 40px;
-        font-size: .7rem;
-    }
-    .big-edit-input-icon {
-        font-size: 1.4rem !important;
-        padding: 12px 45px 12px 16px !important
-    }
-    .insert-symbol-icon-inside {
-        font-size: 1rem;
-        padding: 6px 12px
-    }
-    .sidebar .side-zh {
-        font-size: 0.85rem;
-    }
-    .sidebar .side-km {
-        font-size: 0.7rem;
-    }
-    .sidebar .side-number {
-        font-size: 0.6rem;
-    }
-    .sidebar .vocab-item {
-        padding: 6px 8px;
-    }
-    #vocabSearchResults .result-item,
-    #vocabSearchResultsEdit .result-item {
-        font-size: 1rem !important;
-    }
-    #vocabSearchResults .result-item .result-chinese,
-    #vocabSearchResultsEdit .result-item .result-chinese {
-        font-size: 1.1rem !important;
-    }
-    #vocabSearchResults strong,
-    #vocabSearchResultsEdit strong {
-        font-size: 1.05rem !important;
-    }
-    .group-filter-area select {
-        font-size: 0.6rem;
-        padding: 3px 8px;
-    }
-    .clear-filter-btn {
-        font-size: 0.55rem;
-        padding: 3px 8px;
-    }
-    .vocab-item .side-group {
-        font-size: 0.5rem;
-        padding: 1px 6px;
-        max-width: 40px;
-    }
-    /* === NEW: Mode and filter row responsive === */
-    .mode-and-filter-row {
-        flex-wrap: wrap !important;
-        gap: 4px !important;
-    }
-    .mode-icons-container {
-        flex-shrink: 0 !important;
-    }
-    #groupFilterSelect {
-        font-size: 0.6rem !important;
-        padding: 3px 8px !important;
-        min-width: 60px !important;
-        max-width: 100px !important;
-    }
-    .mode-icon-small {
-        font-size: 0.85rem !important;
-        padding: 3px 8px !important;
-    }
-}
+            .chinese-word {
+                gap: 4px 8px;
+                padding: 8px 12px
+            }
+            .khmer-text {
+                font-size: 22px;
+                padding: 8px 12px
+            }
+            .choice-modal {
+                min-width: 85vw;
+                padding: 20px
+            }
+            #floatingMenu {
+                width: 320px
+            }
+            .side-number-col {
+                min-width: 40px;
+                margin-right: 6px;
+            }
+            .choice-search-area input {
+                font-size: .9rem;
+                padding: 10px
+            }
+            .pagination-btn {
+                padding: 8px 14px;
+                min-width: 60px;
+                font-size: .75rem
+            }
+            .pagination-info input {
+                width: 40px;
+                font-size: .7rem;
+            }
+            .big-edit-input-icon {
+                font-size: 1.4rem !important;
+                padding: 12px 45px 12px 16px !important
+            }
+            .insert-symbol-icon-inside {
+                font-size: 1rem;
+                padding: 6px 12px
+            }
+            .sidebar .side-zh {
+                font-size: 0.85rem;
+            }
+            .sidebar .side-km {
+                font-size: 0.7rem;
+            }
+            .sidebar .side-number {
+                font-size: 0.6rem;
+            }
+            .sidebar .vocab-item {
+                padding: 6px 8px;
+            }
+            #vocabSearchResults .result-item,
+            #vocabSearchResultsEdit .result-item {
+                font-size: 1rem !important;
+            }
+            #vocabSearchResults .result-item .result-chinese,
+            #vocabSearchResultsEdit .result-item .result-chinese {
+                font-size: 1.1rem !important;
+            }
+            #vocabSearchResults strong,
+            #vocabSearchResultsEdit strong {
+                font-size: 1.05rem !important;
+            }
+            .group-filter-area select {
+                font-size: 0.6rem;
+                padding: 3px 8px;
+            }
+            .clear-filter-btn {
+                font-size: 0.55rem;
+                padding: 3px 8px;
+            }
+            .vocab-item .side-group {
+                font-size: 0.5rem;
+                padding: 1px 6px;
+                max-width: 40px;
+            }
+            /* === NEW: Mode and filter row responsive === */
+            .mode-and-filter-row {
+                flex-wrap: wrap !important;
+                gap: 4px !important;
+            }
+            .mode-icons-container {
+                flex-shrink: 0 !important;
+            }
+            #groupFilterSelect {
+                font-size: 0.6rem !important;
+                padding: 3px 8px !important;
+                min-width: 60px !important;
+                max-width: 100px !important;
+            }
+            .mode-icon-small {
+                font-size: 0.85rem !important;
+                padding: 3px 8px !important;
+            }
+        }
         .copy-popup {
             position: fixed;
             top: 50%;
@@ -2901,6 +2908,54 @@
             try { localStorage.removeItem(key); } catch (e) {}
         }
 
+        // ===== IndexedDB for large vocab list =====
+        function openVocabDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('VocabMasterDB', 1);
+                request.onupgradeneeded = function(e) {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('vocab')) {
+                        db.createObjectStore('vocab', { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = function(e) { resolve(e.target.result); };
+                request.onerror = function(e) { reject(e.target.error); };
+            });
+        }
+
+        async function storeVocabListInIndexedDB(list) {
+            try {
+                const db = await openVocabDB();
+                const tx = db.transaction('vocab', 'readwrite');
+                const store = tx.objectStore('vocab');
+                store.put({ id: 'list', data: list });
+                await new Promise((resolve, reject) => {
+                    tx.oncomplete = resolve;
+                    tx.onerror = reject;
+                });
+                return true;
+            } catch (e) {
+                console.warn('IndexedDB store failed:', e);
+                return false;
+            }
+        }
+
+        async function getVocabListFromIndexedDB() {
+            try {
+                const db = await openVocabDB();
+                const tx = db.transaction('vocab', 'readonly');
+                const store = tx.objectStore('vocab');
+                const request = store.get('list');
+                return new Promise((resolve, reject) => {
+                    request.onsuccess = function() { resolve(request.result ? request.result.data : null); };
+                    request.onerror = function() { reject(request.error); };
+                });
+            } catch (e) {
+                console.warn('IndexedDB get failed:', e);
+                return null;
+            }
+        }
+
         function compressVocabList(list) {
             return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2, item.group || '']);
         }
@@ -3633,200 +3688,155 @@
         }
 
         // ---- APPLY FILTER ----
-       // ---- APPLY FILTER ----
-// ---- APPLY FILTER ----
-function applyGroupFilter() {
-    if (groupFilter === '__ALL__') {
-        filteredList = vocabList.map((_, idx) => idx);
-    } else {
-        filteredList = groupMap.get(groupFilter) || [];
-    }
-    // Filter out soft-deleted items from filteredList
-    filteredList = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
-    
-    // Ensure current index is valid
-    if (filteredList.length === 0) {
-        normalCurrentIdx = 0;
-        sidebarIndices = [];
-    } else if (normalCurrentIdx >= filteredList.length) {
-        normalCurrentIdx = 0;
-    }
-    // Also update filteredIndices for compatibility
-    filteredIndices = filteredList;
-    // Rebuild sidebar indices based on filter
-    rebuildFilteredSidebarIndices();
-    // Update UI
-    renderSidebarUI();
-    updateDisplay();
-    updateGroupBadge();
-    updateFilterSelect();
-    updateStatusBar();
-    
-    // Update pagination
-    const paginationContainer = document.getElementById('paginationContainer');
-    if (paginationContainer) {
-        updatePaginationControlsInside(paginationContainer);
-    }
-    
-    // Re-attach group filter listener
-    reattachGroupFilterListener();
-}
+        // ---- APPLY FILTER ----
+        // ---- APPLY FILTER ----
+        function applyGroupFilter() {
+            if (groupFilter === '__ALL__') {
+                filteredList = vocabList.map((_, idx) => idx);
+            } else {
+                filteredList = groupMap.get(groupFilter) || [];
+            }
+            // Filter out soft-deleted items from filteredList
+            filteredList = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
 
+            // Ensure current index is valid
+            if (filteredList.length === 0) {
+                normalCurrentIdx = 0;
+                sidebarIndices = [];
+            } else if (normalCurrentIdx >= filteredList.length) {
+                normalCurrentIdx = 0;
+            }
+            // Also update filteredIndices for compatibility
+            filteredIndices = filteredList;
+            // Rebuild sidebar indices based on filter
+            rebuildFilteredSidebarIndices();
+            // Update UI
+            renderSidebarUI();
+            updateDisplay();
+            updateGroupBadge();
+            updateFilterSelect();
+            updateStatusBar();
+
+            // Update pagination
+            const paginationContainer = document.getElementById('paginationContainer');
+            if (paginationContainer) {
+                updatePaginationControlsInside(paginationContainer);
+            }
+
+            // Re-attach group filter listener
+            reattachGroupFilterListener();
+        } // <-- Added this closing brace
+        // Re-attach group filter listener
+        function reattachGroupFilterListener() {
+            const groupSelect = document.getElementById('groupFilterSelect');
+            if (groupSelect) {
+                groupSelect.onchange = function() {
+                    setGroupFilter(this.value);
+                };
+                updateFilterSelect();
+            }
+        }
         // ---- REBUILD FILTERED SIDEBAR INDICES ----
-       // ---- REBUILD FILTERED SIDEBAR INDICES ----
-function rebuildFilteredSidebarIndices() {
-    if (filteredList.length === 0) {
-        sidebarIndices = [];
-        return;
-    }
-    // Build sidebarIndices from filteredList
-    // For sequential mode, use pagination
-    if (appMode === 'sequential') {
-        const start = normalCurrentPage * ITEMS_PER_PAGE;
-        const end = Math.min(start + ITEMS_PER_PAGE, filteredList.length);
-        sidebarIndices = [];
-        for (let i = start; i < end; i++) {
-            sidebarIndices.push(filteredList[i]);
-        }
-        // Ensure current index is within sidebar
-        const posInSidebar = sidebarIndices.indexOf(filteredList[normalCurrentIdx]);
-        if (posInSidebar !== -1) {
-            sidebarFocusIdx = posInSidebar;
-        } else if (sidebarIndices.length > 0) {
-            const firstIdx = sidebarIndices[0];
-            const globalIdx = vocabList.findIndex((v) => v === filteredList[firstIdx]);
-            if (globalIdx !== -1) {
-                normalCurrentIdx = globalIdx;
-                sidebarFocusIdx = 0;
+        // ---- REBUILD FILTERED SIDEBAR INDICES ----
+        function rebuildFilteredSidebarIndices() {
+            if (filteredList.length === 0) {
+                sidebarIndices = [];
+                return;
+            }
+            // Build sidebarIndices from filteredList
+            // For sequential mode, use pagination
+            if (appMode === 'sequential') {
+                const start = normalCurrentPage * ITEMS_PER_PAGE;
+                const end = Math.min(start + ITEMS_PER_PAGE, filteredList.length);
+                sidebarIndices = [];
+                for (let i = start; i < end; i++) {
+                    sidebarIndices.push(filteredList[i]);
+                }
+                // Ensure current index is within sidebar
+                const posInSidebar = sidebarIndices.indexOf(filteredList[normalCurrentIdx]);
+                if (posInSidebar !== -1) {
+                    sidebarFocusIdx = posInSidebar;
+                } else if (sidebarIndices.length > 0) {
+                    const firstIdx = sidebarIndices[0];
+                    const globalIdx = vocabList.findIndex((v) => v === filteredList[firstIdx]);
+                    if (globalIdx !== -1) {
+                        normalCurrentIdx = globalIdx;
+                        sidebarFocusIdx = 0;
+                    }
+                }
+            } else {
+                // Random mode: show all filtered items
+                sidebarIndices = filteredList.slice();
+                // Ensure current index is valid
+                if (sidebarIndices.length > 0 && !sidebarIndices.includes(normalCurrentIdx)) {
+                    normalCurrentIdx = sidebarIndices[0];
+                    sidebarFocusIdx = 0;
+                }
+                // If we have too many, limit to first 50 for performance
+                if (sidebarIndices.length > 50) {
+                    // Keep current index and surrounding items
+                    const currentPos = sidebarIndices.indexOf(normalCurrentIdx);
+                    if (currentPos !== -1) {
+                        const start = Math.max(0, currentPos - 20);
+                        const end = Math.min(sidebarIndices.length, currentPos + 30);
+                        sidebarIndices = sidebarIndices.slice(start, end);
+                        sidebarFocusIdx = Math.min(20, sidebarIndices.indexOf(normalCurrentIdx));
+                        if (sidebarFocusIdx === -1) sidebarFocusIdx = 0;
+                    }
+                }
             }
         }
-    } else {
-        // Random mode: show all filtered items
-        sidebarIndices = filteredList.slice();
-        // Ensure current index is valid
-        if (sidebarIndices.length > 0 && !sidebarIndices.includes(normalCurrentIdx)) {
-            normalCurrentIdx = sidebarIndices[0];
-            sidebarFocusIdx = 0;
-        }
-        // If we have too many, limit to first 50 for performance
-        if (sidebarIndices.length > 50) {
-            // Keep current index and surrounding items
-            const currentPos = sidebarIndices.indexOf(normalCurrentIdx);
-            if (currentPos !== -1) {
-                const start = Math.max(0, currentPos - 20);
-                const end = Math.min(sidebarIndices.length, currentPos + 30);
-                sidebarIndices = sidebarIndices.slice(start, end);
-                sidebarFocusIdx = Math.min(20, sidebarIndices.indexOf(normalCurrentIdx));
-                if (sidebarFocusIdx === -1) sidebarFocusIdx = 0;
-            }
-        }
-    }
-}
 
         // ---- UPDATE GROUP BADGE ----
         // ---- UPDATE GROUP BADGE ----
-function updateGroupBadge() {
-    const badge = document.getElementById('groupBadge');
-    if (badge) {
-        if (groupFilter === '__ALL__' || groupFilter === 'Uncategorized') {
-            badge.textContent = 'All';
-            badge.style.background = '#3b82f6';
-        } else {
-            badge.textContent = groupFilter;
-            badge.style.background = '#8b5cf6';
+        function updateGroupBadge() {
+            const badge = document.getElementById('groupBadge');
+            if (badge) {
+                if (groupFilter === '__ALL__' || groupFilter === 'Uncategorized') {
+                    badge.textContent = 'All';
+                    badge.style.background = '#3b82f6';
+                } else {
+                    badge.textContent = groupFilter;
+                    badge.style.background = '#8b5cf6';
+                }
+            }
+
+            // Update group filter select
+            const select = document.getElementById('groupFilterSelect');
+            if (select) {
+                select.value = groupFilter;
+            }
         }
-    }
-    
-    // Update group filter select
-    const select = document.getElementById('groupFilterSelect');
-    if (select) {
-        select.value = groupFilter;
-    }
-}
 
-        // ---- UPDATE FILTER SELECT ----
-        // ---- UPDATE FILTER SELECT - FIXED ----
-// ---- UPDATE FILTER SELECT ----
-// ---- UPDATE FILTER SELECT ----
-function updateFilterSelect() {
-    const select = document.getElementById('groupFilterSelect');
-    if (!select) return;
-    const currentVal = select.value;
-    const keys = Array.from(groupMap.keys()).sort();
-    
-    select.innerHTML = `<option value="__ALL__">📂 All</option>`;
-    
-    keys.forEach(g => {
-        // Skip "Uncategorized" completely
-        if (g === 'Uncategorized') return;
-        
-        const count = groupMap.get(g).length;
-        const opt = document.createElement('option');
-        opt.value = g;
-        opt.textContent = `${g} (${count})`;
-        select.appendChild(opt);
-    });
-    
-    // If current filter is Uncategorized, switch to All
-    if (groupFilter === 'Uncategorized') {
-        groupFilter = '__ALL__';
-        applyGroupFilter();
-        return;
-    }
-    
-    // Try to restore selection
-    if (currentVal !== '__ALL__' && groupMap.has(currentVal)) {
-        select.value = currentVal;
-    } else {
-        select.value = groupFilter;
-    }
-}
+        function updateFilterSelect() {
+            const select = document.getElementById('groupFilterSelect');
+            if (!select) return;
+            const currentVal = select.value;
+            const keys = Array.from(groupMap.keys()).sort();
 
-function reattachGroupFilterListener() {
-    const groupSelect = document.getElementById('groupFilterSelect');
-    if (groupSelect) {
-        // Remove any existing listeners by cloning and replacing
-        const newSelect = groupSelect.cloneNode(true);
-        groupSelect.parentNode.replaceChild(newSelect, groupSelect);
-        // Set the value to current groupFilter
-        newSelect.value = groupFilter;
-        // Add the event listener
-        newSelect.onchange = function() {
-            setGroupFilter(this.value);
-        };
-        // Make sure options are correct
-        updateFilterSelect();
-    }
-}
+            select.innerHTML = `<option value="__ALL__">📂 All</option>`;
 
-// ---- APPLY FILTER ----
-function applyGroupFilter() {
-    if (groupFilter === '__ALL__') {
-        filteredList = vocabList.map((_, idx) => idx);
-    } else {
-        filteredList = groupMap.get(groupFilter) || [];
-    }
-    // Ensure current index is valid
-    if (filteredList.length === 0) {
-        normalCurrentIdx = 0;
-        sidebarIndices = [];
-    } else if (normalCurrentIdx >= filteredList.length) {
-        normalCurrentIdx = 0;
-    }
-    // Also update filteredIndices for compatibility
-    filteredIndices = filteredList;
-    // Rebuild sidebar indices based on filter
-    rebuildFilteredSidebarIndices();
-    // Update UI
-    renderSidebarUI();
-    updateDisplay();
-    updateGroupBadge();
-    updateFilterSelect();
-    updateStatusBar();
-    
-    // Re-attach group filter listener
-    reattachGroupFilterListener();
-}
+            keys.forEach(g => {
+                if (g === 'Uncategorized') return;
+                const count = groupMap.get(g).length;
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.textContent = `${g} (${count})`;
+                select.appendChild(opt);
+            });
+
+            if (groupFilter === 'Uncategorized') {
+                groupFilter = '__ALL__';
+                applyGroupFilter();
+                return;
+            }
+
+            if (currentVal !== '__ALL__' && groupMap.has(currentVal)) {
+                select.value = currentVal;
+            } else {
+                select.value = groupFilter;
+            }
+        } // <-- Only one closing brace, no extra code after
 
         // ---- UPDATE STATUS BAR ----
         function updateStatusBar() {
@@ -3847,49 +3857,40 @@ function applyGroupFilter() {
 
         // ---- CREATE GROUP FILTER UI IN SIDEBAR ----
         // ---- CREATE GROUP FILTER UI IN SIDEBAR - FIXED ----
-// ---- CREATE GROUP FILTER UI IN SIDEBAR ----
-function createGroupFilterUI() {
-    const select = document.getElementById('groupFilterSelect');
-    if (!select) return;
-    
-    // Remove any existing event listeners by cloning
-    const newSelect = select.cloneNode(true);
-    select.parentNode.replaceChild(newSelect, select);
-    
-    // Set the value
-    newSelect.value = groupFilter;
-    
-    // Update options - skip Uncategorized
-    const currentVal = newSelect.value;
-    const keys = Array.from(groupMap.keys()).sort();
-    newSelect.innerHTML = `<option value="__ALL__">📂 All</option>`;
-    keys.forEach(g => {
-        // Skip "Uncategorized"
-        if (g === 'Uncategorized') return;
-        
-        const count = groupMap.get(g).length;
-        const opt = document.createElement('option');
-        opt.value = g;
-        opt.textContent = `${g} (${count})`;
-        newSelect.appendChild(opt);
-    });
-    
-    // If current filter is Uncategorized, switch to All
-    if (currentVal === 'Uncategorized') {
-        newSelect.value = '__ALL__';
-        groupFilter = '__ALL__';
-    } else if (currentVal !== '__ALL__' && groupMap.has(currentVal)) {
-        newSelect.value = currentVal;
-    } else {
-        newSelect.value = groupFilter;
-    }
-    
-    // Setup event listener
-    newSelect.onchange = function() {
-        setGroupFilter(this.value);
-    };
-}
+        // ---- CREATE GROUP FILTER UI IN SIDEBAR ----
+        function createGroupFilterUI() {
+            const select = document.getElementById('groupFilterSelect');
+            if (!select) return;
 
+            // Set the value
+            select.value = groupFilter;
+
+            // Update options - skip Uncategorized
+            const currentVal = select.value;
+            const keys = Array.from(groupMap.keys()).sort();
+            select.innerHTML = `<option value="__ALL__">📂 All</option>`;
+            keys.forEach(g => {
+                if (g === 'Uncategorized') return;
+                const count = groupMap.get(g).length;
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.textContent = `${g} (${count})`;
+                select.appendChild(opt);
+            });
+
+            if (currentVal === 'Uncategorized') {
+                select.value = '__ALL__';
+                groupFilter = '__ALL__';
+            } else if (currentVal !== '__ALL__' && groupMap.has(currentVal)) {
+                select.value = currentVal;
+            } else {
+                select.value = groupFilter;
+            }
+
+            select.onchange = function() {
+                setGroupFilter(this.value);
+            };
+        }
         // ---- MODIFIED loadSheetData with GROUP column ----
         async function loadSheetData(forceReload = false) {
             if (!forceReload) return;
@@ -3915,7 +3916,7 @@ function createGroupFilterUI() {
                 -1 === a && i.length > 3 && (a = 3);
                 -1 === r && i.length > 4 && (r = 4);
                 -1 === gCol && i.length > 5 && (gCol = 5);
-                
+
                 const s = [],
                     l = Object.values(o);
                 let d = -1 !== a && l.length > a && l[a] || "",
@@ -3927,7 +3928,7 @@ function createGroupFilterUI() {
                     sheetRow: 2,
                     group: grp.toString().trim() || 'Uncategorized'
                 });
-                
+
                 for (let e = 1; e < n.length; e++) {
                     const t = n[e],
                         o = Object.values(t),
@@ -3941,31 +3942,31 @@ function createGroupFilterUI() {
                         group: grpVal.toString().trim() || 'Uncategorized'
                     });
                 }
-                
+
                 vocabList = s;
                 vocabularyData = vocabList;
                 editUnlocked = !0;
                 updateEditButtonsState();
                 await loadApiAndPasswordFromSheet();
-                
+
                 // Build group map
                 buildGroupMap();
-                
+
                 // Apply filter
                 applyGroupFilter();
-                
+
                 // Save data
                 saveAllData();
-                
+
                 // Save sheet ID to localStorage
                 if (currentSheetId) {
                     safeSetItem("vocabMaster_SheetId", currentSheetId);
                 }
-                
+
                 // Clear soft-deleted indices on fresh load (they are no longer valid)
                 softDeletedIndices.clear();
                 softDeletedData.clear();
-                
+
                 // Load saved filter preference
                 const savedFilter = safeGetItem('groupFilter', '__ALL__');
                 if (savedFilter && groupMap.has(savedFilter)) {
@@ -3974,7 +3975,7 @@ function createGroupFilterUI() {
                     groupFilter = '__ALL__';
                 }
                 applyGroupFilter();
-                
+
                 // Initialize display
                 if (filteredList.length > 0) {
                     if (appMode === 'random') {
@@ -3994,7 +3995,7 @@ function createGroupFilterUI() {
                     updateChineseDisplay("");
                     document.getElementById("khmerWord").innerText = "";
                 }
-                
+
                 const m = await getFileNameFromApi();
                 let sheetName = await getFileNameFromApi();
                 const u = document.getElementById("studioTitleSpan");
@@ -4022,14 +4023,11 @@ function createGroupFilterUI() {
                         u.innerText = "⠿ " + shortId;
                     }
                 }
-                
-                // Create group filter UI
-                createGroupFilterUI();
-                
+
                 updateRecycleBinBadge();
                 updateStatusBar();
                 showToast(`✅ Loaded ${vocabList.length} words in ${groupMap.size} groups`);
-                
+
             } catch (e) {
                 console.error("Error loading sheet:", e);
                 showToast(`❌ Error: ${e.message}`);
@@ -4226,7 +4224,7 @@ function createGroupFilterUI() {
                         sheetHistory = sheetHistory.filter(s => s !== id);
                         safeSetItem('sheetHistory', JSON.stringify(sheetHistory));
                         safeRemoveItem('sheetName_' + id);
-                        
+
                         customDropdown.innerHTML = sheetHistory.map(id => {
                             const sheetName = safeGetItem('sheetName_' + id, id);
                             return `
@@ -4237,7 +4235,7 @@ function createGroupFilterUI() {
                                 <button class="history-delete-btn" data-id="${id}" style="background:transparent; border:none; color:#ef4444; cursor:pointer; font-size:0.9rem; padding:4px 8px; border-radius:4px; flex-shrink:0;">✕</button>
                             </div>
                         `}).join('');
-                        
+
                         if (sheetHistory.length === 0) {
                             customDropdown.innerHTML = '<div style="padding:12px; text-align:center; color:#999; font-size:0.8rem;">No history</div>';
                             customText.textContent = '-- Select URL --';
@@ -4277,7 +4275,7 @@ function createGroupFilterUI() {
                     closeAllModals();
                     currentSheetId = sheetId;
                     currentSheetUrl = `https://docs.google.com/spreadsheets/d/${currentSheetId}`;
-                    
+
                     let sheetName = await getSheetName(sheetId);
                     if (titleSpan) {
                         if (sheetName && sheetName.trim()) {
@@ -4318,51 +4316,51 @@ function createGroupFilterUI() {
         }
 
         function renderNormalSidebar() {
-    if (!vocabList.length) return;
-    // Use filteredList instead of filterVocabBySearch
-    const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
-    if (0 === filtered.length) {
-        sidebarIndices = [];
-        renderSidebarUI();
-        updateDisplay();
-        return;
-    }
-    
-    // Ensure normalCurrentIdx is valid and in filtered list
-    if (!filtered.includes(normalCurrentIdx)) {
-        normalCurrentIdx = filtered[0] || 0;
-    }
-    
-    // Ensure normalCurrentPage is within bounds
-    const totalPages = Math.max(1, Math.ceil(filtered.length / 40));
-    if (normalCurrentPage >= totalPages) {
-        normalCurrentPage = totalPages - 1;
-    }
-    if (normalCurrentPage < 0) {
-        normalCurrentPage = 0;
-    }
-    
-    const start = 40 * normalCurrentPage;
-    const end = Math.min(start + 40, filtered.length);
-    
-    sidebarIndices = filtered.slice(start, end);
-    
-    let focusIdx = sidebarIndices.indexOf(normalCurrentIdx);
-    if (focusIdx === -1 && sidebarIndices.length > 0) {
-        normalCurrentIdx = sidebarIndices[0];
-        focusIdx = 0;
-    }
-    sidebarFocusIdx = focusIdx >= 0 ? focusIdx : 0;
-    
-    renderSidebarUI();
-    updateDisplay();
-    
-    const word = vocabList[sidebarIndices[sidebarFocusIdx]];
-    if (word && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
-        speakAutoSequence(word.chinese, word.khmer);
-    }
-    scrollToActiveSidebarItem();
-}
+            if (!vocabList.length) return;
+            // Use filteredList instead of filterVocabBySearch
+            const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
+            if (0 === filtered.length) {
+                sidebarIndices = [];
+                renderSidebarUI();
+                updateDisplay();
+                return;
+            }
+
+            // Ensure normalCurrentIdx is valid and in filtered list
+            if (!filtered.includes(normalCurrentIdx)) {
+                normalCurrentIdx = filtered[0] || 0;
+            }
+
+            // Ensure normalCurrentPage is within bounds
+            const totalPages = Math.max(1, Math.ceil(filtered.length / 40));
+            if (normalCurrentPage >= totalPages) {
+                normalCurrentPage = totalPages - 1;
+            }
+            if (normalCurrentPage < 0) {
+                normalCurrentPage = 0;
+            }
+
+            const start = 40 * normalCurrentPage;
+            const end = Math.min(start + 40, filtered.length);
+
+            sidebarIndices = filtered.slice(start, end);
+
+            let focusIdx = sidebarIndices.indexOf(normalCurrentIdx);
+            if (focusIdx === -1 && sidebarIndices.length > 0) {
+                normalCurrentIdx = sidebarIndices[0];
+                focusIdx = 0;
+            }
+            sidebarFocusIdx = focusIdx >= 0 ? focusIdx : 0;
+
+            renderSidebarUI();
+            updateDisplay();
+
+            const word = vocabList[sidebarIndices[sidebarFocusIdx]];
+            if (word && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
+                speakAutoSequence(word.chinese, word.khmer);
+            }
+            scrollToActiveSidebarItem();
+        }
 
         let firstCharCache = new Map();
 
@@ -4389,130 +4387,130 @@ function createGroupFilterUI() {
         let lastRandomIndicesStr = "";
 
         function renderRandomSidebar(e) {
-    const t = vocabList[e];
-    if (!t) return;
-    // Make sure the index is in the filtered list
-    if (!filteredList.includes(e)) {
-        // Find the first available in filtered list
-        if (filteredList.length > 0) {
-            const firstAvailable = filteredList.find(idx => !softDeletedIndices.has(idx));
-            if (firstAvailable !== undefined) {
-                e = firstAvailable;
-            } else {
-                return;
+            const t = vocabList[e];
+            if (!t) return;
+            // Make sure the index is in the filtered list
+            if (!filteredList.includes(e)) {
+                // Find the first available in filtered list
+                if (filteredList.length > 0) {
+                    const firstAvailable = filteredList.find(idx => !softDeletedIndices.has(idx));
+                    if (firstAvailable !== undefined) {
+                        e = firstAvailable;
+                    } else {
+                        return;
+                    }
+                } else {
+                    return;
+                }
             }
-        } else {
-            return;
+            const newIndices = getRelatedIndices(e);
+            const newIndicesStr = newIndices.join(",");
+            if (newIndicesStr !== lastRandomIndicesStr) {
+                sidebarIndices = newIndices;
+                lastRandomIndicesStr = newIndicesStr;
+                sidebarFocusIdx = 0;
+                renderSidebarUI();
+            } else {
+                sidebarFocusIdx = 0;
+                document.querySelectorAll(".vocab-item").forEach((el, idx) => {
+                    if (idx === 0) el.classList.add("active");
+                    else el.classList.remove("active");
+                });
+                updateDisplay();
+                const word = vocabList[sidebarIndices[sidebarFocusIdx]];
+                if (word && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
+                    speakAutoSequence(word.chinese, word.khmer);
+                }
+                scrollToActiveSidebarItem();
+            }
+            updateDisplay();
+            if (!softDeletedIndices.has(e)) {
+                speakAutoSequence(t.chinese, t.khmer);
+            }
         }
-    }
-    const newIndices = getRelatedIndices(e);
-    const newIndicesStr = newIndices.join(",");
-    if (newIndicesStr !== lastRandomIndicesStr) {
-        sidebarIndices = newIndices;
-        lastRandomIndicesStr = newIndicesStr;
-        sidebarFocusIdx = 0;
-        renderSidebarUI();
-    } else {
-        sidebarFocusIdx = 0;
-        document.querySelectorAll(".vocab-item").forEach((el, idx) => {
-            if (idx === 0) el.classList.add("active");
-            else el.classList.remove("active");
-        });
-        updateDisplay();
-        const word = vocabList[sidebarIndices[sidebarFocusIdx]];
-        if (word && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
-            speakAutoSequence(word.chinese, word.khmer);
-        }
-        scrollToActiveSidebarItem();
-    }
-    updateDisplay();
-    if (!softDeletedIndices.has(e)) {
-        speakAutoSequence(t.chinese, t.khmer);
-    }
-}
 
         function loadWordByMode(e, t = !0) {
-    if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), killAllSpeech(), !vocabList[e]) return;
-    if (softDeletedIndices.has(e)) {
-        showToast("⚠️ This word is in the recycle bin");
-        return;
-    }
-    // Check if the word is in the current filtered list
-    if (!filteredList.includes(e)) {
-        showToast("⚠️ This word is not in the current group filter");
-        // Find the first available word in the filtered list
-        if (filteredList.length > 0) {
-            const firstAvailable = filteredList.find(idx => !softDeletedIndices.has(idx));
-            if (firstAvailable !== undefined) {
-                e = firstAvailable;
-            } else {
+            if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), killAllSpeech(), !vocabList[e]) return;
+            if (softDeletedIndices.has(e)) {
+                showToast("⚠️ This word is in the recycle bin");
                 return;
             }
-        } else {
-            return;
-        }
-    }
-    
-    if ("random" === appMode) {
-        if (t && history[historyIndex] !== e) {
-            history = history.slice(0, historyIndex + 1);
-            history.push(e);
-            historyIndex = history.length - 1;
-        }
-        renderRandomSidebar(e);
-    } else {
-        // SEQUENTIAL mode
-        normalCurrentIdx = e;
-        const filtered = filterVocabBySearch(vocabList);
-        const posInFiltered = filtered.findIndex((v) => v === vocabList[e]);
-        if (posInFiltered !== -1) {
-            const page = Math.floor(posInFiltered / 40);
-            if (page !== normalCurrentPage) {
-                normalCurrentPage = page;
-                renderNormalSidebar();
-            } else {
-                let idx = sidebarIndices.indexOf(e);
-                if (idx !== -1) {
-                    sidebarFocusIdx = idx;
-                    renderSidebarUI();
-                    updateDisplay();
-                    const w = vocabList[sidebarIndices[sidebarFocusIdx]];
-                    if (w && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
-                        speakAutoSequence(w.chinese, w.khmer);
+            // Check if the word is in the current filtered list
+            if (!filteredList.includes(e)) {
+                showToast("⚠️ This word is not in the current group filter");
+                // Find the first available word in the filtered list
+                if (filteredList.length > 0) {
+                    const firstAvailable = filteredList.find(idx => !softDeletedIndices.has(idx));
+                    if (firstAvailable !== undefined) {
+                        e = firstAvailable;
+                    } else {
+                        return;
                     }
-                    scrollToActiveSidebarItem();
                 } else {
-                    renderNormalSidebar();
+                    return;
                 }
             }
-        } else {
-            if (filtered.length > 0) {
-                const firstVisible = vocabList.findIndex((v) => v === filtered[0]);
-                if (firstVisible !== -1) {
-                    normalCurrentIdx = firstVisible;
-                    normalCurrentPage = 0;
-                    renderNormalSidebar();
+
+            if ("random" === appMode) {
+                if (t && history[historyIndex] !== e) {
+                    history = history.slice(0, historyIndex + 1);
+                    history.push(e);
+                    historyIndex = history.length - 1;
+                }
+                renderRandomSidebar(e);
+            } else {
+                // SEQUENTIAL mode
+                normalCurrentIdx = e;
+                const filtered = filterVocabBySearch(vocabList);
+                const posInFiltered = filtered.findIndex((v) => v === vocabList[e]);
+                if (posInFiltered !== -1) {
+                    const page = Math.floor(posInFiltered / 40);
+                    if (page !== normalCurrentPage) {
+                        normalCurrentPage = page;
+                        renderNormalSidebar();
+                    } else {
+                        let idx = sidebarIndices.indexOf(e);
+                        if (idx !== -1) {
+                            sidebarFocusIdx = idx;
+                            renderSidebarUI();
+                            updateDisplay();
+                            const w = vocabList[sidebarIndices[sidebarFocusIdx]];
+                            if (w && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
+                                speakAutoSequence(w.chinese, w.khmer);
+                            }
+                            scrollToActiveSidebarItem();
+                        } else {
+                            renderNormalSidebar();
+                        }
+                    }
+                } else {
+                    if (filtered.length > 0) {
+                        const firstVisible = vocabList.findIndex((v) => v === filtered[0]);
+                        if (firstVisible !== -1) {
+                            normalCurrentIdx = firstVisible;
+                            normalCurrentPage = 0;
+                            renderNormalSidebar();
+                        }
+                    }
                 }
             }
+            const ch = vocabList[e]?.chinese || "";
+            ch ? fetchEmojiForChinese(ch) : emojiContainer.classList.add("hidden");
         }
-    }
-    const ch = vocabList[e]?.chinese || "";
-    ch ? fetchEmojiForChinese(ch) : emojiContainer.classList.add("hidden");
-}
 
         function pickRandom() {
-    if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), "normal" === appMode) goNextNormal();
-    else if (vocabList.length) {
-        // Find a non-soft-deleted word from the filtered list
-        const available = filteredList.filter(idx => !softDeletedIndices.has(idx));
-        if (available.length === 0) {
-            showToast("⚠️ No words available in this group!");
-            return;
+            if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), "normal" === appMode) goNextNormal();
+            else if (vocabList.length) {
+                // Find a non-soft-deleted word from the filtered list
+                const available = filteredList.filter(idx => !softDeletedIndices.has(idx));
+                if (available.length === 0) {
+                    showToast("⚠️ No words available in this group!");
+                    return;
+                }
+                const newIdx = available[Math.floor(Math.random() * available.length)];
+                if (newIdx !== -1) loadWordByMode(newIdx, !0);
+            }
         }
-        const newIdx = available[Math.floor(Math.random() * available.length)];
-        if (newIdx !== -1) loadWordByMode(newIdx, !0);
-    }
-}
 
         function historyPrev() { autoTimer && (clearTimeout(autoTimer), autoTimer = null); if ("random" === appMode) { if (
                     historyIndex > 0) { historyIndex--;
@@ -4523,99 +4521,99 @@ function createGroupFilterUI() {
                     loadWordByMode(history[historyIndex], !1); } } else goNextNormal(); }
 
         function goPrevNormal() {
-    if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), !vocabList.length) return;
-    // Use filteredList instead of all vocabList
-    const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx));
-    if (filtered.length === 0) return;
-    
-    let pos = filtered.indexOf(normalCurrentIdx);
-    if (pos === -1) {
-        pos = filtered.length - 1;
-    } else {
-        pos = Math.max(0, pos - 1);
-    }
-    if (pos < filtered.length) {
-        const idx = filtered[pos];
-        if (idx !== -1 && !softDeletedIndices.has(idx)) {
-            loadWordByMode(idx, true);
-        } else {
-            pickRandom();
+            if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), !vocabList.length) return;
+            // Use filteredList instead of all vocabList
+            const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx));
+            if (filtered.length === 0) return;
+
+            let pos = filtered.indexOf(normalCurrentIdx);
+            if (pos === -1) {
+                pos = filtered.length - 1;
+            } else {
+                pos = Math.max(0, pos - 1);
+            }
+            if (pos < filtered.length) {
+                const idx = filtered[pos];
+                if (idx !== -1 && !softDeletedIndices.has(idx)) {
+                    loadWordByMode(idx, true);
+                } else {
+                    pickRandom();
+                }
+            }
         }
-    }
-}
 
         function goNextNormal() {
-    if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), !vocabList.length) return;
-    // Use filteredList instead of all vocabList
-    const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx));
-    if (filtered.length === 0) return;
-    
-    let pos = filtered.indexOf(normalCurrentIdx);
-    if (pos === -1) {
-        pos = 0;
-    } else {
-        pos = Math.min(filtered.length - 1, pos + 1);
-    }
-    if (pos < filtered.length) {
-        const idx = filtered[pos];
-        if (idx !== -1 && !softDeletedIndices.has(idx)) {
-            loadWordByMode(idx, true);
-        } else {
-            pickRandom();
+            if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), !vocabList.length) return;
+            // Use filteredList instead of all vocabList
+            const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx));
+            if (filtered.length === 0) return;
+
+            let pos = filtered.indexOf(normalCurrentIdx);
+            if (pos === -1) {
+                pos = 0;
+            } else {
+                pos = Math.min(filtered.length - 1, pos + 1);
+            }
+            if (pos < filtered.length) {
+                const idx = filtered[pos];
+                if (idx !== -1 && !softDeletedIndices.has(idx)) {
+                    loadWordByMode(idx, true);
+                } else {
+                    pickRandom();
+                }
+            }
         }
-    }
-}
 
         function toggleAppMode() {
-    autoTimer && (clearTimeout(autoTimer), autoTimer = null);
-    const e = document.getElementById("modeToggleBtn");
-    if ("random" === appMode) {
-        appMode = "sequential";
-        e.innerText = "SEQUENTIAL";
-        e.classList.remove("mode-random-active");
-        e.classList.add("mode-sequential-active");
-        // Use filteredList instead of all vocabList
-        const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
-        if (filtered.length > 0) {
-            normalCurrentIdx = filtered[0];
-        } else {
-            normalCurrentIdx = 0;
-        }
-        normalCurrentPage = 0;
-        renderNormalSidebar();
-    } else {
-        appMode = "random";
-        e.innerText = "RANDOM";
-        e.classList.remove("mode-sequential-active");
-        e.classList.add("mode-random-active");
-        // Use filteredList instead of all vocabList
-        const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
-        if (filtered.length > 0) {
-            const idx = filtered[Math.floor(Math.random() * filtered.length)];
-            if (idx !== undefined) {
-                history = [idx];
-                historyIndex = 0;
-                renderRandomSidebar(idx);
+            autoTimer && (clearTimeout(autoTimer), autoTimer = null);
+            const e = document.getElementById("modeToggleBtn");
+            if ("random" === appMode) {
+                appMode = "sequential";
+                e.innerText = "SEQUENTIAL";
+                e.classList.remove("mode-random-active");
+                e.classList.add("mode-sequential-active");
+                // Use filteredList instead of all vocabList
+                const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
+                if (filtered.length > 0) {
+                    normalCurrentIdx = filtered[0];
+                } else {
+                    normalCurrentIdx = 0;
+                }
+                normalCurrentPage = 0;
+                renderNormalSidebar();
+            } else {
+                appMode = "random";
+                e.innerText = "RANDOM";
+                e.classList.remove("mode-sequential-active");
+                e.classList.add("mode-random-active");
+                // Use filteredList instead of all vocabList
+                const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
+                if (filtered.length > 0) {
+                    const idx = filtered[Math.floor(Math.random() * filtered.length)];
+                    if (idx !== undefined) {
+                        history = [idx];
+                        historyIndex = 0;
+                        renderRandomSidebar(idx);
+                    }
+                } else if (vocabList.length > 0) {
+                    pickRandom();
+                }
             }
-        } else if (vocabList.length > 0) {
-            pickRandom();
+            saveAllData();
+            const randomIcon = document.getElementById("modeRandomIconHeader");
+            const normalIcon = document.getElementById("modeNormalIconHeader");
+            if (randomIcon && normalIcon) {
+                if ("random" === appMode) {
+                    randomIcon.classList.add("active");
+                    normalIcon.classList.remove("active");
+                } else {
+                    normalIcon.classList.add("active");
+                    randomIcon.classList.remove("active");
+                }
+            }
+            renderSidebarUI();
+            reattachGroupFilterListener();
         }
-    }
-    saveAllData();
-    const randomIcon = document.getElementById("modeRandomIconHeader");
-    const normalIcon = document.getElementById("modeNormalIconHeader");
-    if (randomIcon && normalIcon) {
-        if ("random" === appMode) {
-            randomIcon.classList.add("active");
-            normalIcon.classList.remove("active");
-        } else {
-            normalIcon.classList.add("active");
-            randomIcon.classList.remove("active");
-        }
-    }
-    renderSidebarUI();
-    reattachGroupFilterListener();
-}
 
         function toggleAuto() {
             autoActive = !autoActive;
@@ -4988,29 +4986,29 @@ function createGroupFilterUI() {
             const item = vocabList[idx];
             if (!item) return false;
             const rowToDelete = item.sheetRow;
-            
+
             try {
                 // Step 1: Delete from Google Sheet (this updates the sheet)
                 await deleteVocabByRow(rowToDelete);
-                
+
                 // Step 2: Remove from vocabList FIRST (before updating sheetRow values)
                 vocabList.splice(idx, 1);
-                
+
                 // Step 3: Remove from soft-deleted collections
                 softDeletedIndices.delete(idx);
                 softDeletedData.delete(idx);
-                
+
                 // Step 4: Update sheetRow for all remaining items
                 // IMPORTANT: We must update BOTH the vocabList and softDeletedData
                 // After splice, the indices changed, so we need to rebuild the mapping
-                
+
                 // Update vocabList sheetRow values - subtract 1 from any row > rowToDelete
                 for (let i = 0; i < vocabList.length; i++) {
                     if (vocabList[i].sheetRow > rowToDelete) {
                         vocabList[i].sheetRow--;
                     }
                 }
-                
+
                 // Update softDeletedData sheetRow values
                 const newSoftData = new Map();
                 for (let [k, v] of softDeletedData) {
@@ -5023,7 +5021,7 @@ function createGroupFilterUI() {
                     newSoftData.set(newKey, v);
                 }
                 softDeletedData = newSoftData;
-                
+
                 // Update softDeletedIndices set
                 const newSoftIndices = new Set();
                 for (let k of softDeletedIndices) {
@@ -5031,10 +5029,10 @@ function createGroupFilterUI() {
                     newSoftIndices.add(newKey);
                 }
                 softDeletedIndices = newSoftIndices;
-                
+
                 // Remove any pending deletion flag
                 pendingDeletions.delete(idx);
-                
+
                 return true;
             } catch (err) {
                 console.warn("Delete failed for row", rowToDelete, err);
@@ -5042,6 +5040,7 @@ function createGroupFilterUI() {
                 return false;
             }
         }
+
         async function retryFailedDeletion(idx) {
             if (!softDeletedIndices.has(idx)) {
                 showToast("⚠️ Not in recycle bin");
@@ -5050,24 +5049,24 @@ function createGroupFilterUI() {
             const item = vocabList[idx];
             if (!item) return false;
             const rowToDelete = item.sheetRow;
-            
+
             showToast(`⏳ Retrying deletion of #${getDisplayNumberFromArrayIndex(idx)}...`);
-            
+
             try {
                 await deleteVocabByRow(rowToDelete);
-                
+
                 // Success - remove from all collections
                 vocabList.splice(idx, 1);
                 softDeletedIndices.delete(idx);
                 softDeletedData.delete(idx);
-                
+
                 // Update sheetRow values
                 for (let i = 0; i < vocabList.length; i++) {
                     if (vocabList[i].sheetRow > rowToDelete) {
                         vocabList[i].sheetRow--;
                     }
                 }
-                
+
                 // Update softDeletedData and indices (shift keys)
                 const newSoftData = new Map();
                 for (let [k, v] of softDeletedData) {
@@ -5075,16 +5074,16 @@ function createGroupFilterUI() {
                     newSoftData.set(newKey, v);
                 }
                 softDeletedData = newSoftData;
-                
+
                 const newSoftIndices = new Set();
                 for (let k of softDeletedIndices) {
                     const newKey = k > idx ? k - 1 : k;
                     newSoftIndices.add(newKey);
                 }
                 softDeletedIndices = newSoftIndices;
-                
+
                 pendingDeletions.delete(idx);
-                
+
                 renderSidebarUI();
                 updateRecycleBinBadge();
                 saveAllData();
@@ -5169,26 +5168,27 @@ function createGroupFilterUI() {
             if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
             const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-            let successCount = 0, failCount = 0;
-            
+            let successCount = 0,
+                failCount = 0;
+
             for (const idx of indices) {
                 if (!softDeletedIndices.has(idx)) continue;
                 showToast(`⏳ Deleting #${getDisplayNumberFromArrayIndex(idx)}...`);
-                
+
                 const result = await permanentlyDeleteSoftDeleted(idx);
-                if (result) { 
-                    successCount++; 
-                } else { 
+                if (result) {
+                    successCount++;
+                } else {
                     failCount++;
                     softDeletedIndices.delete(idx);
                     softDeletedData.delete(idx);
                 }
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
-            
+
             renderSidebarUI();
             updateRecycleBinBadge();
-            
+
             if (vocabList.length === 0) {
                 updateChineseDisplay("");
                 document.getElementById("khmerWord").innerText = "";
@@ -5196,10 +5196,10 @@ function createGroupFilterUI() {
                 const nextIdx = findNextAvailableIndex(0);
                 if (nextIdx !== -1) loadWordByMode(nextIdx, true);
             }
-            
+
             saveAllData();
             showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
-            
+
             const rbModal = document.querySelector('.modal-overlay[data-is-recycle-bin="true"]');
             if (rbModal) rbModal.remove();
             updateRecycleBinCountInModals();
@@ -5248,19 +5248,19 @@ function createGroupFilterUI() {
                 </div>
             `;
             document.body.appendChild(overlay);
-            
+
             if (keepParentModal) {
                 overlay._keepParent = true;
             }
-            
-            overlay.onclick = (e) => { 
+
+            overlay.onclick = (e) => {
                 if (e.target === overlay) {
                     if (overlay._keepParent) {
                         overlay.remove();
                     } else {
                         overlay.remove();
                     }
-                } 
+                }
             };
 
             const closeBtn = overlay.querySelector("#closeRecycleBinBtn");
@@ -5308,7 +5308,7 @@ function createGroupFilterUI() {
                             }
                             deleteBtn.textContent = '⏳';
                             deleteBtn.style.opacity = '0.6';
-                            
+
                             permanentlyDeleteSoftDeleted(idx).then((result) => {
                                 if (result) {
                                     list.innerHTML = renderRecycleBinItems();
@@ -5345,7 +5345,7 @@ function createGroupFilterUI() {
                         if (!isNaN(idx) && softDeletedIndices.has(idx)) {
                             retryBtn.textContent = '⏳';
                             retryBtn.style.opacity = '0.6';
-                            
+
                             retryFailedDeletion(idx).then((result) => {
                                 if (result) {
                                     list.innerHTML = renderRecycleBinItems();
@@ -5453,7 +5453,8 @@ function createGroupFilterUI() {
                 newPrev.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                        .has(idx));
                     if (normalCurrentPage > 0) {
                         normalCurrentPage--;
                         renderNormalSidebar();
@@ -5469,7 +5470,8 @@ function createGroupFilterUI() {
                 newNext.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                        .has(idx));
                     const totalPages = Math.ceil(filtered.length / 40);
                     if (normalCurrentPage + 1 < totalPages) {
                         normalCurrentPage++;
@@ -5485,7 +5487,8 @@ function createGroupFilterUI() {
                 newJump._handlersAttached = true;
                 const handleJump = function() {
                     let val = parseInt(this.value);
-                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                        .has(idx));
                     const maxPages = Math.ceil(filtered.length / 40) || 1;
                     if (isNaN(val) || val < 1) val = 1;
                     if (val > maxPages) val = maxPages;
@@ -5508,67 +5511,68 @@ function createGroupFilterUI() {
         }
 
         function syncPageInput() {
-    const input = document.getElementById('pageJumpInput');
-    if (input) {
-        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-        const totalPages = Math.ceil(filtered.length / 40) || 1;
-        input.value = normalCurrentPage + 1;
-        input.max = totalPages;
-        
-        // Update the pagination info text to show total words
-        const paginationInfo = document.querySelector('.pagination-info');
-        if (paginationInfo) {
-            const totalItems = filtered.length;
-            paginationInfo.innerHTML = `
+            const input = document.getElementById('pageJumpInput');
+            if (input) {
+                const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                const totalPages = Math.ceil(filtered.length / 40) || 1;
+                input.value = normalCurrentPage + 1;
+                input.max = totalPages;
+
+                // Update the pagination info text to show total words
+                const paginationInfo = document.querySelector('.pagination-info');
+                if (paginationInfo) {
+                    const totalItems = filtered.length;
+                    paginationInfo.innerHTML = `
                 <input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${totalPages}" value="${normalCurrentPage+1}" style="width:50px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;">
-                / ${totalPages} (${totalItems} W)
+                / ${totalPages} 
             `;
-            // Re-attach event listener to the new input
-            const newJump = document.getElementById('pageJumpInput');
-            if (newJump) {
-                const handleJump = function() {
-                    let val = parseInt(this.value);
-                    const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                    const maxPages = Math.ceil(filtered.length / 40) || 1;
-                    if (isNaN(val) || val < 1) val = 1;
-                    if (val > maxPages) val = maxPages;
-                    const newPage = val - 1;
-                    if (newPage !== normalCurrentPage) {
-                        normalCurrentPage = newPage;
-                        renderNormalSidebar();
-                        setTimeout(syncPageInput, 50);
+                    // Re-attach event listener to the new input
+                    const newJump = document.getElementById('pageJumpInput');
+                    if (newJump) {
+                        const handleJump = function() {
+                            let val = parseInt(this.value);
+                            const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                                .has(idx));
+                            const maxPages = Math.ceil(filtered.length / 40) || 1;
+                            if (isNaN(val) || val < 1) val = 1;
+                            if (val > maxPages) val = maxPages;
+                            const newPage = val - 1;
+                            if (newPage !== normalCurrentPage) {
+                                normalCurrentPage = newPage;
+                                renderNormalSidebar();
+                                setTimeout(syncPageInput, 50);
+                            }
+                            this.value = normalCurrentPage + 1;
+                        };
+                        newJump.addEventListener('change', handleJump);
+                        newJump.addEventListener('keypress', function(ev) {
+                            if (ev.key === 'Enter') {
+                                ev.preventDefault();
+                                handleJump.call(this);
+                            }
+                        });
+                        newJump.addEventListener('blur', function() {
+                            this.value = normalCurrentPage + 1;
+                        });
+                        newJump.addEventListener('touchstart', function(e) {
+                            this.focus();
+                        }, { passive: true });
                     }
-                    this.value = normalCurrentPage + 1;
-                };
-                newJump.addEventListener('change', handleJump);
-                newJump.addEventListener('keypress', function(ev) {
-                    if (ev.key === 'Enter') {
-                        ev.preventDefault();
-                        handleJump.call(this);
-                    }
-                });
-                newJump.addEventListener('blur', function() {
-                    this.value = normalCurrentPage + 1;
-                });
-                newJump.addEventListener('touchstart', function(e) {
-                    this.focus();
-                }, { passive: true });
+                }
             }
         }
-    }
-}
 
         // ---- MODIFIED: renderSidebarUI with GROUP display ----
         // ---- MODIFIED: renderSidebarUI with GROUP display - FIXED event listener ----
-function renderSidebarUI(e = !0) {
-    const t = document.getElementById("sidebarList"),
-        n = currentSearchInputElement ? currentSearchInputElement.value : searchTerm;
-    t.innerHTML = "";
-    
-    // In renderSidebarUI function, replace the vocab-header section:
-    const o = document.createElement("div");
-    o.className = "vocab-header";
-    o.innerHTML = `
+        function renderSidebarUI(e = !0) {
+            const t = document.getElementById("sidebarList"),
+                n = currentSearchInputElement ? currentSearchInputElement.value : searchTerm;
+            t.innerHTML = "";
+
+            // In renderSidebarUI function, replace the vocab-header section:
+            const o = document.createElement("div");
+            o.className = "vocab-header";
+            o.innerHTML = `
         <div class="choice-search-area" style="position: relative; display: flex; align-items: center; gap: 6px;">
             <button id="manualSearchBtn" style="background:var(--accent); border:none; border-radius:40px; width:36px; height:36px; color:white; font-weight:bold; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">🔍</button>
             <input type="text" id="choiceSearchInput" style="flex:1;" value="${escapeHtml(n)}">
@@ -5581,491 +5585,496 @@ function renderSidebarUI(e = !0) {
                 <button id="modeNormalIconHeader" class="mode-icon-small ${"sequential"===appMode?"active":""}" style="font-size:1rem; padding:4px 10px;">📋</button>
             </div>
             <div id="groupFilterArea" style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; justify-content: flex-end;">
-                <select id="groupFilterSelect" style="
-                    background: var(--tab-bg);
-                    color: var(--text-primary);
-                    border: 1px solid var(--border);
-                    border-radius: 20px;
-                    padding: 4px 10px;
-                    font-size: 0.7rem;
-                    min-width: 220px;
-                    max-width: 140px;
-                    cursor: pointer;
-                    transition: all .2s;
-                    flex-shrink: 1;
-                ">
+              <select id="groupFilterSelect" style="
+    background: var(--tab-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    min-width: 80px;
+    max-width: 160px;
+    cursor: pointer;
+    transition: all .2s;
+    flex-shrink: 1;
+">
                     <option value="__ALL__">📂 All</option>
                 </select>
             </div>
         </div>
         <div id="paginationContainer"></div>`;
-    t.appendChild(o);
-    
-    const i = o.querySelector("#choiceSearchInput"),
-        a = o.querySelector("#manualSearchBtn"),
-        r = o.querySelector("#searchClearBtn"),
-        s = o.querySelector("#sidebarSearchResults");
-    currentSearchInputElement = i;
-    let l = null;
-    const d = () => { null === previousWordBeforeSearch && sidebarIndices.length > 0 && sidebarFocusIdx <
-            sidebarIndices.length && (previousWordBeforeSearch = sidebarIndices[sidebarFocusIdx]) };
-    const c = () => {
-        if (l && clearTimeout(l), !i.value.trim()) return s.style.display = "none", void(s.innerHTML = "");
-        l = setTimeout(() => {
-            const e = i.value.trim().toLowerCase();
-            if (!e) { s.style.display = "none";
-                s.innerHTML = ""; return }
-            const matches = [];
-            for (let idx = 0; idx < vocabList.length; idx++) {
-                if (pendingDeletions.has(idx)) continue;
-                const item = vocabList[idx];
-                const score = getRelevanceScore(item, e);
-                if (score > 0) {
-                    matches.push({ idx, score });
-                }
-            }
-            matches.sort((a, b) => b.score - a.score);
-            if (0 === matches.length) { s.innerHTML =
-                    '<div class="result-item" style="opacity:0.7;">No matches</div>';
-                s.style.display = "block"; return }
-            s.innerHTML = matches.map(({ idx }) =>
-                `<div class="result-item" data-index="${idx}">
+            t.appendChild(o);
+
+            const i = o.querySelector("#choiceSearchInput"),
+                a = o.querySelector("#manualSearchBtn"),
+                r = o.querySelector("#searchClearBtn"),
+                s = o.querySelector("#sidebarSearchResults");
+            currentSearchInputElement = i;
+            let l = null;
+            const d = () => { null === previousWordBeforeSearch && sidebarIndices.length > 0 && sidebarFocusIdx <
+                    sidebarIndices.length && (previousWordBeforeSearch = sidebarIndices[sidebarFocusIdx]) };
+            const c = () => {
+                if (l && clearTimeout(l), !i.value.trim()) return s.style.display = "none", void(s.innerHTML = "");
+                l = setTimeout(() => {
+                    const e = i.value.trim().toLowerCase();
+                    if (!e) { s.style.display = "none";
+                        s.innerHTML = ""; return }
+                    const matches = [];
+                    for (let idx = 0; idx < vocabList.length; idx++) {
+                        if (pendingDeletions.has(idx)) continue;
+                        const item = vocabList[idx];
+                        const score = getRelevanceScore(item, e);
+                        if (score > 0) {
+                            matches.push({ idx, score });
+                        }
+                    }
+                    matches.sort((a, b) => b.score - a.score);
+                    if (0 === matches.length) { s.innerHTML =
+                            '<div class="result-item" style="opacity:0.7;">No matches</div>';
+                        s.style.display = "block"; return }
+                    s.innerHTML = matches.map(({ idx }) =>
+                        `<div class="result-item" data-index="${idx}">
                         <div class="result-chinese">${escapeHtml(vocabList[idx].chinese)}</div>
                         <div class="result-khmer">${escapeHtml(vocabList[idx].khmer)}</div>
                     </div>`
-            ).join("");
-            s.style.display = "block";
-            s.querySelectorAll(".result-item").forEach((e => {
-                e.addEventListener("click", (t => {
-                    t.stopPropagation();
-                    const n = parseInt(e.dataset.index);
-                    if (!isNaN(n) && vocabList[n] && !pendingDeletions.has(n) && !softDeletedIndices
-                        .has(n)) {
-                        searchTerm = "";
-                        i.value = "";
-                        s.style.display = "none";
-                        loadWordByMode(n, true);
-                        blurSearchInput();
-                    } else if (softDeletedIndices.has(n)) {
-                        showToast("⚠️ This word is in the recycle bin");
-                    }
-                }));
+                    ).join("");
+                    s.style.display = "block";
+                    s.querySelectorAll(".result-item").forEach((e => {
+                        e.addEventListener("click", (t => {
+                            t.stopPropagation();
+                            const n = parseInt(e.dataset.index);
+                            if (!isNaN(n) && vocabList[n] && !pendingDeletions.has(n) && !softDeletedIndices
+                                .has(n)) {
+                                searchTerm = "";
+                                i.value = "";
+                                s.style.display = "none";
+                                loadWordByMode(n, true);
+                                blurSearchInput();
+                            } else if (softDeletedIndices.has(n)) {
+                                showToast("⚠️ This word is in the recycle bin");
+                            }
+                        }));
+                    }));
+                }, 300);
+            };
+            const m = () => {
+                const e = i.value.trim();
+                if (l && clearTimeout(l), null === previousWordBeforeSearch && "" === searchTerm && "" !== e && d(),
+                    searchTerm = e, "normal" === appMode) { normalCurrentPage = 0;
+                    normalCurrentIdx = 0;
+                    renderNormalSidebar(); } else if ("" === searchTerm.trim()) { if (null !== previousWordBeforeSearch &&
+                        vocabList[previousWordBeforeSearch] && !pendingDeletions.has(previousWordBeforeSearch) && !softDeletedIndices
+                        .has(previousWordBeforeSearch)) {
+                        loadWordByMode(previousWordBeforeSearch, !0);
+                        previousWordBeforeSearch = null } else if (sidebarIndices.length && void 0 !== sidebarIndices[
+                            sidebarFocusIdx] && !pendingDeletions.has(sidebarIndices[sidebarFocusIdx]) && !softDeletedIndices
+                            .has(sidebarIndices[sidebarFocusIdx]))
+                        renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
+                    else vocabList.length ? pickRandom() : renderSidebarUI(!0) } else { const t = filterVocabBySearch(
+                        vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx))
+                        .map((e => vocabList.findIndex((t => t === e)))); if (t.length) { sidebarIndices = t;
+                            sidebarFocusIdx = 0;
+                            renderSidebarUI(!0); if (sidebarIndices.length > 0) loadWordByMode(sidebarIndices[0], !0) } else { sidebarIndices =
+                                [];
+                            renderSidebarUI(!0);
+                            updateChineseDisplay("");
+                            document.getElementById("khmerWord").innerText = "" } }
+                s.style.display = "none";
+            };
+            i.addEventListener("input", c);
+            i.addEventListener("keypress", (e => { if (e.key === "Enter") { e.preventDefault();
+                    m() } }));
+            a.addEventListener("click", (e => { e.preventDefault();
+                m() }));
+            r.addEventListener("click", (e => {
+                e.preventDefault();
+                e.stopPropagation();
+                i.value = "";
+                searchTerm = "";
+                s.style.display = "none";
+                if (null !== previousWordBeforeSearch && vocabList[previousWordBeforeSearch] && !pendingDeletions
+                    .has(previousWordBeforeSearch) && !softDeletedIndices.has(previousWordBeforeSearch)) {
+                    loadWordByMode(previousWordBeforeSearch, !0);
+                    previousWordBeforeSearch = null;
+                } else if ("normal" === appMode) {
+                    normalCurrentPage = 0;
+                    normalCurrentIdx = 0;
+                    renderNormalSidebar();
+                } else if (sidebarIndices.length && void 0 !== sidebarIndices[sidebarFocusIdx] && !pendingDeletions
+                    .has(sidebarIndices[sidebarFocusIdx]) && !softDeletedIndices.has(sidebarIndices[
+                        sidebarFocusIdx])) {
+                    renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
+                } else {
+                    vocabList.length ? pickRandom() : renderSidebarUI(!0);
+                }
+                i.focus();
             }));
-        }, 300);
-    };
-    const m = () => {
-        const e = i.value.trim();
-        if (l && clearTimeout(l), null === previousWordBeforeSearch && "" === searchTerm && "" !== e && d(),
-            searchTerm = e, "normal" === appMode) { normalCurrentPage = 0;
-            normalCurrentIdx = 0;
-            renderNormalSidebar(); } else if ("" === searchTerm.trim()) { if (null !== previousWordBeforeSearch &&
-                vocabList[previousWordBeforeSearch] && !pendingDeletions.has(previousWordBeforeSearch) && !softDeletedIndices
-                .has(previousWordBeforeSearch)) {
-                loadWordByMode(previousWordBeforeSearch, !0);
-                previousWordBeforeSearch = null } else if (sidebarIndices.length && void 0 !== sidebarIndices[
-                    sidebarFocusIdx] && !pendingDeletions.has(sidebarIndices[sidebarFocusIdx]) && !softDeletedIndices
-                    .has(sidebarIndices[sidebarFocusIdx]))
-            renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
-            else vocabList.length ? pickRandom() : renderSidebarUI(!0) } else { const t = filterVocabBySearch(
-                vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx))
-                .map((e => vocabList.findIndex((t => t === e)))); if (t.length) { sidebarIndices = t;
-                sidebarFocusIdx = 0;
-                renderSidebarUI(!0); if (sidebarIndices.length > 0) loadWordByMode(sidebarIndices[0], !0) } else { sidebarIndices =
-                    [];
-                renderSidebarUI(!0);
-                updateChineseDisplay("");
-                document.getElementById("khmerWord").innerText = "" } }
-        s.style.display = "none";
-    };
-    i.addEventListener("input", c);
-    i.addEventListener("keypress", (e => { if (e.key === "Enter") { e.preventDefault();
-            m() } }));
-    a.addEventListener("click", (e => { e.preventDefault();
-        m() }));
-    r.addEventListener("click", (e => {
-        e.preventDefault();
-        e.stopPropagation();
-        i.value = "";
-        searchTerm = "";
-        s.style.display = "none";
-        if (null !== previousWordBeforeSearch && vocabList[previousWordBeforeSearch] && !pendingDeletions
-            .has(previousWordBeforeSearch) && !softDeletedIndices.has(previousWordBeforeSearch)) {
-            loadWordByMode(previousWordBeforeSearch, !0);
-            previousWordBeforeSearch = null;
-        } else if ("normal" === appMode) {
-            normalCurrentPage = 0;
-            normalCurrentIdx = 0;
-            renderNormalSidebar();
-        } else if (sidebarIndices.length && void 0 !== sidebarIndices[sidebarFocusIdx] && !pendingDeletions
-            .has(sidebarIndices[sidebarFocusIdx]) && !softDeletedIndices.has(sidebarIndices[
-            sidebarFocusIdx])) {
-            renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
-        } else {
-            vocabList.length ? pickRandom() : renderSidebarUI(!0);
+            document.addEventListener("click", (function(e) { s.contains(e.target) || e.target === i || e.target === a || (
+                    s.style.display = "none") }));
+            o.querySelector("#modeIconsContainer").innerHTML =
+                `<button id="modeRandomIconHeader" class="mode-icon-small ${"random"===appMode?"active":""}">🎲</button><button id="modeNormalIconHeader" class="mode-icon-small ${"sequential"===appMode?"active":""}">📋</button>`;
+            document.getElementById("modeRandomIconHeader")?.addEventListener("click", function(e) {
+                e.stopPropagation();
+                if ("random" !== appMode) {
+                    toggleAppMode();
+                    // After toggle, re-attach group filter listener
+                    setTimeout(reattachGroupFilterListener, 50);
+                }
+            });
+
+            document.getElementById("modeNormalIconHeader")?.addEventListener("click", function(e) {
+                e.stopPropagation();
+                if ("sequential" !== appMode) {
+                    toggleAppMode();
+                    // After toggle, re-attach group filter listener
+                    setTimeout(reattachGroupFilterListener, 50);
+                }
+            });
+            updatePaginationControlsInside(o.querySelector("#paginationContainer"));
+            let u = sidebarIndices;
+            if ("normal" === appMode && searchTerm) u = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions
+                    .has(idx) && !softDeletedIndices.has(idx)).map((e => vocabList.findIndex((t => t === e))));
+            else "random" === appMode && searchTerm && "" !== searchTerm.trim() && (u = sidebarIndices);
+            u = u.filter(idx => !pendingDeletions.has(idx));
+            for (let e = 0; e < u.length; e++) {
+                const n = u[e];
+                const itemDiv = document.createElement("div");
+                const i = "normal" === appMode && searchTerm ? n === normalCurrentIdx : e === sidebarFocusIdx;
+                const isDeleted = softDeletedIndices.has(n);
+                itemDiv.className = "vocab-item " + (i ? "active" : "") + (isDeleted ? " deleted" : "");
+                const a = getDisplayNumberFromArrayIndex(n),
+                    r = vocabList[n].sheetRow,
+                    s = editUnlocked ? "" : "disabled";
+                const delBadge = isDeleted ? '<span class="deleted-badge">🗑️</span>' : '';
+                const groupLabel = vocabList[n].group || '';
+                itemDiv.innerHTML =
+                    `<div class="side-number-col"><div class="side-number">#${a}</div><div class="side-icons-row"><button class="edit-side-icon ${s}" onclick="event.stopPropagation(); requestEditModal(${n}, ${r}, '${escapeHtml(vocabList[n].khmer)}', '${escapeHtml(vocabList[n].chinese)}')" title="Edit">✏️</button><button class="sheet-row-icon ${s}" onclick="event.stopPropagation(); requestOpenSheetRow(${r})" title="Open Sheet Row ${r} (Khmer cell)">📊</button></div></div><div class="word-wrapper" onclick="if(!softDeletedIndices.has(${n})) { loadWordByMode(${n}, true); } else { showToast('⚠️ This word is in the recycle bin'); } event.stopPropagation()"><span class="side-zh">${escapeHtml(vocabList[n].chinese)} ${delBadge}</span><span class="side-km">${escapeHtml(vocabList[n].khmer)}</span>${groupLabel ? `<span class="side-group">${escapeHtml(groupLabel)}</span>` : ''}</div>`;
+                t.appendChild(itemDiv);
+            }
+
+            applySidebarStyles();
+            scrollToActiveSidebarItem();
+            updateRecycleBinBadge();
+            updateStatusBar();
+
+            // ====== FIX: Re-attach group filter event listener ======
+            const groupSelect = document.getElementById('groupFilterSelect');
+            if (groupSelect) {
+                // Remove any existing listeners by cloning and replacing
+                const newSelect = groupSelect.cloneNode(true);
+                groupSelect.parentNode.replaceChild(newSelect, groupSelect);
+                // Set the value to current groupFilter
+                newSelect.value = groupFilter;
+                // Add the event listener
+                newSelect.onchange = function() {
+                    setGroupFilter(this.value);
+                };
+                // Make sure options are correct
+                updateFilterSelect();
+            }
         }
-        i.focus();
-    }));
-    document.addEventListener("click", (function(e) { s.contains(e.target) || e.target === i || e.target === a || (
-            s.style.display = "none") }));
-    o.querySelector("#modeIconsContainer").innerHTML =
-        `<button id="modeRandomIconHeader" class="mode-icon-small ${"random"===appMode?"active":""}">🎲</button><button id="modeNormalIconHeader" class="mode-icon-small ${"sequential"===appMode?"active":""}">📋</button>`;
-document.getElementById("modeRandomIconHeader")?.addEventListener("click", function(e) {
-    e.stopPropagation();
-    if ("random" !== appMode) {
-        toggleAppMode();
-        // After toggle, re-attach group filter listener
-        setTimeout(reattachGroupFilterListener, 50);
-    }
-});
 
-document.getElementById("modeNormalIconHeader")?.addEventListener("click", function(e) {
-    e.stopPropagation();
-    if ("sequential" !== appMode) {
-        toggleAppMode();
-        // After toggle, re-attach group filter listener
-        setTimeout(reattachGroupFilterListener, 50);
-    }
-});
-    updatePaginationControlsInside(o.querySelector("#paginationContainer"));
-    let u = sidebarIndices;
-    if ("normal" === appMode && searchTerm) u = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions
-        .has(idx) && !softDeletedIndices.has(idx)).map((e => vocabList.findIndex((t => t === e))));
-    else "random" === appMode && searchTerm && "" !== searchTerm.trim() && (u = sidebarIndices);
-    u = u.filter(idx => !pendingDeletions.has(idx));
-    for (let e = 0; e < u.length; e++) {
-        const n = u[e],
-            o = document.createElement("div"),
-            i = "normal" === appMode && searchTerm ? n === normalCurrentIdx : e === sidebarFocusIdx;
-        const isDeleted = softDeletedIndices.has(n);
-        o.className = "vocab-item " + (i ? "active" : "") + (isDeleted ? " deleted" : "");
-        const a = getDisplayNumberFromArrayIndex(n),
-            r = vocabList[n].sheetRow,
-            s = editUnlocked ? "" : "disabled";
-        const delBadge = isDeleted ? '<span class="deleted-badge">🗑️</span>' : '';
-        const groupLabel = vocabList[n].group || '';
-        o.innerHTML =
-            `<div class="side-number-col"><div class="side-number">#${a}</div><div class="side-icons-row"><button class="edit-side-icon ${s}" onclick="event.stopPropagation(); requestEditModal(${n}, ${r}, '${escapeHtml(vocabList[n].khmer)}', '${escapeHtml(vocabList[n].chinese)}')" title="Edit">✏️</button><button class="sheet-row-icon ${s}" onclick="event.stopPropagation(); requestOpenSheetRow(${r})" title="Open Sheet Row ${r} (Khmer cell)">📊</button></div></div><div class="word-wrapper" onclick="if(!softDeletedIndices.has(${n})) { loadWordByMode(${n}, true); } else { showToast('⚠️ This word is in the recycle bin'); } event.stopPropagation()"><span class="side-zh">${escapeHtml(vocabList[n].chinese)} ${delBadge}</span><span class="side-km">${escapeHtml(vocabList[n].khmer)}</span>${groupLabel ? `<span class="side-group">${escapeHtml(groupLabel)}</span>` : ''}</div>`;
-        t.appendChild(o);
-    }
+        function updatePaginationControlsInside(e) {
+            if (!e) return;
+            const t = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+            const totalItems = t.length;
+            const totalPages = Math.ceil(totalItems / 40) || 1;
 
-    applySidebarStyles();
-    scrollToActiveSidebarItem();
-    updateRecycleBinBadge();
-    updateStatusBar();
-    
-    // ====== FIX: Re-attach group filter event listener ======
-    const groupSelect = document.getElementById('groupFilterSelect');
-    if (groupSelect) {
-        // Remove any existing listeners by cloning and replacing
-        const newSelect = groupSelect.cloneNode(true);
-        groupSelect.parentNode.replaceChild(newSelect, groupSelect);
-        // Set the value to current groupFilter
-        newSelect.value = groupFilter;
-        // Add the event listener
-        newSelect.onchange = function() {
-            setGroupFilter(this.value);
-        };
-        // Make sure options are correct
-        updateFilterSelect();
-    }
-}
-function updatePaginationControlsInside(e) {
-    if (!e) return;
-    const t = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-    const totalItems = t.length;
-    const totalPages = Math.ceil(totalItems / 40) || 1;
-    
-    if (totalItems > 40) {
-        e.style.display = "block";
-        e.innerHTML = `
+            if (totalItems > 40) {
+                e.style.display = "block";
+                e.innerHTML = `
             <div class="pagination-bar">
                 <button id="prevPageBtnSide" class="pagination-btn" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;">◀</button>
                 <span class="pagination-info">
                     <input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${totalPages}" value="${normalCurrentPage+1}" style="width:40px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;">
-                    / ${totalPages} ${totalItems}w
+                    / ${totalPages}
                 </span>
                 <button id="nextPageBtnSide" class="pagination-btn" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;">▶</button>
             </div>`;
 
-        const prevBtn = document.getElementById("prevPageBtnSide");
-        const nextBtn = document.getElementById("nextPageBtnSide");
-        const jumpInput = document.getElementById("pageJumpInput");
+                const prevBtn = document.getElementById("prevPageBtnSide");
+                const nextBtn = document.getElementById("nextPageBtnSide");
+                const jumpInput = document.getElementById("pageJumpInput");
 
-        if (prevBtn) {
-            const newPrev = prevBtn.cloneNode(true);
-            prevBtn.parentNode.replaceChild(newPrev, prevBtn);
-            
-            let prevTimer = null;
-            let prevLongPress = false;
-            let prevTouchMoved = false;
-            let prevTouchStartX = 0;
-            let prevTouchStartY = 0;
-            
-            newPrev.addEventListener('selectstart', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            });
-            
-            const jumpToFirst = () => {
-                const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                if (filtered.length) {
-                    const firstIdx = filtered[0];
-                    if (firstIdx !== undefined) {
-                        loadWordByMode(firstIdx, true);
-                        normalCurrentPage = 0;
-                        renderNormalSidebar();
-                        showToast("📖 Jumped to FIRST word");
-                        setTimeout(syncPageInput, 50);
-                    }
-                }
-            };
-            
-            const startPrevPress = function(e) {
-                e.preventDefault();
-                if (e.type === 'touchstart') {
-                    const touch = e.touches[0];
-                    prevTouchStartX = touch.clientX;
-                    prevTouchStartY = touch.clientY;
-                    prevTouchMoved = false;
-                }
-                prevLongPress = false;
-                if (prevTimer) {
-                    clearTimeout(prevTimer);
-                    prevTimer = null;
-                }
-                prevTimer = setTimeout(() => {
-                    if (e.type === 'touchstart' && prevTouchMoved) {
-                        prevTimer = null;
-                        return;
-                    }
-                    prevLongPress = true;
-                    jumpToFirst();
-                    prevTimer = null;
-                }, 400);
-            };
-            
-            const endPrevPress = function(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                if (prevTimer) {
-                    clearTimeout(prevTimer);
-                    prevTimer = null;
-                }
-            };
-            
-            const movePrevPress = function(e) {
-                if (e.type === 'touchmove') {
-                    const touch = e.touches[0];
-                    const dx = Math.abs(touch.clientX - prevTouchStartX);
-                    const dy = Math.abs(touch.clientY - prevTouchStartY);
-                    if (dx > 10 || dy > 10) {
-                        prevTouchMoved = true;
+                if (prevBtn) {
+                    const newPrev = prevBtn.cloneNode(true);
+                    prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+
+                    let prevTimer = null;
+                    let prevLongPress = false;
+                    let prevTouchMoved = false;
+                    let prevTouchStartX = 0;
+                    let prevTouchStartY = 0;
+
+                    newPrev.addEventListener('selectstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                    });
+
+                    const jumpToFirst = () => {
+                        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                            .has(idx));
+                        if (filtered.length) {
+                            const firstIdx = filtered[0];
+                            if (firstIdx !== undefined) {
+                                loadWordByMode(firstIdx, true);
+                                normalCurrentPage = 0;
+                                renderNormalSidebar();
+                                showToast("📖 Jumped to FIRST word");
+                                setTimeout(syncPageInput, 50);
+                            }
+                        }
+                    };
+
+                    const startPrevPress = function(e) {
+                        e.preventDefault();
+                        if (e.type === 'touchstart') {
+                            const touch = e.touches[0];
+                            prevTouchStartX = touch.clientX;
+                            prevTouchStartY = touch.clientY;
+                            prevTouchMoved = false;
+                        }
+                        prevLongPress = false;
                         if (prevTimer) {
                             clearTimeout(prevTimer);
                             prevTimer = null;
                         }
-                    }
-                }
-            };
-            
-            const handlePrevAction = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (prevLongPress) {
-                    prevLongPress = false;
-                    return;
-                }
-                
-                if (normalCurrentPage > 0) {
-                    normalCurrentPage--;
-                    renderNormalSidebar();
-                    setTimeout(syncPageInput, 50);
-                }
-            };
-            
-            newPrev.addEventListener('mousedown', startPrevPress);
-            newPrev.addEventListener('mouseup', endPrevPress);
-            newPrev.addEventListener('mouseleave', endPrevPress);
-            newPrev.addEventListener('click', handlePrevAction);
-            
-            newPrev.addEventListener('touchstart', startPrevPress, { passive: false });
-            newPrev.addEventListener('touchmove', movePrevPress, { passive: true });
-            newPrev.addEventListener('touchend', function(e) {
-                endPrevPress(e);
-                if (!prevLongPress && !prevTouchMoved) {
-                    handlePrevAction(e);
-                }
-                setTimeout(() => {
-                    prevLongPress = false;
-                    prevTouchMoved = false;
-                }, 100);
-            }, { passive: false });
-            newPrev.addEventListener('touchcancel', endPrevPress, { passive: false });
-        }
+                        prevTimer = setTimeout(() => {
+                            if (e.type === 'touchstart' && prevTouchMoved) {
+                                prevTimer = null;
+                                return;
+                            }
+                            prevLongPress = true;
+                            jumpToFirst();
+                            prevTimer = null;
+                        }, 400);
+                    };
 
-        if (nextBtn) {
-            const newNext = nextBtn.cloneNode(true);
-            nextBtn.parentNode.replaceChild(newNext, nextBtn);
-            
-            let nextTimer = null;
-            let nextLongPress = false;
-            let nextTouchMoved = false;
-            let nextTouchStartX = 0;
-            let nextTouchStartY = 0;
-            
-            newNext.addEventListener('selectstart', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            });
-            
-            const jumpToLast = () => {
-                const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                if (filtered.length) {
-                    const lastIdx = filtered[filtered.length - 1];
-                    if (lastIdx !== undefined) {
-                        loadWordByMode(lastIdx, true);
-                        normalCurrentPage = Math.ceil(filtered.length / 40) - 1;
-                        renderNormalSidebar();
-                        showToast("📖 Jumped to LAST word");
-                        setTimeout(syncPageInput, 50);
-                    }
+                    const endPrevPress = function(e) {
+                        if (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                        if (prevTimer) {
+                            clearTimeout(prevTimer);
+                            prevTimer = null;
+                        }
+                    };
+
+                    const movePrevPress = function(e) {
+                        if (e.type === 'touchmove') {
+                            const touch = e.touches[0];
+                            const dx = Math.abs(touch.clientX - prevTouchStartX);
+                            const dy = Math.abs(touch.clientY - prevTouchStartY);
+                            if (dx > 10 || dy > 10) {
+                                prevTouchMoved = true;
+                                if (prevTimer) {
+                                    clearTimeout(prevTimer);
+                                    prevTimer = null;
+                                }
+                            }
+                        }
+                    };
+
+                    const handlePrevAction = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        if (prevLongPress) {
+                            prevLongPress = false;
+                            return;
+                        }
+
+                        if (normalCurrentPage > 0) {
+                            normalCurrentPage--;
+                            renderNormalSidebar();
+                            setTimeout(syncPageInput, 50);
+                        }
+                    };
+
+                    newPrev.addEventListener('mousedown', startPrevPress);
+                    newPrev.addEventListener('mouseup', endPrevPress);
+                    newPrev.addEventListener('mouseleave', endPrevPress);
+                    newPrev.addEventListener('click', handlePrevAction);
+
+                    newPrev.addEventListener('touchstart', startPrevPress, { passive: false });
+                    newPrev.addEventListener('touchmove', movePrevPress, { passive: true });
+                    newPrev.addEventListener('touchend', function(e) {
+                        endPrevPress(e);
+                        if (!prevLongPress && !prevTouchMoved) {
+                            handlePrevAction(e);
+                        }
+                        setTimeout(() => {
+                            prevLongPress = false;
+                            prevTouchMoved = false;
+                        }, 100);
+                    }, { passive: false });
+                    newPrev.addEventListener('touchcancel', endPrevPress, { passive: false });
                 }
-            };
-            
-            const startNextPress = function(e) {
-                e.preventDefault();
-                if (e.type === 'touchstart') {
-                    const touch = e.touches[0];
-                    nextTouchStartX = touch.clientX;
-                    nextTouchStartY = touch.clientY;
-                    nextTouchMoved = false;
-                }
-                nextLongPress = false;
-                if (nextTimer) {
-                    clearTimeout(nextTimer);
-                    nextTimer = null;
-                }
-                nextTimer = setTimeout(() => {
-                    if (e.type === 'touchstart' && nextTouchMoved) {
-                        nextTimer = null;
-                        return;
-                    }
-                    nextLongPress = true;
-                    jumpToLast();
-                    nextTimer = null;
-                }, 400);
-            };
-            
-            const endNextPress = function(e) {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                if (nextTimer) {
-                    clearTimeout(nextTimer);
-                    nextTimer = null;
-                }
-            };
-            
-            const moveNextPress = function(e) {
-                if (e.type === 'touchmove') {
-                    const touch = e.touches[0];
-                    const dx = Math.abs(touch.clientX - nextTouchStartX);
-                    const dy = Math.abs(touch.clientY - nextTouchStartY);
-                    if (dx > 10 || dy > 10) {
-                        nextTouchMoved = true;
+
+                if (nextBtn) {
+                    const newNext = nextBtn.cloneNode(true);
+                    nextBtn.parentNode.replaceChild(newNext, nextBtn);
+
+                    let nextTimer = null;
+                    let nextLongPress = false;
+                    let nextTouchMoved = false;
+                    let nextTouchStartX = 0;
+                    let nextTouchStartY = 0;
+
+                    newNext.addEventListener('selectstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                    });
+
+                    const jumpToLast = () => {
+                        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                            .has(idx));
+                        if (filtered.length) {
+                            const lastIdx = filtered[filtered.length - 1];
+                            if (lastIdx !== undefined) {
+                                loadWordByMode(lastIdx, true);
+                                normalCurrentPage = Math.ceil(filtered.length / 40) - 1;
+                                renderNormalSidebar();
+                                showToast("📖 Jumped to LAST word");
+                                setTimeout(syncPageInput, 50);
+                            }
+                        }
+                    };
+
+                    const startNextPress = function(e) {
+                        e.preventDefault();
+                        if (e.type === 'touchstart') {
+                            const touch = e.touches[0];
+                            nextTouchStartX = touch.clientX;
+                            nextTouchStartY = touch.clientY;
+                            nextTouchMoved = false;
+                        }
+                        nextLongPress = false;
                         if (nextTimer) {
                             clearTimeout(nextTimer);
                             nextTimer = null;
                         }
-                    }
+                        nextTimer = setTimeout(() => {
+                            if (e.type === 'touchstart' && nextTouchMoved) {
+                                nextTimer = null;
+                                return;
+                            }
+                            nextLongPress = true;
+                            jumpToLast();
+                            nextTimer = null;
+                        }, 400);
+                    };
+
+                    const endNextPress = function(e) {
+                        if (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                        if (nextTimer) {
+                            clearTimeout(nextTimer);
+                            nextTimer = null;
+                        }
+                    };
+
+                    const moveNextPress = function(e) {
+                        if (e.type === 'touchmove') {
+                            const touch = e.touches[0];
+                            const dx = Math.abs(touch.clientX - nextTouchStartX);
+                            const dy = Math.abs(touch.clientY - nextTouchStartY);
+                            if (dx > 10 || dy > 10) {
+                                nextTouchMoved = true;
+                                if (nextTimer) {
+                                    clearTimeout(nextTimer);
+                                    nextTimer = null;
+                                }
+                            }
+                        }
+                    };
+
+                    const handleNextAction = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        if (nextLongPress) {
+                            nextLongPress = false;
+                            return;
+                        }
+
+                        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                            .has(idx));
+                        const pageCount = Math.ceil(filtered.length / 40);
+                        if (normalCurrentPage + 1 < pageCount) {
+                            normalCurrentPage++;
+                            renderNormalSidebar();
+                            setTimeout(syncPageInput, 50);
+                        }
+                    };
+
+                    newNext.addEventListener('mousedown', startNextPress);
+                    newNext.addEventListener('mouseup', endNextPress);
+                    newNext.addEventListener('mouseleave', endNextPress);
+                    newNext.addEventListener('click', handleNextAction);
+
+                    newNext.addEventListener('touchstart', startNextPress, { passive: false });
+                    newNext.addEventListener('touchmove', moveNextPress, { passive: true });
+                    newNext.addEventListener('touchend', function(e) {
+                        endNextPress(e);
+                        if (!nextLongPress && !nextTouchMoved) {
+                            handleNextAction(e);
+                        }
+                        setTimeout(() => {
+                            nextLongPress = false;
+                            nextTouchMoved = false;
+                        }, 100);
+                    }, { passive: false });
+                    newNext.addEventListener('touchcancel', endNextPress, { passive: false });
                 }
-            };
-            
-            const handleNextAction = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (nextLongPress) {
-                    nextLongPress = false;
-                    return;
+
+                if (jumpInput) {
+                    const newJump = jumpInput.cloneNode(true);
+                    jumpInput.parentNode.replaceChild(newJump, jumpInput);
+
+                    const handleJump = function() {
+                        let val = parseInt(this.value);
+                        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices
+                            .has(idx));
+                        const maxPages = Math.ceil(filtered.length / 40) || 1;
+                        if (isNaN(val) || val < 1) val = 1;
+                        if (val > maxPages) val = maxPages;
+                        const newPage = val - 1;
+                        if (newPage !== normalCurrentPage) {
+                            normalCurrentPage = newPage;
+                            renderNormalSidebar();
+                            setTimeout(syncPageInput, 50);
+                        }
+                        this.value = normalCurrentPage + 1;
+                    };
+
+                    newJump.addEventListener('change', handleJump);
+                    newJump.addEventListener('keypress', function(ev) {
+                        if (ev.key === 'Enter') {
+                            ev.preventDefault();
+                            handleJump.call(this);
+                        }
+                    });
+                    newJump.addEventListener('blur', function() {
+                        this.value = normalCurrentPage + 1;
+                    });
+
+                    newJump.addEventListener('touchstart', function(e) {
+                        this.focus();
+                    }, { passive: true });
                 }
-                
-                const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                const pageCount = Math.ceil(filtered.length / 40);
-                if (normalCurrentPage + 1 < pageCount) {
-                    normalCurrentPage++;
-                    renderNormalSidebar();
-                    setTimeout(syncPageInput, 50);
-                }
-            };
-            
-            newNext.addEventListener('mousedown', startNextPress);
-            newNext.addEventListener('mouseup', endNextPress);
-            newNext.addEventListener('mouseleave', endNextPress);
-            newNext.addEventListener('click', handleNextAction);
-            
-            newNext.addEventListener('touchstart', startNextPress, { passive: false });
-            newNext.addEventListener('touchmove', moveNextPress, { passive: true });
-            newNext.addEventListener('touchend', function(e) {
-                endNextPress(e);
-                if (!nextLongPress && !nextTouchMoved) {
-                    handleNextAction(e);
-                }
-                setTimeout(() => {
-                    nextLongPress = false;
-                    nextTouchMoved = false;
-                }, 100);
-            }, { passive: false });
-            newNext.addEventListener('touchcancel', endNextPress, { passive: false });
+
+                setTimeout(syncPageInput, 100);
+            } else {
+                e.style.display = "none";
+                e.innerHTML = "";
+            }
         }
-
-        if (jumpInput) {
-            const newJump = jumpInput.cloneNode(true);
-            jumpInput.parentNode.replaceChild(newJump, jumpInput);
-
-            const handleJump = function() {
-                let val = parseInt(this.value);
-                const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                const maxPages = Math.ceil(filtered.length / 40) || 1;
-                if (isNaN(val) || val < 1) val = 1;
-                if (val > maxPages) val = maxPages;
-                const newPage = val - 1;
-                if (newPage !== normalCurrentPage) {
-                    normalCurrentPage = newPage;
-                    renderNormalSidebar();
-                    setTimeout(syncPageInput, 50);
-                }
-                this.value = normalCurrentPage + 1;
-            };
-
-            newJump.addEventListener('change', handleJump);
-            newJump.addEventListener('keypress', function(ev) {
-                if (ev.key === 'Enter') {
-                    ev.preventDefault();
-                    handleJump.call(this);
-                }
-            });
-            newJump.addEventListener('blur', function() {
-                this.value = normalCurrentPage + 1;
-            });
-            
-            newJump.addEventListener('touchstart', function(e) {
-                this.focus();
-            }, { passive: true });
-        }
-
-        setTimeout(syncPageInput, 100);
-    } else {
-        e.style.display = "none";
-        e.innerHTML = "";
-    }
-}
 
         // Patch renderNormalSidebar and renderSidebarUI to sync after rendering
         const origRenderNormalSidebar = renderNormalSidebar;
@@ -6098,8 +6107,8 @@ function updatePaginationControlsInside(e) {
                 let isLongPress = false;
                 let longPressHandled = false;
 
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
                 const startLongPress = (e) => {
                     const target = btn.getAttribute('data-target');
@@ -6118,16 +6127,16 @@ function updatePaginationControlsInside(e) {
                     longPressTimer = setTimeout(() => {
                         longPressHandled = true;
                         isLongPress = true;
-                        
+
                         btn.classList.add('copy-mode');
                         setTimeout(() => btn.classList.remove('copy-mode'), 800);
-                        
+
                         if (isIOS) {
                             showCopyPopupWithButton(text, "text");
                         } else {
                             copyTextDirectly(text, "text");
                         }
-                        
+
                         longPressTimer = null;
                     }, 400);
                 };
@@ -6154,7 +6163,7 @@ function updatePaginationControlsInside(e) {
                         isLongPress = false;
                         return;
                     }
-                    
+
                     ev.preventDefault();
                     ev.stopPropagation();
                     const target = btn.getAttribute('data-target');
@@ -6342,7 +6351,8 @@ function updatePaginationControlsInside(e) {
             setTimeout(setupInsertSymbolLongPress, 100);
             const editChineseInput = document.getElementById("editChineseInput");
             const editKhmerInput = document.getElementById("editKhmerInput");
-            const editEnter = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); document.getElementById("confirmUpdateBtn").click(); } };
+            const editEnter = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); document.getElementById("confirmUpdateBtn")
+                        .click(); } };
             editChineseInput.addEventListener("keypress", editEnter);
             editKhmerInput.addEventListener("keypress", editEnter);
             const resultsEdit = document.getElementById("vocabSearchResultsEdit");
@@ -6395,7 +6405,8 @@ function updatePaginationControlsInside(e) {
                     showRetryToast("retry Tap ⟳", retryFn);
                 });
             };
-            document.getElementById("confirmUpdateBtn").onclick = () => showPasswordProtectionModal(confirmUpdate, "update vocabulary");
+            document.getElementById("confirmUpdateBtn").onclick = () => showPasswordProtectionModal(confirmUpdate,
+                "update vocabulary");
             const deleteAction = () => {
                 const idx = window.currentEdit.idx;
                 const row = window.currentEdit.row;
@@ -6413,7 +6424,8 @@ function updatePaginationControlsInside(e) {
                     window.addModalPerformSearch(addInput.value);
                 }
             };
-            document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction, "delete vocabulary");
+            document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction,
+                "delete vocabulary");
             document.getElementById("closeEditModalBtn").onclick = () => a.remove();
             const addIcon = document.getElementById("addIconInsideEdit");
             if (addIcon) {
@@ -6439,18 +6451,18 @@ function updatePaginationControlsInside(e) {
                 let longPressHandled = false;
                 let pointerDownTime = 0;
                 let pointerMoved = false;
-                
+
                 const startHold = function(e) {
                     isLongPress = false;
                     longPressHandled = false;
                     pointerMoved = false;
                     pointerDownTime = Date.now();
-                    
+
                     if (holdTimer) {
                         clearTimeout(holdTimer);
                         holdTimer = null;
                     }
-                    
+
                     holdTimer = setTimeout(async () => {
                         if (!pointerMoved) {
                             isLongPress = true;
@@ -6460,10 +6472,13 @@ function updatePaginationControlsInside(e) {
                                 showToast("Recycle bin is empty");
                                 return;
                             }
-                            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
-                            
+                            if (!confirm(
+                                    `⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`
+                                    )) return;
+
                             const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-                            let successCount = 0, failCount = 0;
+                            let successCount = 0,
+                                failCount = 0;
                             for (const idx of indices) {
                                 if (!softDeletedIndices.has(idx)) continue;
                                 const result = await permanentlyDeleteSoftDeleted(idx);
@@ -6480,7 +6495,9 @@ function updatePaginationControlsInside(e) {
                                 if (nextIdx !== -1) loadWordByMode(nextIdx, true);
                             }
                             saveAllData();
-                            showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
+                            showToast(
+                                `🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`
+                                );
                             const input = document.getElementById('editChineseInput');
                             if (input && window.editModalPerformSearch) {
                                 window.editModalPerformSearch(input.value);
@@ -6492,7 +6509,7 @@ function updatePaginationControlsInside(e) {
                         holdTimer = null;
                     }, 500);
                 };
-                
+
                 const endHold = function(e) {
                     if (holdTimer) {
                         clearTimeout(holdTimer);
@@ -6504,7 +6521,7 @@ function updatePaginationControlsInside(e) {
                         }
                     }, 100);
                 };
-                
+
                 const handleClick = function(e) {
                     if (longPressHandled) {
                         e.preventDefault();
@@ -6520,10 +6537,10 @@ function updatePaginationControlsInside(e) {
                     e.preventDefault();
                     showRecycleBinModal(true);
                 };
-                
+
                 const newBtn = rbEditBtn.cloneNode(true);
                 rbEditBtn.parentNode.replaceChild(newBtn, rbEditBtn);
-                
+
                 newBtn.addEventListener('pointerdown', function(e) {
                     startHold(e);
                 });
@@ -6601,7 +6618,8 @@ function updatePaginationControlsInside(e) {
             setTimeout(setupInsertSymbolLongPress, 100);
             const chineseInput = document.getElementById("addChineseInput");
             const khmerInput = document.getElementById("addKhmerInput");
-            const enterHandler = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); document.getElementById("confirmAddBtn").click(); } };
+            const enterHandler = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); document.getElementById(
+                        "confirmAddBtn").click(); } };
             chineseInput.addEventListener("keypress", enterHandler);
             khmerInput.addEventListener("keypress", enterHandler);
             const addResultsContainer = document.getElementById("vocabSearchResults");
@@ -6687,18 +6705,18 @@ function updatePaginationControlsInside(e) {
                 let longPressHandled = false;
                 let pointerDownTime = 0;
                 let pointerMoved = false;
-                
+
                 const startHold = function(e) {
                     isLongPress = false;
                     longPressHandled = false;
                     pointerMoved = false;
                     pointerDownTime = Date.now();
-                    
+
                     if (holdTimer) {
                         clearTimeout(holdTimer);
                         holdTimer = null;
                     }
-                    
+
                     holdTimer = setTimeout(async () => {
                         if (!pointerMoved) {
                             isLongPress = true;
@@ -6708,10 +6726,13 @@ function updatePaginationControlsInside(e) {
                                 showToast("Recycle bin is empty");
                                 return;
                             }
-                            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
-                            
+                            if (!confirm(
+                                    `⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`
+                                    )) return;
+
                             const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-                            let successCount = 0, failCount = 0;
+                            let successCount = 0,
+                                failCount = 0;
                             for (const idx of indices) {
                                 if (!softDeletedIndices.has(idx)) continue;
                                 const result = await permanentlyDeleteSoftDeleted(idx);
@@ -6728,7 +6749,9 @@ function updatePaginationControlsInside(e) {
                                 if (nextIdx !== -1) loadWordByMode(nextIdx, true);
                             }
                             saveAllData();
-                            showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
+                            showToast(
+                                `🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`
+                                );
                             const input = document.getElementById('addChineseInput');
                             if (input && window.addModalPerformSearch) {
                                 window.addModalPerformSearch(input.value);
@@ -6740,7 +6763,7 @@ function updatePaginationControlsInside(e) {
                         holdTimer = null;
                     }, 500);
                 };
-                
+
                 const endHold = function(e) {
                     if (holdTimer) {
                         clearTimeout(holdTimer);
@@ -6752,7 +6775,7 @@ function updatePaginationControlsInside(e) {
                         }
                     }, 100);
                 };
-                
+
                 const handleClick = function(e) {
                     if (longPressHandled) {
                         e.preventDefault();
@@ -6768,10 +6791,10 @@ function updatePaginationControlsInside(e) {
                     e.preventDefault();
                     showRecycleBinModal(true);
                 };
-                
+
                 const newBtn = rbAddBtn.cloneNode(true);
                 rbAddBtn.parentNode.replaceChild(newBtn, rbAddBtn);
-                
+
                 newBtn.addEventListener('pointerdown', function(e) {
                     startHold(e);
                 });
@@ -7195,18 +7218,18 @@ function updatePaginationControlsInside(e) {
                 let longPressHandled = false;
                 let pointerDownTime = 0;
                 let pointerMoved = false;
-                
+
                 const startHold = function(e) {
                     isLongPress = false;
                     longPressHandled = false;
                     pointerMoved = false;
                     pointerDownTime = Date.now();
-                    
+
                     if (holdTimer) {
                         clearTimeout(holdTimer);
                         holdTimer = null;
                     }
-                    
+
                     holdTimer = setTimeout(async () => {
                         if (!pointerMoved) {
                             isLongPress = true;
@@ -7216,10 +7239,13 @@ function updatePaginationControlsInside(e) {
                                 showToast("Recycle bin is empty");
                                 return;
                             }
-                            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
-                            
+                            if (!confirm(
+                                    `⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`
+                                    )) return;
+
                             const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-                            let successCount = 0, failCount = 0;
+                            let successCount = 0,
+                                failCount = 0;
                             for (const idx of indices) {
                                 if (!softDeletedIndices.has(idx)) continue;
                                 const result = await permanentlyDeleteSoftDeleted(idx);
@@ -7236,7 +7262,9 @@ function updatePaginationControlsInside(e) {
                                 if (nextIdx !== -1) loadWordByMode(nextIdx, true);
                             }
                             saveAllData();
-                            showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
+                            showToast(
+                                `🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`
+                                );
                             const input = document.getElementById('editChineseInput');
                             if (input && window.editModalPerformSearch) {
                                 window.editModalPerformSearch(input.value);
@@ -7248,7 +7276,7 @@ function updatePaginationControlsInside(e) {
                         holdTimer = null;
                     }, 500);
                 };
-                
+
                 const endHold = function(e) {
                     if (holdTimer) {
                         clearTimeout(holdTimer);
@@ -7260,7 +7288,7 @@ function updatePaginationControlsInside(e) {
                         }
                     }, 100);
                 };
-                
+
                 const handleClick = function(e) {
                     if (longPressHandled) {
                         e.preventDefault();
@@ -7276,10 +7304,10 @@ function updatePaginationControlsInside(e) {
                     e.preventDefault();
                     showRecycleBinModal(true);
                 };
-                
+
                 const newBtn = rbBtn.cloneNode(true);
                 rbBtn.parentNode.replaceChild(newBtn, rbBtn);
-                
+
                 newBtn.addEventListener('pointerdown', function(e) {
                     startHold(e);
                 });
@@ -7306,7 +7334,8 @@ function updatePaginationControlsInside(e) {
             if (!button) return button;
             let timer = null;
             let pointerMoved = false;
-            let touchStartX = 0, touchStartY = 0;
+            let touchStartX = 0,
+                touchStartY = 0;
             let isLongPress = false;
             let longPressHandled = false;
 
@@ -7315,7 +7344,7 @@ function updatePaginationControlsInside(e) {
                 longPressHandled = false;
                 pointerMoved = false;
                 button.dataset.longPressTriggered = 'false';
-                
+
                 if (e.type === 'touchstart' && e.touches) {
                     touchStartX = e.touches[0].clientX;
                     touchStartY = e.touches[0].clientY;
@@ -7323,9 +7352,9 @@ function updatePaginationControlsInside(e) {
                     touchStartX = e.clientX;
                     touchStartY = e.clientY;
                 }
-                
+
                 if (timer) clearTimeout(timer);
-                
+
                 timer = setTimeout(() => {
                     if (!pointerMoved) {
                         isLongPress = true;
@@ -7339,7 +7368,7 @@ function updatePaginationControlsInside(e) {
                     timer = null;
                 }, duration);
             };
-            
+
             const movePress = (e) => {
                 let cx, cy;
                 if (e.type === 'touchmove' && e.touches) {
@@ -7351,59 +7380,63 @@ function updatePaginationControlsInside(e) {
                 }
                 if (cx !== undefined && (Math.abs(cx - touchStartX) > 10 || Math.abs(cy - touchStartY) > 10)) {
                     pointerMoved = true;
-                    if (timer) { clearTimeout(timer); timer = null; }
+                    if (timer) { clearTimeout(timer);
+                        timer = null; }
                 }
             };
-            
+
             const endPress = (e) => {
-                if (timer) { clearTimeout(timer); timer = null; }
-                
+                if (timer) { clearTimeout(timer);
+                    timer = null; }
+
                 if (longPressHandled || isLongPress) {
                     if (e) {
                         e.preventDefault();
                         e.stopPropagation();
                     }
                 }
-                
+
                 window.removeEventListener('mousemove', movePress);
                 window.removeEventListener('touchmove', movePress);
                 window.removeEventListener('mouseup', endPress);
                 window.removeEventListener('touchend', endPress);
             };
-            
+
             const newBtn = button.cloneNode(true);
             button.parentNode.replaceChild(newBtn, button);
-            
+
             newBtn.addEventListener('pointerdown', function(e) {
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
                 startPress(e);
             });
-            
+
             newBtn.addEventListener('pointermove', function(e) {
                 movePress(e);
             });
-            
+
             newBtn.addEventListener('pointerup', function(e) {
                 endPress(e);
             });
-            
+
             newBtn.addEventListener('pointercancel', function(e) {
-                if (timer) { clearTimeout(timer); timer = null; }
+                if (timer) { clearTimeout(timer);
+                    timer = null; }
                 isLongPress = false;
                 longPressHandled = false;
                 button.dataset.longPressTriggered = 'false';
             });
-            
+
             newBtn.addEventListener('touchstart', startPress, { passive: true });
             newBtn.addEventListener('touchmove', movePress, { passive: true });
             newBtn.addEventListener('touchend', endPress);
             newBtn.addEventListener('touchcancel', function(e) {
-                if (timer) { clearTimeout(timer); timer = null; }
+                if (timer) { clearTimeout(timer);
+                    timer = null; }
                 isLongPress = false;
                 longPressHandled = false;
                 button.dataset.longPressTriggered = 'false';
             });
-            
+
             return newBtn;
         }
         const tripleHtmlCache = new Map;
@@ -7415,12 +7448,12 @@ function updatePaginationControlsInside(e) {
                 let n = "";
                 for (let e = 0; e < t.length; e++) { const o = t[e].char;
                     n +=
-                    `<div class="char-block"><div class="pinyin-top">${t[e].pinyin}</div><div class="chinese-main">${o}</div><div class="chinese-bottom">${o}</div></div>` }
+                        `<div class="char-block"><div class="pinyin-top">${t[e].pinyin}</div><div class="chinese-main">${o}</div><div class="chinese-bottom">${o}</div></div>` }
                 return tripleHtmlCache.set(e, n), n } catch (t) { console.warn("pinyin error", t);
                 let n = "";
                 for (let t = 0; t < e.length; t++) { const o = e[t];
                     n +=
-                    `<div class="char-block"><div class="pinyin-top"></div><div class="chinese-main">${o}</div><div class="chinese-bottom">${o}</div></div>` } return n }
+                        `<div class="char-block"><div class="pinyin-top"></div><div class="chinese-main">${o}</div><div class="chinese-bottom">${o}</div></div>` } return n }
         }
         let currentAudio = null,
             speechQueue = [],
@@ -7759,17 +7792,30 @@ function updatePaginationControlsInside(e) {
             }
             safeSetItem("vocabMaster_SoftData", JSON.stringify(softDataObj));
 
+            // ---- Save vocab list with fallback to IndexedDB ----
             if (vocabList.length > 0) {
                 const compressed = compressVocabList(vocabList);
                 const jsonStr = JSON.stringify(compressed);
-                if (!safeSetItem("vocabMaster_List_Compressed", jsonStr)) {
-                    showToast("⚠️ Vocabulary list too large for storage. Try clearing cache.");
+                const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
+                if (!success) {
+                    storeVocabListInIndexedDB(compressed).then(ok => {
+                        if (ok) {
+                            console.log('✅ Stored vocab list in IndexedDB');
+                            safeSetItem('vocabMaster_List_StoredInIndexedDB', 'true');
+                        } else {
+                            showToast('⚠️ Vocabulary list too large. Try clearing cache.');
+                        }
+                    });
+                } else {
+                    safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
+                    storeVocabListInIndexedDB(null).catch(() => {});
                 }
             } else {
                 safeRemoveItem("vocabMaster_List_Compressed");
+                safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
+                storeVocabListInIndexedDB(null).catch(() => {});
             }
-            
-            // Save group map data
+
             try {
                 const mapData = {};
                 for (let [k, v] of groupMap) {
@@ -7777,11 +7823,10 @@ function updatePaginationControlsInside(e) {
                 }
                 safeSetItem('groupMapData', JSON.stringify(mapData));
             } catch (e) {}
-            
             safeSetItem('groupFilter', groupFilter);
         }
 
-        function loadSettings() {
+        async function loadSettings() {
             const settingsStr = safeGetItem("vocabMaster_Settings", null);
             if (settingsStr) {
                 try {
@@ -7851,7 +7896,6 @@ function updatePaginationControlsInside(e) {
                         document.getElementById("rightSide").classList.add("hidden");
                         document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
                     }
-                    // Load group filter
                     if (t.groupFilter) {
                         groupFilter = t.groupFilter;
                     }
@@ -7923,28 +7967,40 @@ function updatePaginationControlsInside(e) {
                 currentSheetId = sheetId;
                 console.log("🔑 Restored sheet ID:", sheetId);
             }
-
             const apiUrl = safeGetItem("vocabMaster_ApiUrl", "");
             if (apiUrl) {
                 detectedApiUrl = apiUrl;
                 console.log("🔗 Restored API URL:", apiUrl);
             }
-
             const password = safeGetItem("vocabMaster_Password", "");
             if (password) {
                 dynamicPassword = password;
                 console.log("🔒 Restored password");
             }
 
-            const compressedStr = safeGetItem("vocabMaster_List_Compressed", null);
-            if (compressedStr) {
+            // ---- Load vocab list: try localStorage first, then IndexedDB ----
+            let compressed = null;
+            const listStr = safeGetItem("vocabMaster_List_Compressed", null);
+            if (listStr) {
                 try {
-                    const compressed = JSON.parse(compressedStr);
-                    if (Array.isArray(compressed) && compressed.length > 0) {
-                        vocabList = decompressVocabList(compressed);
-                        lastSheetDataHash = computeSheetHash(vocabList);
-                    }
-                } catch (e) { console.warn("Vocab list parse error:", e); }
+                    compressed = JSON.parse(listStr);
+                } catch (e) {}
+            }
+            if (!compressed || !Array.isArray(compressed) || compressed.length === 0) {
+                const storedInDB = safeGetItem('vocabMaster_List_StoredInIndexedDB', 'false') === 'true';
+                if (storedInDB) {
+                    try {
+                        const dbData = await getVocabListFromIndexedDB();
+                        if (dbData && Array.isArray(dbData) && dbData.length > 0) {
+                            compressed = dbData;
+                            console.log('✅ Loaded vocab list from IndexedDB');
+                        }
+                    } catch (e) {}
+                }
+            }
+            if (compressed && Array.isArray(compressed) && compressed.length > 0) {
+                vocabList = decompressVocabList(compressed);
+                lastSheetDataHash = computeSheetHash(vocabList);
             }
 
             checkPasswordVerifiedSession();
@@ -8127,7 +8183,7 @@ function updatePaginationControlsInside(e) {
         function toggleMenu(e) {
             const gear = document.getElementById("minimizedTrigger");
             const menu = document.getElementById("floatingMenu");
-            
+
             if (e) {
                 menu.style.display = "none";
                 gear.style.display = "flex";
@@ -8227,16 +8283,17 @@ function updatePaginationControlsInside(e) {
 
         function resetKhmerPosition() { khmerX = 50, khmerY = 70, khmerElement && (khmerElement.style.left = "50%",
                 khmerElement.style.top = "70%"), saveAllDragPositions(), forceShrink() }
+
         function onChinesePointerDown(e) {
             e.preventDefault(), e.stopPropagation();
             const t = e.clientX ?? (e.touches ? e.touches[0].clientX : 0),
                 n = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
             pressStartX = t, pressStartY = n, hasMovedDuringPress = !1;
-            
+
             const target = e.target;
             const isPinyinTop = target && target.classList && target.classList.contains('pinyin-top');
             const isChineseBottom = target && target.classList && target.classList.contains('chinese-bottom');
-            
+
             longPressTimer = setTimeout((async () => {
                 if (!hasMovedDuringPress && !dragActive && !copyLocked) {
                     if (isPinyinTop) {
@@ -8251,25 +8308,31 @@ function updatePaginationControlsInside(e) {
                         const e = chineseElement.getAttribute("data-plain") || "";
                         e && (isIOS ? showCopyPopupWithButton(e, "Chinese") : await copyTextDirectly(e, "Chinese"));
                         const t = await showLayerChoiceModal();
-                        "top" === t ? startLayerDrag("top", pressStartX, pressStartY) : "bottom" === t && startLayerDrag("bottom", pressStartX, pressStartY);
+                        "top" === t ? startLayerDrag("top", pressStartX, pressStartY) : "bottom" === t && startLayerDrag(
+                            "bottom", pressStartX, pressStartY);
                     }
                 }
                 longPressTimer = null
             }), 250);
-            
-            window.addEventListener("mousemove", onPressMove), window.addEventListener("touchmove", onPressMove), window.addEventListener("mouseup", onPressEnd), window.addEventListener("touchend", onPressEnd)
+
+            window.addEventListener("mousemove", onPressMove), window.addEventListener("touchmove", onPressMove), window
+                .addEventListener("mouseup", onPressEnd), window.addEventListener("touchend", onPressEnd)
         }
 
         function onKhmerPointerDown(e) {
             e.preventDefault(), e.stopPropagation();
-            let t = null, n = !1;
+            let t = null,
+                n = !1;
             const o = () => { n = !0, t && clearTimeout(t) },
-                i = () => { t && clearTimeout(t), window.removeEventListener("mousemove", o), window.removeEventListener("touchmove", o), window.removeEventListener("mouseup", i), window.removeEventListener("touchend", i) };
+                i = () => { t && clearTimeout(t), window.removeEventListener("mousemove", o), window.removeEventListener(
+                        "touchmove", o), window.removeEventListener("mouseup", i), window.removeEventListener(
+                        "touchend", i) };
             t = setTimeout((async () => {
                 if (!n && !copyLocked) { const e = khmerElement.innerText;
                     e && (isIOS ? showCopyPopupWithButton(e, "Khmer") : await copyTextDirectly(e, "Khmer")) }
                 i()
-            }), 250), window.addEventListener("mousemove", o), window.addEventListener("touchmove", o), window.addEventListener("mouseup", i), window.addEventListener("touchend", i)
+            }), 250), window.addEventListener("mousemove", o), window.addEventListener("touchmove", o), window
+                .addEventListener("mouseup", i), window.addEventListener("touchend", i)
         }
 
         function onPressMove(e) {
@@ -8283,7 +8346,7 @@ function updatePaginationControlsInside(e) {
         function onPressEnd(e) {
             const target = e && e.target;
             const isBottomElement = target && target.classList && target.classList.contains('chinese-bottom');
-            
+
             if (longPressTimer !== null && !dragActive && !hasMovedDuringPress) {
                 if (isBottomElement) {
                     const touch = e && (e.clientX !== undefined ? e : (e.changedTouches ? e.changedTouches[0] : null));
@@ -8296,7 +8359,7 @@ function updatePaginationControlsInside(e) {
                     speakChineseFromMain();
                 }
             }
-            
+
             if (longPressTimer) {
                 clearTimeout(longPressTimer);
                 longPressTimer = null;
@@ -8388,8 +8451,7 @@ function updatePaginationControlsInside(e) {
                 if (e.type === 'mousedown') {
                     e.preventDefault();
                     e.stopPropagation();
-                } else if (e.type === 'touchstart') {
-                }
+                } else if (e.type === 'touchstart') {}
                 let timer = null;
                 let moved = false;
                 const onMove = (ev) => {
@@ -8720,9 +8782,9 @@ function updatePaginationControlsInside(e) {
                 moved = false;
 
             const isDraggableElement = (target) => {
-                return target.closest('.khmer-text') || 
-                       target.closest('.chinese-word') || 
-                       target.closest('.emoji-container');
+                return target.closest('.khmer-text') ||
+                    target.closest('.chinese-word') ||
+                    target.closest('.emoji-container');
             };
 
             area.addEventListener("touchstart", function(e) {
@@ -8871,14 +8933,14 @@ function updatePaginationControlsInside(e) {
         }
 
         function saveGearPosition() {
-            if (gearElemDrag) { 
+            if (gearElemDrag) {
                 const e = gearElemDrag.offsetLeft,
-                    t = gearElemDrag.offsetTop; 
-                if (!isNaN(e) && !isNaN(t)) { 
+                    t = gearElemDrag.offsetTop;
+                if (!isNaN(e) && !isNaN(t)) {
                     safeSetItem("gearPosLeft", e);
-                    safeSetItem("gearPosTop", t); 
-                } 
-            } 
+                    safeSetItem("gearPosTop", t);
+                }
+            }
         }
 
         function applyStoredGearPosition() {
@@ -8934,11 +8996,11 @@ function updatePaginationControlsInside(e) {
                     holdTriggered = false;
                     holdTimer = setTimeout(async () => {
                         holdTriggered = true;
-                        
+
                         const overlay = document.getElementById('qrPopupOverlay');
                         if (overlay) overlay.style.display = 'none';
                         toggleMenu(true);
-                        
+
                         const sheetId = DEFAULT_SHEET_ID;
                         const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
                         currentSheetId = sheetId;
@@ -9025,8 +9087,8 @@ function updatePaginationControlsInside(e) {
                             const data = await response.json();
                             console.log('📥 API Response:', data);
                             if (data.result === "success" && data.fileName) {
-                                if (!data.fileName.startsWith('http://') && 
-                                    !data.fileName.startsWith('https://') && 
+                                if (!data.fileName.startsWith('http://') &&
+                                    !data.fileName.startsWith('https://') &&
                                     !data.fileName.includes('docs.google.com')) {
                                     safeSetItem('sheetName_' + sheetId, data.fileName);
                                     console.log('✅ Saved sheet name:', data.fileName);
@@ -9109,7 +9171,9 @@ function updatePaginationControlsInside(e) {
                     opt.value = voiceId;
 
                     let label = voiceId.replace('zh-CN-', '').replace('Neural', '');
-                    const femaleNames = ['Xiaoxiao', 'Xiaoyi', 'Xiaohan', 'Xiaomeng', 'Xiaomo', 'Xiaoqiu', 'Xiaorui', 'Xiaoshuang', 'Xiaoxia', 'Xiaoxuan', 'Xiaoyan', 'Xiaoyou', 'Xiaozhen'];
+                    const femaleNames = ['Xiaoxiao', 'Xiaoyi', 'Xiaohan', 'Xiaomeng', 'Xiaomo', 'Xiaoqiu', 'Xiaorui',
+                        'Xiaoshuang', 'Xiaoxia', 'Xiaoxuan', 'Xiaoyan', 'Xiaoyou', 'Xiaozhen'
+                    ];
                     const isFemale = femaleNames.some(name => voiceId.includes(name));
                     opt.textContent = label + (isFemale ? ' ♀' : ' ♂');
                     select.appendChild(opt);
@@ -9184,7 +9248,7 @@ function updatePaginationControlsInside(e) {
                 z-index: 99999;
                 transition: opacity 0.5s ease;
             `;
-            
+
             const style = document.createElement('style');
             style.textContent = `
                 .loading-dots::after {
@@ -9204,7 +9268,7 @@ function updatePaginationControlsInside(e) {
                 }
             `;
             document.head.appendChild(style);
-            
+
             loadingOverlay.innerHTML = `
                 <img src="/static/ABAicon.png" alt="ABA Icon" style="width:80px; height:80px; border-radius:16px; margin-bottom:20px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
                 <div style="color:white; font-size:1.4rem; font-weight:600; font-family:Inter, system-ui, sans-serif; margin-bottom:16px;">
@@ -9231,7 +9295,7 @@ function updatePaginationControlsInside(e) {
                 loadEmojiPosition();
             }
 
-            loadSettings();
+            await loadSettings();
             loadSheetHistory();
 
             if (currentSheetId) {
@@ -9267,7 +9331,7 @@ function updatePaginationControlsInside(e) {
                     groupFilter = '__ALL__';
                 }
                 applyGroupFilter();
-                
+
                 if (appMode === "random") {
                     if (history.length === 0 && filteredList.length > 0) {
                         history = [filteredList[0]];
@@ -9375,18 +9439,18 @@ function updatePaginationControlsInside(e) {
                 let longPressHandled = false;
                 let pointerMoved = false;
                 let pointerDownTime = 0;
-                
+
                 const startHold = function(e) {
                     isLongPress = false;
                     longPressHandled = false;
                     pointerMoved = false;
                     pointerDownTime = Date.now();
-                    
+
                     if (holdTimer) {
                         clearTimeout(holdTimer);
                         holdTimer = null;
                     }
-                    
+
                     holdTimer = setTimeout(async () => {
                         if (!pointerMoved) {
                             isLongPress = true;
@@ -9396,10 +9460,13 @@ function updatePaginationControlsInside(e) {
                                 showToast("Recycle bin is empty");
                                 return;
                             }
-                            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
-                            
+                            if (!confirm(
+                                    `⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`
+                                    )) return;
+
                             const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-                            let successCount = 0, failCount = 0;
+                            let successCount = 0,
+                                failCount = 0;
                             for (const idx of indices) {
                                 if (!softDeletedIndices.has(idx)) continue;
                                 const result = await permanentlyDeleteSoftDeleted(idx);
@@ -9416,14 +9483,16 @@ function updatePaginationControlsInside(e) {
                                 if (nextIdx !== -1) loadWordByMode(nextIdx, true);
                             }
                             saveAllData();
-                            showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
+                            showToast(
+                                `🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`
+                                );
                             updateRecycleBinCountInModals();
                             setTimeout(() => { longPressHandled = false; }, 300);
                         }
                         holdTimer = null;
                     }, 500);
                 };
-                
+
                 const endHold = function(e) {
                     if (holdTimer) {
                         clearTimeout(holdTimer);
@@ -9435,7 +9504,7 @@ function updatePaginationControlsInside(e) {
                         }
                     }, 100);
                 };
-                
+
                 const handleClick = function(e) {
                     if (longPressHandled) {
                         e.preventDefault();
@@ -9450,7 +9519,7 @@ function updatePaginationControlsInside(e) {
                     e.stopPropagation();
                     showRecycleBinModal(false);
                 };
-                
+
                 rbBtn.addEventListener('pointerdown', function(e) {
                     startHold(e);
                 });
@@ -9588,7 +9657,7 @@ function updatePaginationControlsInside(e) {
             });
 
             updateRecycleBinBadge();
-            
+
             // Create group filter UI if not exists
             createGroupFilterUI();
         };
