@@ -2870,29 +2870,50 @@
     <script src=https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js>
     </script>
     <script>
-        // ======================== SAFE LOCALSTORAGE WRAPPER (FIXED) =========================
+      // ======================== SAFE LOCALSTORAGE WRAPPER =========================
 let storageQuotaExceeded = false;
 let _quotaToastShown = false;
 let _lastQuotaCheck = 0;
+let _quotaErrorCount = 0;
 
 function safeSetItem(key, value) {
+    // If quota is already exceeded, skip localStorage entirely
+    if (storageQuotaExceeded) {
+        // Only try IndexedDB for critical data (vocab list)
+        if (key === 'vocabMaster_List_Compressed' || key === 'vocabMaster_List_StoredInIndexedDB') {
+            // Let the caller handle IndexedDB fallback
+            return false;
+        }
+        // For all other keys, just return false without showing toast
+        return false;
+    }
+    
     try {
         localStorage.setItem(key, value);
+        // If we successfully wrote, reset the quota state
         storageQuotaExceeded = false;
         _quotaToastShown = false;
+        _quotaErrorCount = 0;
         const warn = document.getElementById('cacheWarning');
         if (warn) warn.style.display = 'none';
         return true;
     } catch (e) {
-        if (e.name === 'QuotaExceededError' || e.code === 22 || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+        // Check if this is a quota error
+        if (e.name === 'QuotaExceededError' || e.code === 22 || 
+            e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || 
+            (e.name === 'SecurityError' && e.message && e.message.includes('quota'))) {
+            
             storageQuotaExceeded = true;
+            _quotaErrorCount++;
             console.warn('localStorage quota exceeded for key:', key);
+            
+            // Show the warning in the UI
             const warn = document.getElementById('cacheWarning');
             if (warn) warn.style.display = 'block';
             
-            // Only show toast once every 5 seconds to avoid spam
+            // Only show toast once every 10 seconds to avoid spam
             const now = Date.now();
-            if (!_quotaToastShown || (now - _lastQuotaCheck) > 5000) {
+            if (!_quotaToastShown || (now - _lastQuotaCheck) > 10000) {
                 _quotaToastShown = true;
                 _lastQuotaCheck = now;
                 showToast('⚠️ Storage full! Tap "Clear Cache" in Load Vocabulary modal.');
@@ -2905,12 +2926,27 @@ function safeSetItem(key, value) {
 }
 
 function safeGetItem(key, fallback) {
+    // If quota is exceeded, still try to read (reads don't throw quota errors)
     try {
         const val = localStorage.getItem(key);
         return val !== null ? val : fallback;
     } catch (e) {
         return fallback;
     }
+}
+
+function safeRemoveItem(key) {
+    try { localStorage.removeItem(key); } catch (e) {}
+}
+
+// Function to reset quota state (call this after clearing cache)
+function resetQuotaState() {
+    storageQuotaExceeded = false;
+    _quotaToastShown = false;
+    _lastQuotaCheck = 0;
+    _quotaErrorCount = 0;
+    const warn = document.getElementById('cacheWarning');
+    if (warn) warn.style.display = 'none';
 }
 
 function safeRemoveItem(key) {
@@ -3013,8 +3049,7 @@ function safeRemoveItem(key) {
             } catch (e) { return false; }
         }
 
-        // ---- Override clearAllCache to also clear IndexedDB ----
-        // ---- Override clearAllCache to also clear IndexedDB and reset quota state ----
+       // ---- Override clearAllCache to also clear IndexedDB and reset quota state ----
 const origClearAllCache = window.clearAllCache || function() {};
 
 window.clearAllCache = async function() {
@@ -3024,23 +3059,24 @@ window.clearAllCache = async function() {
     const password = dynamicPassword || safeGetItem('vocabMaster_Password', '012891556');
     try {
         const keys = Object.keys(localStorage);
+        let removedCount = 0;
         for (const k of keys) {
             if (k.startsWith('vocabMaster_') || k.startsWith('drag_') || k.startsWith('gear') ||
                 k.startsWith('menu') || k.startsWith('emoji') || k.startsWith('sidebar') ||
                 k === 'floatingMenuLeft' || k === 'floatingMenuTop' || k === 'speechOrder' ||
                 k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || k === 'sheetHistory' ||
                 k === 'groupFilter' || k === 'groupMapData' || k === 'vocabMaster_List_StoredInIndexedDB') {
-                localStorage.removeItem(k);
+                try { localStorage.removeItem(k); removedCount++; } catch (e) {}
             }
         }
         // Clear IndexedDB too
-        await clearVocabListFromIndexedDB();
+        try {
+            await clearVocabListFromIndexedDB();
+        } catch (e) {}
+        
         // Reset all quota flags
-        storageQuotaExceeded = false;
-        _quotaToastShown = false;
-        _lastQuotaCheck = 0;
-        const warn = document.getElementById('cacheWarning');
-        if (warn) warn.style.display = 'none';
+        resetQuotaState();
+        
         // Save sheet ID and password back so they persist
         if (sheetId) {
             try { localStorage.setItem('vocabMaster_SheetId', sheetId); } catch (e) {}
@@ -3048,7 +3084,7 @@ window.clearAllCache = async function() {
         if (password) {
             try { localStorage.setItem('vocabMaster_Password', password); } catch (e) {}
         }
-        showToast('✅ Cache cleared! Reloading...');
+        showToast(`✅ Cache cleared! (${removedCount} items removed) Reloading...`);
         setTimeout(() => location.reload(), 500);
     } catch (e) {
         showToast('❌ Clear failed: ' + e.message);
@@ -7761,10 +7797,27 @@ window.clearAllCache = async function() {
             i && (i.style.textShadow = o), saveAllData()
         }
 
-       // ======================================================================
-// FIXED: saveAllData with proper IndexedDB fallback
+      // ======================================================================
+// FIXED: saveAllData with proper IndexedDB fallback for iOS
 // ======================================================================
 async function saveAllData() {
+    // If quota is exceeded, only save the absolute essentials
+    if (storageQuotaExceeded) {
+        // Try to save the most important data to IndexedDB
+        if (vocabList.length > 0) {
+            try {
+                const compressed = compressVocabList(vocabList);
+                const stored = await storeVocabListInIndexedDB(compressed);
+                if (stored) {
+                    try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
+                }
+            } catch (e) {
+                console.warn('IndexedDB save failed:', e);
+            }
+        }
+        return; // Skip all other saves
+    }
+    
     const settings = {
         mZhSize: userSetChineseFontSize,
         mKmSize: userSetKhmerFontSize,
@@ -7801,7 +7854,13 @@ async function saveAllData() {
         shadow: document.getElementById("shadowSlider").value,
         groupFilter: groupFilter
     };
-    safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
+    
+    // Try to save settings - if this fails, quota is full
+    const settingsSuccess = safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
+    if (!settingsSuccess) {
+        // Quota is full, stop trying to save other keys
+        return;
+    }
 
     const softDeletedArray = Array.from(softDeletedIndices);
     safeSetItem("vocabMaster_SoftDeleted", JSON.stringify(softDeletedArray));
@@ -7825,30 +7884,16 @@ async function saveAllData() {
             try {
                 const stored = await storeVocabListInIndexedDB(compressed);
                 if (stored) {
-                    // Use a direct localStorage set for this flag (it's small)
                     try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
-                    // Remove the failing localStorage entry to prevent retry
                     try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
                     console.log('📦 Stored vocabulary list in IndexedDB');
-                } else {
-                    console.warn('⚠️ Failed to store in IndexedDB as well');
-                    // Only show this warning once
-                    if (!window._idbWarningShown) {
-                        window._idbWarningShown = true;
-                        showToast('⚠️ Your vocabulary list is too large. Please clear cache and reload.');
-                    }
                 }
             } catch (idbError) {
                 console.warn('IndexedDB store error:', idbError);
-                if (!window._idbWarningShown) {
-                    window._idbWarningShown = true;
-                    showToast('⚠️ Storage error. Please clear cache.');
-                }
             }
         } else {
             // If localStorage worked, clear the IndexedDB flag
             try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
-            // Also clear any stale IndexedDB data
             try {
                 await clearVocabListFromIndexedDB();
             } catch (e) {}
@@ -9376,8 +9421,9 @@ function loadSettings() {
                 loadEmojiPosition();
             }
 
-            loadSettings();
-            loadSheetHistory();
+           loadSettings();
+    resetQuotaState(); // <-- ADD THIS LINE HERE
+    loadSheetHistory();
 
             if (currentSheetId) {
                 try {
