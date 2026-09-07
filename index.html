@@ -7711,75 +7711,92 @@ function updatePaginationControlsInside(e) {
             i && (i.style.textShadow = o), saveAllData()
         }
 
-        function saveAllData() {
-            const settings = {
-                mZhSize: userSetChineseFontSize,
-                mKmSize: userSetKhmerFontSize,
-                mZhColor: document.getElementById("mZhColor").value,
-                mKmColor: document.getElementById("mKmColor").value,
-                zhReps: document.getElementById("zhReps").value,
-                kmReps: document.getElementById("kmReps").value,
-                autoDelay: document.getElementById("autoDelay").value,
-                sidebarVisible: sidebarVisible,
-                sZhFont: document.getElementById("sZhFont").value,
-                sKmFont: document.getElementById("sKmFont").value,
-                sZhSize: document.getElementById("sZhSize").value,
-                sKmSize: document.getElementById("sKmSize").value,
-                sZhColor: document.getElementById("sZhColor").value,
-                sKmColor: document.getElementById("sKmColor").value,
-                vocabSpacing: document.getElementById("sVocabSpacing").value,
-                zhVoice: document.getElementById("zhVoiceSelect").value,
-                kmVoice: document.getElementById("kmVoiceSelect").value,
-                zhRate: document.getElementById("zhRateSlider").value,
-                pinyinFont: document.getElementById("pinyinFont").value,
-                pinyinColor: document.getElementById("pinyinColor").value,
-                pinyinBold: document.getElementById("pinyinBold").classList.contains("active"),
-                pinyinSizePx: document.getElementById("pinyinSizePx").value,
-                pinyinSpacing: document.getElementById("pinyinSpacing").value,
-                bottomFont: document.getElementById("bottomFont").value,
-                bottomCharColor: document.getElementById("bottomCharColor").value,
-                bottomBold: document.getElementById("bottomBold").classList.contains("active"),
-                bottomSizePx: userSetBottomFontSize,
-                topPinyinVisible: topPinyinVisible,
-                bottomCharVisible: bottomCharVisible,
-                appMode: appMode,
-                normalCurrentIdx: normalCurrentIdx,
-                normalCurrentPage: normalCurrentPage,
-                shadow: document.getElementById("shadowSlider").value,
-                groupFilter: groupFilter
-            };
-            safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
+ async function saveAllData() {
+    const settings = {
+        mZhSize: userSetChineseFontSize,
+        mKmSize: userSetKhmerFontSize,
+        mZhColor: document.getElementById("mZhColor").value,
+        mKmColor: document.getElementById("mKmColor").value,
+        zhReps: document.getElementById("zhReps").value,
+        kmReps: document.getElementById("kmReps").value,
+        autoDelay: document.getElementById("autoDelay").value,
+        sidebarVisible: sidebarVisible,
+        sZhFont: document.getElementById("sZhFont").value,
+        sKmFont: document.getElementById("sKmFont").value,
+        sZhSize: document.getElementById("sZhSize").value,
+        sKmSize: document.getElementById("sKmSize").value,
+        sZhColor: document.getElementById("sZhColor").value,
+        sKmColor: document.getElementById("sKmColor").value,
+        vocabSpacing: document.getElementById("sVocabSpacing").value,
+        zhVoice: document.getElementById("zhVoiceSelect").value,
+        kmVoice: document.getElementById("kmVoiceSelect").value,
+        zhRate: document.getElementById("zhRateSlider").value,
+        pinyinFont: document.getElementById("pinyinFont").value,
+        pinyinColor: document.getElementById("pinyinColor").value,
+        pinyinBold: document.getElementById("pinyinBold").classList.contains("active"),
+        pinyinSizePx: document.getElementById("pinyinSizePx").value,
+        pinyinSpacing: document.getElementById("pinyinSpacing").value,
+        bottomFont: document.getElementById("bottomFont").value,
+        bottomCharColor: document.getElementById("bottomCharColor").value,
+        bottomBold: document.getElementById("bottomBold").classList.contains("active"),
+        bottomSizePx: userSetBottomFontSize,
+        topPinyinVisible: topPinyinVisible,
+        bottomCharVisible: bottomCharVisible,
+        appMode: appMode,
+        normalCurrentIdx: normalCurrentIdx,
+        normalCurrentPage: normalCurrentPage,
+        shadow: document.getElementById("shadowSlider").value,
+        groupFilter: groupFilter
+    };
+    safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
 
-            const softDeletedArray = Array.from(softDeletedIndices);
-            safeSetItem("vocabMaster_SoftDeleted", JSON.stringify(softDeletedArray));
+    const softDeletedArray = Array.from(softDeletedIndices);
+    safeSetItem("vocabMaster_SoftDeleted", JSON.stringify(softDeletedArray));
 
-            const softDataObj = {};
-            for (let [k, v] of softDeletedData) {
-                softDataObj[k] = v;
-            }
-            safeSetItem("vocabMaster_SoftData", JSON.stringify(softDataObj));
+    const softDataObj = {};
+    for (let [k, v] of softDeletedData) {
+        softDataObj[k] = v;
+    }
+    safeSetItem("vocabMaster_SoftData", JSON.stringify(softDataObj));
 
-            if (vocabList.length > 0) {
-                const compressed = compressVocabList(vocabList);
-                const jsonStr = JSON.stringify(compressed);
-                if (!safeSetItem("vocabMaster_List_Compressed", jsonStr)) {
-                    showToast("⚠️ Vocabulary list too large for storage. Try clearing cache.");
-                }
-            } else {
+    // ✅ FIX: Always use IndexedDB for large lists, localStorage for small ones
+    if (vocabList.length > 0) {
+        const compressed = compressVocabList(vocabList);
+        const jsonStr = JSON.stringify(compressed);
+        
+        // Try localStorage first (faster for small lists)
+        const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
+        
+        if (!success) {
+            // ✅ If localStorage fails, store in IndexedDB
+            const stored = await storeVocabListInIndexedDB(compressed);
+            if (stored) {
+                safeSetItem('vocabMaster_List_StoredInIndexedDB', 'true');
+                // ✅ Remove the failing localStorage entry to prevent retry
                 safeRemoveItem("vocabMaster_List_Compressed");
+            } else {
+                // ✅ If IndexedDB also fails, show a more helpful message
+                showToast('⚠️ Your vocabulary list is too large. Please reduce the number of words or clear old data.');
             }
-            
-            // Save group map data
-            try {
-                const mapData = {};
-                for (let [k, v] of groupMap) {
-                    mapData[k] = v;
-                }
-                safeSetItem('groupMapData', JSON.stringify(mapData));
-            } catch (e) {}
-            
-            safeSetItem('groupFilter', groupFilter);
+        } else {
+            // ✅ If localStorage worked, clear the IndexedDB flag
+            safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
         }
+    } else {
+        safeRemoveItem("vocabMaster_List_Compressed");
+        safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
+        await storeVocabListInIndexedDB(null).catch(() => {});
+    }
+
+    try {
+        const mapData = {};
+        for (let [k, v] of groupMap) {
+            mapData[k] = v;
+        }
+        safeSetItem('groupMapData', JSON.stringify(mapData));
+    } catch (e) {}
+    safeSetItem('groupFilter', groupFilter);
+}
 
         function loadSettings() {
             const settingsStr = safeGetItem("vocabMaster_Settings", null);
