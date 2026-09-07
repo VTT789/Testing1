@@ -7741,325 +7741,334 @@
         // ======================================================================
         // FIXED: saveAllData with proper IndexedDB fallback
         // ======================================================================
-        async function saveAllData() {
-            const settings = {
-                mZhSize: userSetChineseFontSize,
-                mKmSize: userSetKhmerFontSize,
-                mZhColor: document.getElementById("mZhColor").value,
-                mKmColor: document.getElementById("mKmColor").value,
-                zhReps: document.getElementById("zhReps").value,
-                kmReps: document.getElementById("kmReps").value,
-                autoDelay: document.getElementById("autoDelay").value,
-                sidebarVisible: sidebarVisible,
-                sZhFont: document.getElementById("sZhFont").value,
-                sKmFont: document.getElementById("sKmFont").value,
-                sZhSize: document.getElementById("sZhSize").value,
-                sKmSize: document.getElementById("sKmSize").value,
-                sZhColor: document.getElementById("sZhColor").value,
-                sKmColor: document.getElementById("sKmColor").value,
-                vocabSpacing: document.getElementById("sVocabSpacing").value,
-                zhVoice: document.getElementById("zhVoiceSelect").value,
-                kmVoice: document.getElementById("kmVoiceSelect").value,
-                zhRate: document.getElementById("zhRateSlider").value,
-                pinyinFont: document.getElementById("pinyinFont").value,
-                pinyinColor: document.getElementById("pinyinColor").value,
-                pinyinBold: document.getElementById("pinyinBold").classList.contains("active"),
-                pinyinSizePx: document.getElementById("pinyinSizePx").value,
-                pinyinSpacing: document.getElementById("pinyinSpacing").value,
-                bottomFont: document.getElementById("bottomFont").value,
-                bottomCharColor: document.getElementById("bottomCharColor").value,
-                bottomBold: document.getElementById("bottomBold").classList.contains("active"),
-                bottomSizePx: userSetBottomFontSize,
-                topPinyinVisible: topPinyinVisible,
-                bottomCharVisible: bottomCharVisible,
-                appMode: appMode,
-                normalCurrentIdx: normalCurrentIdx,
-                normalCurrentPage: normalCurrentPage,
-                shadow: document.getElementById("shadowSlider").value,
-                groupFilter: groupFilter
-            };
-            safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
+       // ======================================================================
+// FIXED: saveAllData with proper IndexedDB fallback
+// ======================================================================
+async function saveAllData() {
+    const settings = {
+        mZhSize: userSetChineseFontSize,
+        mKmSize: userSetKhmerFontSize,
+        mZhColor: document.getElementById("mZhColor").value,
+        mKmColor: document.getElementById("mKmColor").value,
+        zhReps: document.getElementById("zhReps").value,
+        kmReps: document.getElementById("kmReps").value,
+        autoDelay: document.getElementById("autoDelay").value,
+        sidebarVisible: sidebarVisible,
+        sZhFont: document.getElementById("sZhFont").value,
+        sKmFont: document.getElementById("sKmFont").value,
+        sZhSize: document.getElementById("sZhSize").value,
+        sKmSize: document.getElementById("sKmSize").value,
+        sZhColor: document.getElementById("sZhColor").value,
+        sKmColor: document.getElementById("sKmColor").value,
+        vocabSpacing: document.getElementById("sVocabSpacing").value,
+        zhVoice: document.getElementById("zhVoiceSelect").value,
+        kmVoice: document.getElementById("kmVoiceSelect").value,
+        zhRate: document.getElementById("zhRateSlider").value,
+        pinyinFont: document.getElementById("pinyinFont").value,
+        pinyinColor: document.getElementById("pinyinColor").value,
+        pinyinBold: document.getElementById("pinyinBold").classList.contains("active"),
+        pinyinSizePx: document.getElementById("pinyinSizePx").value,
+        pinyinSpacing: document.getElementById("pinyinSpacing").value,
+        bottomFont: document.getElementById("bottomFont").value,
+        bottomCharColor: document.getElementById("bottomCharColor").value,
+        bottomBold: document.getElementById("bottomBold").classList.contains("active"),
+        bottomSizePx: userSetBottomFontSize,
+        topPinyinVisible: topPinyinVisible,
+        bottomCharVisible: bottomCharVisible,
+        appMode: appMode,
+        normalCurrentIdx: normalCurrentIdx,
+        normalCurrentPage: normalCurrentPage,
+        shadow: document.getElementById("shadowSlider").value,
+        groupFilter: groupFilter
+    };
+    safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
 
-            const softDeletedArray = Array.from(softDeletedIndices);
-            safeSetItem("vocabMaster_SoftDeleted", JSON.stringify(softDeletedArray));
+    const softDeletedArray = Array.from(softDeletedIndices);
+    safeSetItem("vocabMaster_SoftDeleted", JSON.stringify(softDeletedArray));
 
-            const softDataObj = {};
-            for (let [k, v] of softDeletedData) {
-                softDataObj[k] = v;
-            }
-            safeSetItem("vocabMaster_SoftData", JSON.stringify(softDataObj));
+    const softDataObj = {};
+    for (let [k, v] of softDeletedData) {
+        softDataObj[k] = v;
+    }
+    safeSetItem("vocabMaster_SoftData", JSON.stringify(softDataObj));
 
-            // Save vocab list: try localStorage first, fallback to IndexedDB
-            if (vocabList.length > 0) {
-                const compressed = compressVocabList(vocabList);
-                const jsonStr = JSON.stringify(compressed);
+    // Save vocab list: try localStorage first, fallback to IndexedDB
+    if (vocabList.length > 0) {
+        const compressed = compressVocabList(vocabList);
+        const jsonStr = JSON.stringify(compressed);
 
-                // Try localStorage first (faster for small lists)
-                const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
+        // Try localStorage first
+        const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
 
-                if (!success) {
-                    // If localStorage fails, use IndexedDB
-                    const stored = await storeVocabListInIndexedDB(compressed);
-                    if (stored) {
-                        safeSetItem('vocabMaster_List_StoredInIndexedDB', 'true');
-                        // Remove the failing localStorage entry to prevent retry
-                        safeRemoveItem("vocabMaster_List_Compressed");
-                        console.log('📦 Stored vocabulary list in IndexedDB');
-                    } else {
-                        showToast('⚠️ Your vocabulary list is too large. Please reduce the number of words or clear old data.');
-                    }
-                } else {
-                    // If localStorage worked, clear the IndexedDB flag
-                    safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
-                    // Also clear any stale IndexedDB data
-                    await clearVocabListFromIndexedDB().catch(() => {});
-                }
-            } else {
-                safeRemoveItem("vocabMaster_List_Compressed");
-                safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
-                await clearVocabListFromIndexedDB().catch(() => {});
-            }
-
+        if (!success) {
+            // If localStorage fails, use IndexedDB
             try {
-                const mapData = {};
-                for (let [k, v] of groupMap) {
-                    mapData[k] = v;
+                const stored = await storeVocabListInIndexedDB(compressed);
+                if (stored) {
+                    safeSetItem('vocabMaster_List_StoredInIndexedDB', 'true');
+                    // Remove the failing localStorage entry to prevent retry
+                    safeRemoveItem("vocabMaster_List_Compressed");
+                    console.log('📦 Stored vocabulary list in IndexedDB');
+                } else {
+                    console.warn('⚠️ Failed to store in IndexedDB as well');
+                    showToast('⚠️ Your vocabulary list is too large. Please clear cache and reload.');
                 }
-                safeSetItem('groupMapData', JSON.stringify(mapData));
+            } catch (idbError) {
+                console.warn('IndexedDB store error:', idbError);
+                showToast('⚠️ Storage error. Please clear cache.');
+            }
+        } else {
+            // If localStorage worked, clear the IndexedDB flag
+            safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
+            // Also clear any stale IndexedDB data
+            try {
+                await clearVocabListFromIndexedDB();
             } catch (e) {}
-            safeSetItem('groupFilter', groupFilter);
         }
+    } else {
+        safeRemoveItem("vocabMaster_List_Compressed");
+        safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
+        try {
+            await clearVocabListFromIndexedDB();
+        } catch (e) {}
+    }
 
-        // ======================================================================
-        // FIXED: loadSettings with IndexedDB fallback
-        // ======================================================================
-        function loadSettings() {
-            const settingsStr = safeGetItem("vocabMaster_Settings", null);
-            if (settingsStr) {
-                try {
-                    const t = JSON.parse(settingsStr);
-                    userSetChineseFontSize = t.mZhSize || 42;
-                    userSetKhmerFontSize = t.mKmSize || 42;
-                    document.getElementById("mZhSize").value = userSetChineseFontSize;
-                    document.getElementById("mKmSize").value = userSetKhmerFontSize;
-                    document.getElementById("mZhColor").value = t.mZhColor || "#ffffff";
-                    document.getElementById("mKmColor").value = t.mKmColor || "#ffffff";
-                    document.getElementById("zhReps").value = t.zhReps || 1;
-                    document.getElementById("kmReps").value = t.kmReps || 1;
-                    let n = void 0 !== t.autoDelay ? t.autoDelay : 1;
-                    document.getElementById("autoDelay").value = n;
-                    if (void 0 !== t.shadow) document.getElementById("shadowSlider").value = t.shadow;
-                    if (t.sZhFont) document.getElementById("sZhFont").value = t.sZhFont;
-                    if (t.sKmFont) document.getElementById("sKmFont").value = t.sKmFont;
-                    if (t.sZhSize) document.getElementById("sZhSize").value = t.sZhSize;
-                    if (t.sKmSize) document.getElementById("sKmSize").value = t.sKmSize;
-                    if (t.sZhColor) document.getElementById("sZhColor").value = t.sZhColor || "#ffffff";
-                    if (t.sKmColor) document.getElementById("sKmColor").value = t.sKmColor || "#ffffff";
-                    document.getElementById("sVocabSpacing").value = t.vocabSpacing || 8;
-                    document.body.style.setProperty("--vocab-spacing", (t.vocabSpacing || 8) + "px");
-                    document.getElementById("vocabSpacingVal").innerText = (t.vocabSpacing || 8) + "px";
-                    if (t.zhVoice) document.getElementById("zhVoiceSelect").value = t.zhVoice;
-                    if (t.kmVoice) document.getElementById("kmVoiceSelect").value = t.kmVoice;
-                    if (void 0 !== t.zhRate) document.getElementById("zhRateSlider").value = t.zhRate;
-                    if (t.pinyinFont) document.getElementById("pinyinFont").value = t.pinyinFont;
-                    if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#fbbf24";
-                    if (void 0 !== t.pinyinBold) {
-                        const e = document.getElementById("pinyinBold");
-                        t.pinyinBold ? e.classList.add("active") : e.classList.remove("active");
-                    }
-                    if (t.pinyinSizePx) {
-                        document.getElementById("pinyinSizePx").value = t.pinyinSizePx;
-                        userSetPinyinFontSize = parseInt(t.pinyinSizePx);
-                    }
-                    if (t.pinyinSpacing) document.getElementById("pinyinSpacing").value = t.pinyinSpacing;
-                    if (t.bottomFont) document.getElementById("bottomFont").value = t.bottomFont;
-                    if (t.bottomCharColor) document.getElementById("bottomCharColor").value = t.bottomCharColor ||
-                        "#60a5fa";
-                    if (void 0 !== t.bottomBold) {
-                        const e = document.getElementById("bottomBold");
-                        t.bottomBold ? e.classList.add("active") : e.classList.remove("active");
-                    }
-                    if (t.bottomSizePx) {
-                        document.getElementById("bottomSizePx").value = t.bottomSizePx;
-                        userSetBottomFontSize = parseInt(t.bottomSizePx);
-                    }
-                    if (void 0 !== t.topPinyinVisible) topPinyinVisible = t.topPinyinVisible;
-                    bottomCharVisible = void 0 === t.bottomCharVisible || t.bottomCharVisible;
-                    if ("sequential" === t.appMode) {
-                        appMode = "sequential";
-                        document.getElementById("modeToggleBtn").innerText = "SEQUENTIAL";
-                        document.getElementById("modeToggleBtn").classList.remove("mode-random-active");
-                        document.getElementById("modeToggleBtn").classList.add("mode-sequential-active");
-                    } else {
-                        appMode = "random";
-                        document.getElementById("modeToggleBtn").innerText = "RANDOM";
-                        document.getElementById("modeToggleBtn").classList.remove("mode-sequential-active");
-                        document.getElementById("modeToggleBtn").classList.add("mode-random-active");
-                    }
-                    normalCurrentIdx = t.normalCurrentIdx || 0;
-                    normalCurrentPage = t.normalCurrentPage || 0;
-                    sidebarVisible = void 0 !== t.sidebarVisible && t.sidebarVisible;
-                    if (!sidebarVisible) {
-                        document.getElementById("rightSide").classList.add("hidden");
-                        document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
-                    }
-                    // Load group filter
-                    if (t.groupFilter) {
-                        groupFilter = t.groupFilter;
-                    }
-                } catch (e) { console.warn("Settings parse error:", e); }
+    try {
+        const mapData = {};
+        for (let [k, v] of groupMap) {
+            mapData[k] = v;
+        }
+        safeSetItem('groupMapData', JSON.stringify(mapData));
+    } catch (e) {}
+    safeSetItem('groupFilter', groupFilter);
+}
+
+       // ======================================================================
+// FIXED: loadSettings with IndexedDB fallback
+// ======================================================================
+function loadSettings() {
+    const settingsStr = safeGetItem("vocabMaster_Settings", null);
+    if (settingsStr) {
+        try {
+            const t = JSON.parse(settingsStr);
+            userSetChineseFontSize = t.mZhSize || 42;
+            userSetKhmerFontSize = t.mKmSize || 42;
+            document.getElementById("mZhSize").value = userSetChineseFontSize;
+            document.getElementById("mKmSize").value = userSetKhmerFontSize;
+            document.getElementById("mZhColor").value = t.mZhColor || "#ffffff";
+            document.getElementById("mKmColor").value = t.mKmColor || "#ffffff";
+            document.getElementById("zhReps").value = t.zhReps || 1;
+            document.getElementById("kmReps").value = t.kmReps || 1;
+            let n = void 0 !== t.autoDelay ? t.autoDelay : 1;
+            document.getElementById("autoDelay").value = n;
+            if (void 0 !== t.shadow) document.getElementById("shadowSlider").value = t.shadow;
+            if (t.sZhFont) document.getElementById("sZhFont").value = t.sZhFont;
+            if (t.sKmFont) document.getElementById("sKmFont").value = t.sKmFont;
+            if (t.sZhSize) document.getElementById("sZhSize").value = t.sZhSize;
+            if (t.sKmSize) document.getElementById("sKmSize").value = t.sKmSize;
+            if (t.sZhColor) document.getElementById("sZhColor").value = t.sZhColor || "#ffffff";
+            if (t.sKmColor) document.getElementById("sKmColor").value = t.sKmColor || "#ffffff";
+            document.getElementById("sVocabSpacing").value = t.vocabSpacing || 8;
+            document.body.style.setProperty("--vocab-spacing", (t.vocabSpacing || 8) + "px");
+            document.getElementById("vocabSpacingVal").innerText = (t.vocabSpacing || 8) + "px";
+            if (t.zhVoice) document.getElementById("zhVoiceSelect").value = t.zhVoice;
+            if (t.kmVoice) document.getElementById("kmVoiceSelect").value = t.kmVoice;
+            if (void 0 !== t.zhRate) document.getElementById("zhRateSlider").value = t.zhRate;
+            if (t.pinyinFont) document.getElementById("pinyinFont").value = t.pinyinFont;
+            if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#fbbf24";
+            if (void 0 !== t.pinyinBold) {
+                const e = document.getElementById("pinyinBold");
+                t.pinyinBold ? e.classList.add("active") : e.classList.remove("active");
+            }
+            if (t.pinyinSizePx) {
+                document.getElementById("pinyinSizePx").value = t.pinyinSizePx;
+                userSetPinyinFontSize = parseInt(t.pinyinSizePx);
+            }
+            if (t.pinyinSpacing) document.getElementById("pinyinSpacing").value = t.pinyinSpacing;
+            if (t.bottomFont) document.getElementById("bottomFont").value = t.bottomFont;
+            if (t.bottomCharColor) document.getElementById("bottomCharColor").value = t.bottomCharColor || "#60a5fa";
+            if (void 0 !== t.bottomBold) {
+                const e = document.getElementById("bottomBold");
+                t.bottomBold ? e.classList.add("active") : e.classList.remove("active");
+            }
+            if (t.bottomSizePx) {
+                document.getElementById("bottomSizePx").value = t.bottomSizePx;
+                userSetBottomFontSize = parseInt(t.bottomSizePx);
+            }
+            if (void 0 !== t.topPinyinVisible) topPinyinVisible = t.topPinyinVisible;
+            bottomCharVisible = void 0 === t.bottomCharVisible || t.bottomCharVisible;
+            if ("sequential" === t.appMode) {
+                appMode = "sequential";
+                document.getElementById("modeToggleBtn").innerText = "SEQUENTIAL";
+                document.getElementById("modeToggleBtn").classList.remove("mode-random-active");
+                document.getElementById("modeToggleBtn").classList.add("mode-sequential-active");
             } else {
-                document.getElementById("pinyinFont").value = "'Baguette Simplified'";
-                document.getElementById("pinyinColor").value = "#fbbf24";
-                document.getElementById("pinyinSizePx").value = "55";
-                userSetPinyinFontSize = 55;
-                document.getElementById("pinyinSpacing").value = "0";
-                document.getElementById("bottomSizePx").value = "55";
-                userSetBottomFontSize = 55;
-                document.getElementById("mKmColor").value = "#ffffff";
-                document.getElementById("bottomCharColor").value = "#60a5fa";
-                document.getElementById("shadowSlider").value = "3";
-                sidebarVisible = false;
+                appMode = "random";
+                document.getElementById("modeToggleBtn").innerText = "RANDOM";
+                document.getElementById("modeToggleBtn").classList.remove("mode-sequential-active");
+                document.getElementById("modeToggleBtn").classList.add("mode-random-active");
+            }
+            normalCurrentIdx = t.normalCurrentIdx || 0;
+            normalCurrentPage = t.normalCurrentPage || 0;
+            sidebarVisible = void 0 !== t.sidebarVisible && t.sidebarVisible;
+            if (!sidebarVisible) {
                 document.getElementById("rightSide").classList.add("hidden");
                 document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
-                bottomCharVisible = true;
-                document.body.classList.add("night-mode");
-                const darkBtn = document.getElementById("dragDarkModeBtn");
-                if (darkBtn) darkBtn.innerHTML = "☀️";
-                groupFilter = safeGetItem('groupFilter', '__ALL__');
             }
-
-            // ---- Load soft-deleted data ----
-            try {
-                const softDeletedStr = safeGetItem("vocabMaster_SoftDeleted", "[]");
-                const softArr = JSON.parse(softDeletedStr);
-                if (Array.isArray(softArr)) {
-                    for (const idx of softArr) {
-                        if (idx >= 0 && idx < vocabList.length) {
-                            softDeletedIndices.add(idx);
-                        }
-                    }
-                }
-            } catch (e) { console.warn("Soft-deleted parse error:", e); }
-
-            try {
-                const softDataStr = safeGetItem("vocabMaster_SoftData", "{}");
-                const softDataObj = JSON.parse(softDataStr);
-                if (typeof softDataObj === 'object') {
-                    for (let [k, v] of Object.entries(softDataObj)) {
-                        const idx = parseInt(k);
-                        if (!isNaN(idx) && idx >= 0 && idx < vocabList.length) {
-                            softDeletedData.set(idx, v);
-                        }
-                    }
-                }
-            } catch (e) { console.warn("Soft-data parse error:", e); }
-
-            // ---- Load group map data ----
-            try {
-                const mapDataStr = safeGetItem('groupMapData', '{}');
-                const mapData = JSON.parse(mapDataStr);
-                if (typeof mapData === 'object') {
-                    groupMap.clear();
-                    for (let [k, v] of Object.entries(mapData)) {
-                        if (Array.isArray(v)) {
-                            groupMap.set(k, v);
-                        }
-                    }
-                }
-            } catch (e) { console.warn("Group map parse error:", e); }
-
-            // ===== RESTORE SHEET ID, API URL, AND PASSWORD =====
-            const sheetId = safeGetItem("vocabMaster_SheetId", "");
-            if (sheetId) {
-                currentSheetId = sheetId;
-                console.log("🔑 Restored sheet ID:", sheetId);
+            if (t.groupFilter) {
+                groupFilter = t.groupFilter;
             }
+        } catch (e) { console.warn("Settings parse error:", e); }
+    } else {
+        document.getElementById("pinyinFont").value = "'Baguette Simplified'";
+        document.getElementById("pinyinColor").value = "#fbbf24";
+        document.getElementById("pinyinSizePx").value = "55";
+        userSetPinyinFontSize = 55;
+        document.getElementById("pinyinSpacing").value = "0";
+        document.getElementById("bottomSizePx").value = "55";
+        userSetBottomFontSize = 55;
+        document.getElementById("mKmColor").value = "#ffffff";
+        document.getElementById("bottomCharColor").value = "#60a5fa";
+        document.getElementById("shadowSlider").value = "3";
+        sidebarVisible = false;
+        document.getElementById("rightSide").classList.add("hidden");
+        document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
+        bottomCharVisible = true;
+        document.body.classList.add("night-mode");
+        const darkBtn = document.getElementById("dragDarkModeBtn");
+        if (darkBtn) darkBtn.innerHTML = "☀️";
+        groupFilter = safeGetItem('groupFilter', '__ALL__');
+    }
 
-            const apiUrl = safeGetItem("vocabMaster_ApiUrl", "");
-            if (apiUrl) {
-                detectedApiUrl = apiUrl;
-                console.log("🔗 Restored API URL:", apiUrl);
-            }
-
-            const password = safeGetItem("vocabMaster_Password", "");
-            if (password) {
-                dynamicPassword = password;
-                console.log("🔒 Restored password");
-            }
-
-            // ---- Load vocab list: try localStorage first, then IndexedDB ----
-            const compressedStr = safeGetItem("vocabMaster_List_Compressed", null);
-            if (compressedStr) {
-                try {
-                    const compressed = JSON.parse(compressedStr);
-                    if (Array.isArray(compressed) && compressed.length > 0) {
-                        vocabList = decompressVocabList(compressed);
-                        lastSheetDataHash = computeSheetHash(vocabList);
-                        console.log('📦 Loaded vocab list from localStorage:', vocabList.length, 'words');
-                    }
-                } catch (e) { console.warn("Vocab list parse error:", e); }
-            }
-
-            // If localStorage didn't have data, try IndexedDB
-            if (vocabList.length === 0) {
-                // Check if we have a flag indicating IndexedDB was used
-                const storedInIndexedDB = safeGetItem('vocabMaster_List_StoredInIndexedDB', 'false') === 'true';
-                if (storedInIndexedDB) {
-                    // Try to load from IndexedDB
-                    loadVocabListFromIndexedDB().then(compressed => {
-                        if (compressed && Array.isArray(compressed) && compressed.length > 0) {
-                            vocabList = decompressVocabList(compressed);
-                            lastSheetDataHash = computeSheetHash(vocabList);
-                            console.log('📦 Loaded vocab list from IndexedDB:', vocabList.length,
-                            'words');
-                            // Rebuild everything
-                            buildFirstCharCache();
-                            buildGroupMap();
-                            applyGroupFilter();
-                            if (appMode === 'random' && filteredList.length > 0) {
-                                const idx = filteredList[Math.floor(Math.random() * filteredList
-                                .length)];
-                                if (idx !== undefined) {
-                                    history = [idx];
-                                    historyIndex = 0;
-                                    renderRandomSidebar(idx);
-                                }
-                            } else if (appMode === 'sequential' && filteredList.length > 0) {
-                                normalCurrentIdx = filteredList[0] || 0;
-                                normalCurrentPage = 0;
-                                renderNormalSidebar();
-                            }
-                            updateRecycleBinBadge();
-                            updateStatusBar();
-                            applyGroupFilter();
-                            renderSidebarUI();
-                            updateDisplay();
-                            forceShrink();
-                        }
-                    }).catch(err => {
-                        console.warn('Failed to load from IndexedDB:', err);
-                    });
+    // ---- Load soft-deleted data ----
+    try {
+        const softDeletedStr = safeGetItem("vocabMaster_SoftDeleted", "[]");
+        const softArr = JSON.parse(softDeletedStr);
+        if (Array.isArray(softArr)) {
+            for (const idx of softArr) {
+                if (idx >= 0 && idx < vocabList.length) {
+                    softDeletedIndices.add(idx);
                 }
             }
-
-            checkPasswordVerifiedSession();
-
-            applyChineseMainStyle();
-            applyPinyinStyles();
-            applyBottomStyles();
-            applyTextVisibility();
-            setKhmerFontSize(userSetKhmerFontSize);
-            applyShadow();
-            applyBottomAutoScale();
-            const mainEl = document.querySelector('.chinese-main');
-            if (mainEl) {
-                const size = parseFloat(getComputedStyle(mainEl).fontSize);
-                if (size && !isNaN(size)) baselineFontSizePx = size;
-            }
-            updateRecycleBinBadge();
-            setTimeout(setupInsertSymbolLongPress, 200);
         }
+    } catch (e) { console.warn("Soft-deleted parse error:", e); }
+
+    try {
+        const softDataStr = safeGetItem("vocabMaster_SoftData", "{}");
+        const softDataObj = JSON.parse(softDataStr);
+        if (typeof softDataObj === 'object') {
+            for (let [k, v] of Object.entries(softDataObj)) {
+                const idx = parseInt(k);
+                if (!isNaN(idx) && idx >= 0 && idx < vocabList.length) {
+                    softDeletedData.set(idx, v);
+                }
+            }
+        }
+    } catch (e) { console.warn("Soft-data parse error:", e); }
+
+    // ---- Load group map data ----
+    try {
+        const mapDataStr = safeGetItem('groupMapData', '{}');
+        const mapData = JSON.parse(mapDataStr);
+        if (typeof mapData === 'object') {
+            groupMap.clear();
+            for (let [k, v] of Object.entries(mapData)) {
+                if (Array.isArray(v)) {
+                    groupMap.set(k, v);
+                }
+            }
+        }
+    } catch (e) { console.warn("Group map parse error:", e); }
+
+    // ===== RESTORE SHEET ID, API URL, AND PASSWORD =====
+    const sheetId = safeGetItem("vocabMaster_SheetId", "");
+    if (sheetId) {
+        currentSheetId = sheetId;
+        console.log("🔑 Restored sheet ID:", sheetId);
+    }
+
+    const apiUrl = safeGetItem("vocabMaster_ApiUrl", "");
+    if (apiUrl) {
+        detectedApiUrl = apiUrl;
+        console.log("🔗 Restored API URL:", apiUrl);
+    }
+
+    const password = safeGetItem("vocabMaster_Password", "");
+    if (password) {
+        dynamicPassword = password;
+        console.log("🔒 Restored password");
+    }
+
+    // ---- Load vocab list: try localStorage first, then IndexedDB ----
+    const compressedStr = safeGetItem("vocabMaster_List_Compressed", null);
+    if (compressedStr) {
+        try {
+            const compressed = JSON.parse(compressedStr);
+            if (Array.isArray(compressed) && compressed.length > 0) {
+                vocabList = decompressVocabList(compressed);
+                lastSheetDataHash = computeSheetHash(vocabList);
+                console.log('📦 Loaded vocab list from localStorage:', vocabList.length, 'words');
+            }
+        } catch (e) { console.warn("Vocab list parse error:", e); }
+    }
+
+    // If localStorage didn't have data, try IndexedDB
+    if (vocabList.length === 0) {
+        const storedInIndexedDB = safeGetItem('vocabMaster_List_StoredInIndexedDB', 'false') === 'true';
+        if (storedInIndexedDB) {
+            // Try to load from IndexedDB
+            loadVocabListFromIndexedDB().then(compressed => {
+                if (compressed && Array.isArray(compressed) && compressed.length > 0) {
+                    vocabList = decompressVocabList(compressed);
+                    lastSheetDataHash = computeSheetHash(vocabList);
+                    console.log('📦 Loaded vocab list from IndexedDB:', vocabList.length, 'words');
+                    buildFirstCharCache();
+                    buildGroupMap();
+                    applyGroupFilter();
+                    if (appMode === 'random' && filteredList.length > 0) {
+                        const idx = filteredList[Math.floor(Math.random() * filteredList.length)];
+                        if (idx !== undefined) {
+                            history = [idx];
+                            historyIndex = 0;
+                            renderRandomSidebar(idx);
+                        }
+                    } else if (appMode === 'sequential' && filteredList.length > 0) {
+                        normalCurrentIdx = filteredList[0] || 0;
+                        normalCurrentPage = 0;
+                        renderNormalSidebar();
+                    }
+                    updateRecycleBinBadge();
+                    updateStatusBar();
+                    applyGroupFilter();
+                    renderSidebarUI();
+                    updateDisplay();
+                    forceShrink();
+                }
+            }).catch(err => {
+                console.warn('Failed to load from IndexedDB:', err);
+                // Clear the flag so we don't keep trying
+                safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
+            });
+        }
+    }
+
+    checkPasswordVerifiedSession();
+
+    applyChineseMainStyle();
+    applyPinyinStyles();
+    applyBottomStyles();
+    applyTextVisibility();
+    setKhmerFontSize(userSetKhmerFontSize);
+    applyShadow();
+    applyBottomAutoScale();
+    const mainEl = document.querySelector('.chinese-main');
+    if (mainEl) {
+        const size = parseFloat(getComputedStyle(mainEl).fontSize);
+        if (size && !isNaN(size)) baselineFontSizePx = size;
+    }
+    updateRecycleBinBadge();
+    setTimeout(setupInsertSymbolLongPress, 200);
+}
 
         function toggleBold(e, t) {
             const n = document.getElementById(e);
