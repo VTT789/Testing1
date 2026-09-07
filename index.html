@@ -3727,42 +3727,7 @@
         // ---- APPLY FILTER ----
         // ---- APPLY FILTER ----
         // ---- APPLY FILTER ----
-        function applyGroupFilter() {
-            if (groupFilter === '__ALL__') {
-                filteredList = vocabList.map((_, idx) => idx);
-            } else {
-                filteredList = groupMap.get(groupFilter) || [];
-            }
-            // Filter out soft-deleted items from filteredList
-            filteredList = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
-
-            // Ensure current index is valid
-            if (filteredList.length === 0) {
-                normalCurrentIdx = 0;
-                sidebarIndices = [];
-            } else if (normalCurrentIdx >= filteredList.length) {
-                normalCurrentIdx = 0;
-            }
-            // Also update filteredIndices for compatibility
-            filteredIndices = filteredList;
-            // Rebuild sidebar indices based on filter
-            rebuildFilteredSidebarIndices();
-            // Update UI
-            renderSidebarUI();
-            updateDisplay();
-            updateGroupBadge();
-            updateFilterSelect();
-            updateStatusBar();
-
-            // Update pagination
-            const paginationContainer = document.getElementById('paginationContainer');
-            if (paginationContainer) {
-                updatePaginationControlsInside(paginationContainer);
-            }
-
-            // Re-attach group filter listener
-            reattachGroupFilterListener();
-        }
+        
 
         // ---- REBUILD FILTERED SIDEBAR INDICES ----
         // ---- REBUILD FILTERED SIDEBAR INDICES ----
@@ -3929,48 +3894,7 @@
 
         // ---- CREATE GROUP FILTER UI IN SIDEBAR ----
         // ---- CREATE GROUP FILTER UI IN SIDEBAR - FIXED ----
-        // ---- CREATE GROUP FILTER UI IN SIDEBAR ----
-        function createGroupFilterUI() {
-            const select = document.getElementById('groupFilterSelect');
-            if (!select) return;
-
-            // Remove any existing event listeners by cloning
-            const newSelect = select.cloneNode(true);
-            select.parentNode.replaceChild(newSelect, select);
-
-            // Set the value
-            newSelect.value = groupFilter;
-
-            // Update options - skip Uncategorized
-            const currentVal = newSelect.value;
-            const keys = Array.from(groupMap.keys()).sort();
-            newSelect.innerHTML = `<option value="__ALL__">📂 All</option>`;
-            keys.forEach(g => {
-                // Skip "Uncategorized"
-                if (g === 'Uncategorized') return;
-
-                const count = groupMap.get(g).length;
-                const opt = document.createElement('option');
-                opt.value = g;
-                opt.textContent = `${g} (${count})`;
-                newSelect.appendChild(opt);
-            });
-
-            // If current filter is Uncategorized, switch to All
-            if (currentVal === 'Uncategorized') {
-                newSelect.value = '__ALL__';
-                groupFilter = '__ALL__';
-            } else if (currentVal !== '__ALL__' && groupMap.has(currentVal)) {
-                newSelect.value = currentVal;
-            } else {
-                newSelect.value = groupFilter;
-            }
-
-            // Setup event listener
-            newSelect.onchange = function() {
-                setGroupFilter(this.value);
-            };
-        }
+        
 
         // ---- MODIFIED loadSheetData with GROUP column ----
         async function loadSheetData(forceReload = false) {
