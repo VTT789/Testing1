@@ -3006,7 +3006,8 @@
         const origClearAllCache = window.clearAllCache || function() {};
 
         window.clearAllCache = async function() {
-            if (!confirm('⚠️ Clear all cached data? This will reset your vocabulary list, settings, and positions. Your sheet data will be reloaded.')) return;
+            if (!confirm('⚠️ Clear all cached data? This will reset your vocabulary list, settings, and positions. Your sheet data will be reloaded.'))
+                return;
             const sheetId = currentSheetId || safeGetItem('vocabMaster_SheetId', '');
             const password = dynamicPassword || safeGetItem('vocabMaster_Password', '012891556');
             try {
