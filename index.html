@@ -3837,42 +3837,32 @@
         }
 
         // ---- UPDATE FILTER SELECT ----
-        // ---- UPDATE FILTER SELECT - FIXED ----
-        // ---- UPDATE FILTER SELECT ----
-        // ---- UPDATE FILTER SELECT ----
-        function updateFilterSelect() {
-            const select = document.getElementById('groupFilterSelect');
-            if (!select) return;
-            const currentVal = select.value;
-            const keys = Array.from(groupMap.keys()).sort();
-
-            select.innerHTML = `<option value="__ALL__">📂 All</option>`;
-
-            keys.forEach(g => {
-                // Skip "Uncategorized" completely
-                if (g === 'Uncategorized') return;
-
-                const count = groupMap.get(g).length;
-                const opt = document.createElement('option');
-                opt.value = g;
-                opt.textContent = `${g} (${count})`;
-                select.appendChild(opt);
-            });
-
-            // If current filter is Uncategorized, switch to All
-            if (groupFilter === 'Uncategorized') {
-                groupFilter = '__ALL__';
-                applyGroupFilter();
-                return;
-            }
-
-            // Try to restore selection
-            if (currentVal !== '__ALL__' && groupMap.has(currentVal)) {
-                select.value = currentVal;
-            } else {
-                select.value = groupFilter;
-            }
-        }
+       function updateFilterSelect() {
+    const select = document.getElementById('groupFilterSelect');
+    if (!select) return;
+    
+    // Clear existing options (keep only "All")
+    const currentVal = select.value;
+    select.innerHTML = `<option value="__ALL__">📂 All</option>`;
+    
+    // Add group options (skip "Uncategorized")
+    const keys = Array.from(groupMap.keys()).sort();
+    keys.forEach(g => {
+        if (g === 'Uncategorized') return;
+        const count = groupMap.get(g).length;
+        const opt = document.createElement('option');
+        opt.value = g;
+        opt.textContent = `${g} (${count})`;
+        select.appendChild(opt);
+    });
+    
+    // Restore selection
+    if (currentVal !== '__ALL__' && groupMap.has(currentVal)) {
+        select.value = currentVal;
+    } else {
+        select.value = groupFilter;
+    }
+}
 
         function reattachGroupFilterListener() {
             const groupSelect = document.getElementById('groupFilterSelect');
@@ -5608,68 +5598,64 @@
         }
 
         function syncPageInput() {
-            const input = document.getElementById('pageJumpInput');
-            if (input) {
-                const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-                const totalPages = Math.ceil(filtered.length / 40) || 1;
-                input.value = normalCurrentPage + 1;
-                input.max = totalPages;
-
-                // Update the pagination info text to show total words
-                const paginationInfo = document.querySelector('.pagination-info');
-                if (paginationInfo) {
-                    const totalItems = filtered.length;
-                    paginationInfo.innerHTML = `
+    const input = document.getElementById('pageJumpInput');
+    if (input) {
+        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+        const totalPages = Math.ceil(filtered.length / 40) || 1;
+        input.value = normalCurrentPage + 1;
+        input.max = totalPages;
+        
+        // Update the pagination info text - REMOVED WORD COUNT
+        const paginationInfo = document.querySelector('.pagination-info');
+        if (paginationInfo) {
+            const totalItems = filtered.length;
+            paginationInfo.innerHTML = `
                 <input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${totalPages}" value="${normalCurrentPage+1}" style="width:50px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;">
-                / ${totalPages} (${totalItems} W)
+                / ${totalPages}
             `;
-                    // Re-attach event listener to the new input
-                    const newJump = document.getElementById('pageJumpInput');
-                    if (newJump) {
-                        const handleJump = function() {
-                            let val = parseInt(this.value);
-                            const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !
-                                softDeletedIndices.has(idx));
-                            const maxPages = Math.ceil(filtered.length / 40) || 1;
-                            if (isNaN(val) || val < 1) val = 1;
-                            if (val > maxPages) val = maxPages;
-                            const newPage = val - 1;
-                            if (newPage !== normalCurrentPage) {
-                                normalCurrentPage = newPage;
-                                renderNormalSidebar();
-                                setTimeout(syncPageInput, 50);
-                            }
-                            this.value = normalCurrentPage + 1;
-                        };
-                        newJump.addEventListener('change', handleJump);
-                        newJump.addEventListener('keypress', function(ev) {
-                            if (ev.key === 'Enter') {
-                                ev.preventDefault();
-                                handleJump.call(this);
-                            }
-                        });
-                        newJump.addEventListener('blur', function() {
-                            this.value = normalCurrentPage + 1;
-                        });
-                        newJump.addEventListener('touchstart', function(e) {
-                            this.focus();
-                        }, { passive: true });
+            // Re-attach event listener to the new input
+            const newJump = document.getElementById('pageJumpInput');
+            if (newJump) {
+                const handleJump = function() {
+                    let val = parseInt(this.value);
+                    const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                    const maxPages = Math.ceil(filtered.length / 40) || 1;
+                    if (isNaN(val) || val < 1) val = 1;
+                    if (val > maxPages) val = maxPages;
+                    const newPage = val - 1;
+                    if (newPage !== normalCurrentPage) {
+                        normalCurrentPage = newPage;
+                        renderNormalSidebar();
+                        setTimeout(syncPageInput, 50);
                     }
-                }
+                    this.value = normalCurrentPage + 1;
+                };
+                newJump.addEventListener('change', handleJump);
+                newJump.addEventListener('keypress', function(ev) {
+                    if (ev.key === 'Enter') {
+                        ev.preventDefault();
+                        handleJump.call(this);
+                    }
+                });
+                newJump.addEventListener('blur', function() {
+                    this.value = normalCurrentPage + 1;
+                });
+                newJump.addEventListener('touchstart', function(e) {
+                    this.focus();
+                }, { passive: true });
             }
         }
+    }
+}
 
-        // ---- MODIFIED: renderSidebarUI with GROUP display ----
-        // ---- MODIFIED: renderSidebarUI with GROUP display - FIXED event listener ----
-        function renderSidebarUI(e = !0) {
-            const t = document.getElementById("sidebarList"),
-                n = currentSearchInputElement ? currentSearchInputElement.value : searchTerm;
-            t.innerHTML = "";
+   function renderSidebarUI(e = !0) {
+    const t = document.getElementById("sidebarList"),
+        n = currentSearchInputElement ? currentSearchInputElement.value : searchTerm;
+    t.innerHTML = "";
 
-            // In renderSidebarUI function, replace the vocab-header section:
-            const o = document.createElement("div");
-            o.className = "vocab-header";
-            o.innerHTML = `
+    const o = document.createElement("div");
+    o.className = "vocab-header";
+    o.innerHTML = `
         <div class="choice-search-area" style="position: relative; display: flex; align-items: center; gap: 6px;">
             <button id="manualSearchBtn" style="background:var(--accent); border:none; border-radius:40px; width:36px; height:36px; color:white; font-weight:bold; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">🔍</button>
             <input type="text" id="choiceSearchInput" style="flex:1;" value="${escapeHtml(n)}">
@@ -5700,481 +5686,467 @@
             </div>
         </div>
         <div id="paginationContainer"></div>`;
-            t.appendChild(o);
+    t.appendChild(o);
 
-            const i = o.querySelector("#choiceSearchInput"),
-                a = o.querySelector("#manualSearchBtn"),
-                r = o.querySelector("#searchClearBtn"),
-                s = o.querySelector("#sidebarSearchResults");
-            currentSearchInputElement = i;
-            let l = null;
-            const d = () => { null === previousWordBeforeSearch && sidebarIndices.length > 0 && sidebarFocusIdx <
-                    sidebarIndices.length && (previousWordBeforeSearch = sidebarIndices[sidebarFocusIdx]) };
-            const c = () => {
-                if (l && clearTimeout(l), !i.value.trim()) return s.style.display = "none", void(s.innerHTML = "");
-                l = setTimeout(() => {
-                    const e = i.value.trim().toLowerCase();
-                    if (!e) { s.style.display = "none";
-                        s.innerHTML = ""; return }
-                    const matches = [];
-                    for (let idx = 0; idx < vocabList.length; idx++) {
-                        if (pendingDeletions.has(idx)) continue;
-                        const item = vocabList[idx];
-                        const score = getRelevanceScore(item, e);
-                        if (score > 0) {
-                            matches.push({ idx, score });
-                        }
-                    }
-                    matches.sort((a, b) => b.score - a.score);
-                    if (0 === matches.length) { s.innerHTML =
-                            '<div class="result-item" style="opacity:0.7;">No matches</div>';
-                        s.style.display = "block"; return }
-                    s.innerHTML = matches.map(({ idx }) =>
-                        `<div class="result-item" data-index="${idx}">
+    const i = o.querySelector("#choiceSearchInput"),
+        a = o.querySelector("#manualSearchBtn"),
+        r = o.querySelector("#searchClearBtn"),
+        s = o.querySelector("#sidebarSearchResults");
+    currentSearchInputElement = i;
+    let l = null;
+    const d = () => { null === previousWordBeforeSearch && sidebarIndices.length > 0 && sidebarFocusIdx <
+            sidebarIndices.length && (previousWordBeforeSearch = sidebarIndices[sidebarFocusIdx]) };
+    const c = () => {
+        if (l && clearTimeout(l), !i.value.trim()) return s.style.display = "none", void(s.innerHTML = "");
+        l = setTimeout(() => {
+            const e = i.value.trim().toLowerCase();
+            if (!e) { s.style.display = "none";
+                s.innerHTML = ""; return }
+            const matches = [];
+            for (let idx = 0; idx < vocabList.length; idx++) {
+                if (pendingDeletions.has(idx)) continue;
+                const item = vocabList[idx];
+                const score = getRelevanceScore(item, e);
+                if (score > 0) {
+                    matches.push({ idx, score });
+                }
+            }
+            matches.sort((a, b) => b.score - a.score);
+            if (0 === matches.length) { s.innerHTML =
+                    '<div class="result-item" style="opacity:0.7;">No matches</div>';
+                s.style.display = "block"; return }
+            s.innerHTML = matches.map(({ idx }) =>
+                `<div class="result-item" data-index="${idx}">
                         <div class="result-chinese">${escapeHtml(vocabList[idx].chinese)}</div>
                         <div class="result-khmer">${escapeHtml(vocabList[idx].khmer)}</div>
                     </div>`
-                    ).join("");
-                    s.style.display = "block";
-                    s.querySelectorAll(".result-item").forEach((e => {
-                        e.addEventListener("click", (t => {
-                            t.stopPropagation();
-                            const n = parseInt(e.dataset.index);
-                            if (!isNaN(n) && vocabList[n] && !pendingDeletions.has(n) && !
-                                softDeletedIndices
-                                .has(n)) {
-                                searchTerm = "";
-                                i.value = "";
-                                s.style.display = "none";
-                                loadWordByMode(n, true);
-                                blurSearchInput();
-                            } else if (softDeletedIndices.has(n)) {
-                                showToast("⚠️ This word is in the recycle bin");
-                            }
-                        }));
-                    }));
-                }, 300);
-            };
-            const m = () => {
-                const e = i.value.trim();
-                if (l && clearTimeout(l), null === previousWordBeforeSearch && "" === searchTerm && "" !== e && d(),
-                    searchTerm = e, "normal" === appMode) { normalCurrentPage = 0;
-                    normalCurrentIdx = 0;
-                    renderNormalSidebar(); } else if ("" === searchTerm.trim()) { if (null !== previousWordBeforeSearch &&
-                        vocabList[previousWordBeforeSearch] && !pendingDeletions.has(previousWordBeforeSearch) && !
-                        softDeletedIndices
-                        .has(previousWordBeforeSearch)) {
-                        loadWordByMode(previousWordBeforeSearch, !0);
-                        previousWordBeforeSearch = null } else if (sidebarIndices.length && void 0 !== sidebarIndices[
-                            sidebarFocusIdx] && !pendingDeletions.has(sidebarIndices[sidebarFocusIdx]) && !
-                            softDeletedIndices
-                            .has(sidebarIndices[sidebarFocusIdx]))
-                    renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
-                    else vocabList.length ? pickRandom() : renderSidebarUI(!0) } else { const t = filterVocabBySearch(
-                        vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx))
-                        .map((e => vocabList.findIndex((t => t === e)))); if (t.length) { sidebarIndices = t;
-                        sidebarFocusIdx = 0;
-                        renderSidebarUI(!0); if (sidebarIndices.length > 0) loadWordByMode(sidebarIndices[0], !0) } else { sidebarIndices =
-                            [];
-                        renderSidebarUI(!0);
-                        updateChineseDisplay("");
-                        document.getElementById("khmerWord").innerText = "" } }
-                s.style.display = "none";
-            };
-            i.addEventListener("input", c);
-            i.addEventListener("keypress", (e => { if (e.key === "Enter") { e.preventDefault();
-                    m() } }));
-            a.addEventListener("click", (e => { e.preventDefault();
-                m() }));
-            r.addEventListener("click", (e => {
-                e.preventDefault();
-                e.stopPropagation();
-                i.value = "";
-                searchTerm = "";
-                s.style.display = "none";
-                if (null !== previousWordBeforeSearch && vocabList[previousWordBeforeSearch] && !pendingDeletions
-                    .has(previousWordBeforeSearch) && !softDeletedIndices.has(previousWordBeforeSearch)) {
-                    loadWordByMode(previousWordBeforeSearch, !0);
-                    previousWordBeforeSearch = null;
-                } else if ("normal" === appMode) {
-                    normalCurrentPage = 0;
-                    normalCurrentIdx = 0;
-                    renderNormalSidebar();
-                } else if (sidebarIndices.length && void 0 !== sidebarIndices[sidebarFocusIdx] && !pendingDeletions
-                    .has(sidebarIndices[sidebarFocusIdx]) && !softDeletedIndices.has(sidebarIndices[
-                        sidebarFocusIdx])) {
-                    renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
-                } else {
-                    vocabList.length ? pickRandom() : renderSidebarUI(!0);
-                }
-                i.focus();
+            ).join("");
+            s.style.display = "block";
+            s.querySelectorAll(".result-item").forEach((e => {
+                e.addEventListener("click", (t => {
+                    t.stopPropagation();
+                    const n = parseInt(e.dataset.index);
+                    if (!isNaN(n) && vocabList[n] && !pendingDeletions.has(n) && !softDeletedIndices
+                        .has(n)) {
+                        searchTerm = "";
+                        i.value = "";
+                        s.style.display = "none";
+                        loadWordByMode(n, true);
+                        blurSearchInput();
+                    } else if (softDeletedIndices.has(n)) {
+                        showToast("⚠️ This word is in the recycle bin");
+                    }
+                }));
             }));
-            document.addEventListener("click", (function(e) { s.contains(e.target) || e.target === i || e.target === a || (
-                    s.style.display = "none") }));
-            o.querySelector("#modeIconsContainer").innerHTML =
-                `<button id="modeRandomIconHeader" class="mode-icon-small ${"random"===appMode?"active":""}">🎲</button><button id="modeNormalIconHeader" class="mode-icon-small ${"sequential"===appMode?"active":""}">📋</button>`;
-            document.getElementById("modeRandomIconHeader")?.addEventListener("click", function(e) {
-                e.stopPropagation();
-                if ("random" !== appMode) {
-                    toggleAppMode();
-                    // After toggle, re-attach group filter listener
-                    setTimeout(reattachGroupFilterListener, 50);
-                }
-            });
-
-            document.getElementById("modeNormalIconHeader")?.addEventListener("click", function(e) {
-                e.stopPropagation();
-                if ("sequential" !== appMode) {
-                    toggleAppMode();
-                    // After toggle, re-attach group filter listener
-                    setTimeout(reattachGroupFilterListener, 50);
-                }
-            });
-            updatePaginationControlsInside(o.querySelector("#paginationContainer"));
-            let u = sidebarIndices;
-            if ("normal" === appMode && searchTerm) u = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions
-                    .has(idx) && !softDeletedIndices.has(idx)).map((e => vocabList.findIndex((t => t === e))));
-            else "random" === appMode && searchTerm && "" !== searchTerm.trim() && (u = sidebarIndices);
-            u = u.filter(idx => !pendingDeletions.has(idx));
-            for (let e = 0; e < u.length; e++) {
-                const n = u[e],
-                    o = document.createElement("div"),
-                    i = "normal" === appMode && searchTerm ? n === normalCurrentIdx : e === sidebarFocusIdx;
-                const isDeleted = softDeletedIndices.has(n);
-                o.className = "vocab-item " + (i ? "active" : "") + (isDeleted ? " deleted" : "");
-                const a = getDisplayNumberFromArrayIndex(n),
-                    r = vocabList[n].sheetRow,
-                    s = editUnlocked ? "" : "disabled";
-                const delBadge = isDeleted ? '<span class="deleted-badge">🗑️</span>' : '';
-                const groupLabel = vocabList[n].group || '';
-                o.innerHTML =
-                    `<div class="side-number-col"><div class="side-number">#${a}</div><div class="side-icons-row"><button class="edit-side-icon ${s}" onclick="event.stopPropagation(); requestEditModal(${n}, ${r}, '${escapeHtml(vocabList[n].khmer)}', '${escapeHtml(vocabList[n].chinese)}')" title="Edit">✏️</button><button class="sheet-row-icon ${s}" onclick="event.stopPropagation(); requestOpenSheetRow(${r})" title="Open Sheet Row ${r} (Khmer cell)">📊</button></div></div><div class="word-wrapper" onclick="if(!softDeletedIndices.has(${n})) { loadWordByMode(${n}, true); } else { showToast('⚠️ This word is in the recycle bin'); } event.stopPropagation()"><span class="side-zh">${escapeHtml(vocabList[n].chinese)} ${delBadge}</span><span class="side-km">${escapeHtml(vocabList[n].khmer)}</span>${groupLabel ? `<span class="side-group">${escapeHtml(groupLabel)}</span>` : ''}</div>`;
-                t.appendChild(o);
-            }
-
-            applySidebarStyles();
-            scrollToActiveSidebarItem();
-            updateRecycleBinBadge();
-            updateStatusBar();
-
-            // ====== FIX: Re-attach group filter event listener ======
-            const groupSelect = document.getElementById('groupFilterSelect');
-            if (groupSelect) {
-                // Remove any existing listeners by cloning and replacing
-                const newSelect = groupSelect.cloneNode(true);
-                groupSelect.parentNode.replaceChild(newSelect, groupSelect);
-                // Set the value to current groupFilter
-                newSelect.value = groupFilter;
-                // Add the event listener
-                newSelect.onchange = function() {
-                    setGroupFilter(this.value);
-                };
-                // Make sure options are correct
-                updateFilterSelect();
-            }
+        }, 300);
+    };
+    const m = () => {
+        const e = i.value.trim();
+        if (l && clearTimeout(l), null === previousWordBeforeSearch && "" === searchTerm && "" !== e && d(),
+            searchTerm = e, "normal" === appMode) { normalCurrentPage = 0;
+            normalCurrentIdx = 0;
+            renderNormalSidebar(); } else if ("" === searchTerm.trim()) { if (null !== previousWordBeforeSearch &&
+                vocabList[previousWordBeforeSearch] && !pendingDeletions.has(previousWordBeforeSearch) && !softDeletedIndices
+                .has(previousWordBeforeSearch)) {
+                loadWordByMode(previousWordBeforeSearch, !0);
+                previousWordBeforeSearch = null } else if (sidebarIndices.length && void 0 !== sidebarIndices[
+                    sidebarFocusIdx] && !pendingDeletions.has(sidebarIndices[sidebarFocusIdx]) && !softDeletedIndices
+                    .has(sidebarIndices[sidebarFocusIdx]))
+            renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
+            else vocabList.length ? pickRandom() : renderSidebarUI(!0) } else { const t = filterVocabBySearch(
+                vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx))
+                .map((e => vocabList.findIndex((t => t === e)))); if (t.length) { sidebarIndices = t;
+                sidebarFocusIdx = 0;
+                renderSidebarUI(!0); if (sidebarIndices.length > 0) loadWordByMode(sidebarIndices[0], !0) } else { sidebarIndices =
+                    [];
+                renderSidebarUI(!0);
+                updateChineseDisplay("");
+                document.getElementById("khmerWord").innerText = "" } }
+        s.style.display = "none";
+    };
+    i.addEventListener("input", c);
+    i.addEventListener("keypress", (e => { if (e.key === "Enter") { e.preventDefault();
+            m() } }));
+    a.addEventListener("click", (e => { e.preventDefault();
+        m() }));
+    r.addEventListener("click", (e => {
+        e.preventDefault();
+        e.stopPropagation();
+        i.value = "";
+        searchTerm = "";
+        s.style.display = "none";
+        if (null !== previousWordBeforeSearch && vocabList[previousWordBeforeSearch] && !pendingDeletions
+            .has(previousWordBeforeSearch) && !softDeletedIndices.has(previousWordBeforeSearch)) {
+            loadWordByMode(previousWordBeforeSearch, !0);
+            previousWordBeforeSearch = null;
+        } else if ("normal" === appMode) {
+            normalCurrentPage = 0;
+            normalCurrentIdx = 0;
+            renderNormalSidebar();
+        } else if (sidebarIndices.length && void 0 !== sidebarIndices[sidebarFocusIdx] && !pendingDeletions
+            .has(sidebarIndices[sidebarFocusIdx]) && !softDeletedIndices.has(sidebarIndices[
+            sidebarFocusIdx])) {
+            renderRandomSidebar(sidebarIndices[sidebarFocusIdx]);
+        } else {
+            vocabList.length ? pickRandom() : renderSidebarUI(!0);
         }
+        i.focus();
+    }));
+    document.addEventListener("click", (function(e) { s.contains(e.target) || e.target === i || e.target === a || (
+            s.style.display = "none") }));
+    o.querySelector("#modeIconsContainer").innerHTML =
+        `<button id="modeRandomIconHeader" class="mode-icon-small ${"random"===appMode?"active":""}">🎲</button><button id="modeNormalIconHeader" class="mode-icon-small ${"sequential"===appMode?"active":""}">📋</button>`;
+    document.getElementById("modeRandomIconHeader")?.addEventListener("click", function(e) {
+        e.stopPropagation();
+        if ("random" !== appMode) {
+            toggleAppMode();
+            setTimeout(reattachGroupFilterListener, 50);
+        }
+    });
+    document.getElementById("modeNormalIconHeader")?.addEventListener("click", function(e) {
+        e.stopPropagation();
+        if ("sequential" !== appMode) {
+            toggleAppMode();
+            setTimeout(reattachGroupFilterListener, 50);
+        }
+    });
+    updatePaginationControlsInside(o.querySelector("#paginationContainer"));
+    let u = sidebarIndices;
+    if ("normal" === appMode && searchTerm) u = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions
+        .has(idx) && !softDeletedIndices.has(idx)).map((e => vocabList.findIndex((t => t === e))));
+    else "random" === appMode && searchTerm && "" !== searchTerm.trim() && (u = sidebarIndices);
+    u = u.filter(idx => !pendingDeletions.has(idx));
+    for (let e = 0; e < u.length; e++) {
+        const n = u[e],
+            o = document.createElement("div"),
+            i = "normal" === appMode && searchTerm ? n === normalCurrentIdx : e === sidebarFocusIdx;
+        const isDeleted = softDeletedIndices.has(n);
+        o.className = "vocab-item " + (i ? "active" : "") + (isDeleted ? " deleted" : "");
+        const a = getDisplayNumberFromArrayIndex(n),
+            r = vocabList[n].sheetRow,
+            s = editUnlocked ? "" : "disabled";
+        const delBadge = isDeleted ? '<span class="deleted-badge">🗑️</span>' : '';
+        const groupLabel = vocabList[n].group || '';
+        o.innerHTML =
+            `<div class="side-number-col"><div class="side-number">#${a}</div><div class="side-icons-row"><button class="edit-side-icon ${s}" onclick="event.stopPropagation(); requestEditModal(${n}, ${r}, '${escapeHtml(vocabList[n].khmer)}', '${escapeHtml(vocabList[n].chinese)}')" title="Edit">✏️</button><button class="sheet-row-icon ${s}" onclick="event.stopPropagation(); requestOpenSheetRow(${r})" title="Open Sheet Row ${r} (Khmer cell)">📊</button></div></div><div class="word-wrapper" onclick="if(!softDeletedIndices.has(${n})) { loadWordByMode(${n}, true); } else { showToast('⚠️ This word is in the recycle bin'); } event.stopPropagation()"><span class="side-zh">${escapeHtml(vocabList[n].chinese)} ${delBadge}</span><span class="side-km">${escapeHtml(vocabList[n].khmer)}</span>${groupLabel ? `<span class="side-group">${escapeHtml(groupLabel)}</span>` : ''}</div>`;
+        t.appendChild(o);
+    }
+
+    applySidebarStyles();
+    scrollToActiveSidebarItem();
+    updateRecycleBinBadge();
+    updateStatusBar();
+    
+    // Update the group filter select options (single source of truth)
+    updateFilterSelect();
+    // Set the correct value
+    const groupSelect = document.getElementById('groupFilterSelect');
+    if (groupSelect) {
+        groupSelect.value = groupFilter;
+        // Single event listener
+        groupSelect.onchange = function() {
+            setGroupFilter(this.value);
+        };
+    }
+}
 
         function updatePaginationControlsInside(e) {
-            if (!e) return;
-            const t = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
-            const totalItems = t.length;
-            const totalPages = Math.ceil(totalItems / 40) || 1;
-
-            if (totalItems > 40) {
-                e.style.display = "block";
-                e.innerHTML = `
+    if (!e) return;
+    const t = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+    const totalItems = t.length;
+    const totalPages = Math.ceil(totalItems / 40) || 1;
+    
+    if (totalItems > 40) {
+        e.style.display = "block";
+        e.innerHTML = `
             <div class="pagination-bar">
                 <button id="prevPageBtnSide" class="pagination-btn" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;">◀</button>
                 <span class="pagination-info">
                     <input type="number" id="pageJumpInput" class="pagination-input" min="1" max="${totalPages}" value="${normalCurrentPage+1}" style="width:40px; text-align:center; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-primary); font-size:.75rem; padding:2px 4px;">
-                    / ${totalPages} ${totalItems}w
+                    / ${totalPages}
                 </span>
                 <button id="nextPageBtnSide" class="pagination-btn" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;">▶</button>
             </div>`;
 
-                const prevBtn = document.getElementById("prevPageBtnSide");
-                const nextBtn = document.getElementById("nextPageBtnSide");
-                const jumpInput = document.getElementById("pageJumpInput");
+        const prevBtn = document.getElementById("prevPageBtnSide");
+        const nextBtn = document.getElementById("nextPageBtnSide");
+        const jumpInput = document.getElementById("pageJumpInput");
 
-                if (prevBtn) {
-                    const newPrev = prevBtn.cloneNode(true);
-                    prevBtn.parentNode.replaceChild(newPrev, prevBtn);
-
-                    let prevTimer = null;
-                    let prevLongPress = false;
-                    let prevTouchMoved = false;
-                    let prevTouchStartX = 0;
-                    let prevTouchStartY = 0;
-
-                    newPrev.addEventListener('selectstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        return false;
-                    });
-
-                    const jumpToFirst = () => {
-                        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !
-                            softDeletedIndices.has(idx));
-                        if (filtered.length) {
-                            const firstIdx = filtered[0];
-                            if (firstIdx !== undefined) {
-                                loadWordByMode(firstIdx, true);
-                                normalCurrentPage = 0;
-                                renderNormalSidebar();
-                                showToast("📖 Jumped to FIRST word");
-                                setTimeout(syncPageInput, 50);
-                            }
-                        }
-                    };
-
-                    const startPrevPress = function(e) {
-                        e.preventDefault();
-                        if (e.type === 'touchstart') {
-                            const touch = e.touches[0];
-                            prevTouchStartX = touch.clientX;
-                            prevTouchStartY = touch.clientY;
-                            prevTouchMoved = false;
-                        }
-                        prevLongPress = false;
+        if (prevBtn) {
+            const newPrev = prevBtn.cloneNode(true);
+            prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+            
+            let prevTimer = null;
+            let prevLongPress = false;
+            let prevTouchMoved = false;
+            let prevTouchStartX = 0;
+            let prevTouchStartY = 0;
+            
+            newPrev.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            });
+            
+            const jumpToFirst = () => {
+                const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                if (filtered.length) {
+                    const firstIdx = filtered[0];
+                    if (firstIdx !== undefined) {
+                        loadWordByMode(firstIdx, true);
+                        normalCurrentPage = 0;
+                        renderNormalSidebar();
+                        showToast("📖 Jumped to FIRST word");
+                        setTimeout(syncPageInput, 50);
+                    }
+                }
+            };
+            
+            const startPrevPress = function(e) {
+                e.preventDefault();
+                if (e.type === 'touchstart') {
+                    const touch = e.touches[0];
+                    prevTouchStartX = touch.clientX;
+                    prevTouchStartY = touch.clientY;
+                    prevTouchMoved = false;
+                }
+                prevLongPress = false;
+                if (prevTimer) {
+                    clearTimeout(prevTimer);
+                    prevTimer = null;
+                }
+                prevTimer = setTimeout(() => {
+                    if (e.type === 'touchstart' && prevTouchMoved) {
+                        prevTimer = null;
+                        return;
+                    }
+                    prevLongPress = true;
+                    jumpToFirst();
+                    prevTimer = null;
+                }, 400);
+            };
+            
+            const endPrevPress = function(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                if (prevTimer) {
+                    clearTimeout(prevTimer);
+                    prevTimer = null;
+                }
+            };
+            
+            const movePrevPress = function(e) {
+                if (e.type === 'touchmove') {
+                    const touch = e.touches[0];
+                    const dx = Math.abs(touch.clientX - prevTouchStartX);
+                    const dy = Math.abs(touch.clientY - prevTouchStartY);
+                    if (dx > 10 || dy > 10) {
+                        prevTouchMoved = true;
                         if (prevTimer) {
                             clearTimeout(prevTimer);
                             prevTimer = null;
                         }
-                        prevTimer = setTimeout(() => {
-                            if (e.type === 'touchstart' && prevTouchMoved) {
-                                prevTimer = null;
-                                return;
-                            }
-                            prevLongPress = true;
-                            jumpToFirst();
-                            prevTimer = null;
-                        }, 400);
-                    };
-
-                    const endPrevPress = function(e) {
-                        if (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }
-                        if (prevTimer) {
-                            clearTimeout(prevTimer);
-                            prevTimer = null;
-                        }
-                    };
-
-                    const movePrevPress = function(e) {
-                        if (e.type === 'touchmove') {
-                            const touch = e.touches[0];
-                            const dx = Math.abs(touch.clientX - prevTouchStartX);
-                            const dy = Math.abs(touch.clientY - prevTouchStartY);
-                            if (dx > 10 || dy > 10) {
-                                prevTouchMoved = true;
-                                if (prevTimer) {
-                                    clearTimeout(prevTimer);
-                                    prevTimer = null;
-                                }
-                            }
-                        }
-                    };
-
-                    const handlePrevAction = function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        if (prevLongPress) {
-                            prevLongPress = false;
-                            return;
-                        }
-
-                        if (normalCurrentPage > 0) {
-                            normalCurrentPage--;
-                            renderNormalSidebar();
-                            setTimeout(syncPageInput, 50);
-                        }
-                    };
-
-                    newPrev.addEventListener('mousedown', startPrevPress);
-                    newPrev.addEventListener('mouseup', endPrevPress);
-                    newPrev.addEventListener('mouseleave', endPrevPress);
-                    newPrev.addEventListener('click', handlePrevAction);
-
-                    newPrev.addEventListener('touchstart', startPrevPress, { passive: false });
-                    newPrev.addEventListener('touchmove', movePrevPress, { passive: true });
-                    newPrev.addEventListener('touchend', function(e) {
-                        endPrevPress(e);
-                        if (!prevLongPress && !prevTouchMoved) {
-                            handlePrevAction(e);
-                        }
-                        setTimeout(() => {
-                            prevLongPress = false;
-                            prevTouchMoved = false;
-                        }, 100);
-                    }, { passive: false });
-                    newPrev.addEventListener('touchcancel', endPrevPress, { passive: false });
+                    }
                 }
-
-                if (nextBtn) {
-                    const newNext = nextBtn.cloneNode(true);
-                    nextBtn.parentNode.replaceChild(newNext, nextBtn);
-
-                    let nextTimer = null;
-                    let nextLongPress = false;
-                    let nextTouchMoved = false;
-                    let nextTouchStartX = 0;
-                    let nextTouchStartY = 0;
-
-                    newNext.addEventListener('selectstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        return false;
-                    });
-
-                    const jumpToLast = () => {
-                        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !
-                            softDeletedIndices.has(idx));
-                        if (filtered.length) {
-                            const lastIdx = filtered[filtered.length - 1];
-                            if (lastIdx !== undefined) {
-                                loadWordByMode(lastIdx, true);
-                                normalCurrentPage = Math.ceil(filtered.length / 40) - 1;
-                                renderNormalSidebar();
-                                showToast("📖 Jumped to LAST word");
-                                setTimeout(syncPageInput, 50);
-                            }
-                        }
-                    };
-
-                    const startNextPress = function(e) {
-                        e.preventDefault();
-                        if (e.type === 'touchstart') {
-                            const touch = e.touches[0];
-                            nextTouchStartX = touch.clientX;
-                            nextTouchStartY = touch.clientY;
-                            nextTouchMoved = false;
-                        }
-                        nextLongPress = false;
-                        if (nextTimer) {
-                            clearTimeout(nextTimer);
-                            nextTimer = null;
-                        }
-                        nextTimer = setTimeout(() => {
-                            if (e.type === 'touchstart' && nextTouchMoved) {
-                                nextTimer = null;
-                                return;
-                            }
-                            nextLongPress = true;
-                            jumpToLast();
-                            nextTimer = null;
-                        }, 400);
-                    };
-
-                    const endNextPress = function(e) {
-                        if (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }
-                        if (nextTimer) {
-                            clearTimeout(nextTimer);
-                            nextTimer = null;
-                        }
-                    };
-
-                    const moveNextPress = function(e) {
-                        if (e.type === 'touchmove') {
-                            const touch = e.touches[0];
-                            const dx = Math.abs(touch.clientX - nextTouchStartX);
-                            const dy = Math.abs(touch.clientY - nextTouchStartY);
-                            if (dx > 10 || dy > 10) {
-                                nextTouchMoved = true;
-                                if (nextTimer) {
-                                    clearTimeout(nextTimer);
-                                    nextTimer = null;
-                                }
-                            }
-                        }
-                    };
-
-                    const handleNextAction = function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        if (nextLongPress) {
-                            nextLongPress = false;
-                            return;
-                        }
-
-                        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !
-                            softDeletedIndices.has(idx));
-                        const pageCount = Math.ceil(filtered.length / 40);
-                        if (normalCurrentPage + 1 < pageCount) {
-                            normalCurrentPage++;
-                            renderNormalSidebar();
-                            setTimeout(syncPageInput, 50);
-                        }
-                    };
-
-                    newNext.addEventListener('mousedown', startNextPress);
-                    newNext.addEventListener('mouseup', endNextPress);
-                    newNext.addEventListener('mouseleave', endNextPress);
-                    newNext.addEventListener('click', handleNextAction);
-
-                    newNext.addEventListener('touchstart', startNextPress, { passive: false });
-                    newNext.addEventListener('touchmove', moveNextPress, { passive: true });
-                    newNext.addEventListener('touchend', function(e) {
-                        endNextPress(e);
-                        if (!nextLongPress && !nextTouchMoved) {
-                            handleNextAction(e);
-                        }
-                        setTimeout(() => {
-                            nextLongPress = false;
-                            nextTouchMoved = false;
-                        }, 100);
-                    }, { passive: false });
-                    newNext.addEventListener('touchcancel', endNextPress, { passive: false });
+            };
+            
+            const handlePrevAction = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (prevLongPress) {
+                    prevLongPress = false;
+                    return;
                 }
-
-                if (jumpInput) {
-                    const newJump = jumpInput.cloneNode(true);
-                    jumpInput.parentNode.replaceChild(newJump, jumpInput);
-
-                    const handleJump = function() {
-                        let val = parseInt(this.value);
-                        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !
-                            softDeletedIndices.has(idx));
-                        const maxPages = Math.ceil(filtered.length / 40) || 1;
-                        if (isNaN(val) || val < 1) val = 1;
-                        if (val > maxPages) val = maxPages;
-                        const newPage = val - 1;
-                        if (newPage !== normalCurrentPage) {
-                            normalCurrentPage = newPage;
-                            renderNormalSidebar();
-                            setTimeout(syncPageInput, 50);
-                        }
-                        this.value = normalCurrentPage + 1;
-                    };
-
-                    newJump.addEventListener('change', handleJump);
-                    newJump.addEventListener('keypress', function(ev) {
-                        if (ev.key === 'Enter') {
-                            ev.preventDefault();
-                            handleJump.call(this);
-                        }
-                    });
-                    newJump.addEventListener('blur', function() {
-                        this.value = normalCurrentPage + 1;
-                    });
-
-                    newJump.addEventListener('touchstart', function(e) {
-                        this.focus();
-                    }, { passive: true });
+                
+                if (normalCurrentPage > 0) {
+                    normalCurrentPage--;
+                    renderNormalSidebar();
+                    setTimeout(syncPageInput, 50);
                 }
-
-                setTimeout(syncPageInput, 100);
-            } else {
-                e.style.display = "none";
-                e.innerHTML = "";
-            }
+            };
+            
+            newPrev.addEventListener('mousedown', startPrevPress);
+            newPrev.addEventListener('mouseup', endPrevPress);
+            newPrev.addEventListener('mouseleave', endPrevPress);
+            newPrev.addEventListener('click', handlePrevAction);
+            
+            newPrev.addEventListener('touchstart', startPrevPress, { passive: false });
+            newPrev.addEventListener('touchmove', movePrevPress, { passive: true });
+            newPrev.addEventListener('touchend', function(e) {
+                endPrevPress(e);
+                if (!prevLongPress && !prevTouchMoved) {
+                    handlePrevAction(e);
+                }
+                setTimeout(() => {
+                    prevLongPress = false;
+                    prevTouchMoved = false;
+                }, 100);
+            }, { passive: false });
+            newPrev.addEventListener('touchcancel', endPrevPress, { passive: false });
         }
+
+        if (nextBtn) {
+            const newNext = nextBtn.cloneNode(true);
+            nextBtn.parentNode.replaceChild(newNext, nextBtn);
+            
+            let nextTimer = null;
+            let nextLongPress = false;
+            let nextTouchMoved = false;
+            let nextTouchStartX = 0;
+            let nextTouchStartY = 0;
+            
+            newNext.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            });
+            
+            const jumpToLast = () => {
+                const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                if (filtered.length) {
+                    const lastIdx = filtered[filtered.length - 1];
+                    if (lastIdx !== undefined) {
+                        loadWordByMode(lastIdx, true);
+                        normalCurrentPage = Math.ceil(filtered.length / 40) - 1;
+                        renderNormalSidebar();
+                        showToast("📖 Jumped to LAST word");
+                        setTimeout(syncPageInput, 50);
+                    }
+                }
+            };
+            
+            const startNextPress = function(e) {
+                e.preventDefault();
+                if (e.type === 'touchstart') {
+                    const touch = e.touches[0];
+                    nextTouchStartX = touch.clientX;
+                    nextTouchStartY = touch.clientY;
+                    nextTouchMoved = false;
+                }
+                nextLongPress = false;
+                if (nextTimer) {
+                    clearTimeout(nextTimer);
+                    nextTimer = null;
+                }
+                nextTimer = setTimeout(() => {
+                    if (e.type === 'touchstart' && nextTouchMoved) {
+                        nextTimer = null;
+                        return;
+                    }
+                    nextLongPress = true;
+                    jumpToLast();
+                    nextTimer = null;
+                }, 400);
+            };
+            
+            const endNextPress = function(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                if (nextTimer) {
+                    clearTimeout(nextTimer);
+                    nextTimer = null;
+                }
+            };
+            
+            const moveNextPress = function(e) {
+                if (e.type === 'touchmove') {
+                    const touch = e.touches[0];
+                    const dx = Math.abs(touch.clientX - nextTouchStartX);
+                    const dy = Math.abs(touch.clientY - nextTouchStartY);
+                    if (dx > 10 || dy > 10) {
+                        nextTouchMoved = true;
+                        if (nextTimer) {
+                            clearTimeout(nextTimer);
+                            nextTimer = null;
+                        }
+                    }
+                }
+            };
+            
+            const handleNextAction = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (nextLongPress) {
+                    nextLongPress = false;
+                    return;
+                }
+                
+                const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                const pageCount = Math.ceil(filtered.length / 40);
+                if (normalCurrentPage + 1 < pageCount) {
+                    normalCurrentPage++;
+                    renderNormalSidebar();
+                    setTimeout(syncPageInput, 50);
+                }
+            };
+            
+            newNext.addEventListener('mousedown', startNextPress);
+            newNext.addEventListener('mouseup', endNextPress);
+            newNext.addEventListener('mouseleave', endNextPress);
+            newNext.addEventListener('click', handleNextAction);
+            
+            newNext.addEventListener('touchstart', startNextPress, { passive: false });
+            newNext.addEventListener('touchmove', moveNextPress, { passive: true });
+            newNext.addEventListener('touchend', function(e) {
+                endNextPress(e);
+                if (!nextLongPress && !nextTouchMoved) {
+                    handleNextAction(e);
+                }
+                setTimeout(() => {
+                    nextLongPress = false;
+                    nextTouchMoved = false;
+                }, 100);
+            }, { passive: false });
+            newNext.addEventListener('touchcancel', endNextPress, { passive: false });
+        }
+
+        if (jumpInput) {
+            const newJump = jumpInput.cloneNode(true);
+            jumpInput.parentNode.replaceChild(newJump, jumpInput);
+
+            const handleJump = function() {
+                let val = parseInt(this.value);
+                const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+                const maxPages = Math.ceil(filtered.length / 40) || 1;
+                if (isNaN(val) || val < 1) val = 1;
+                if (val > maxPages) val = maxPages;
+                const newPage = val - 1;
+                if (newPage !== normalCurrentPage) {
+                    normalCurrentPage = newPage;
+                    renderNormalSidebar();
+                    setTimeout(syncPageInput, 50);
+                }
+                this.value = normalCurrentPage + 1;
+            };
+
+            newJump.addEventListener('change', handleJump);
+            newJump.addEventListener('keypress', function(ev) {
+                if (ev.key === 'Enter') {
+                    ev.preventDefault();
+                    handleJump.call(this);
+                }
+            });
+            newJump.addEventListener('blur', function() {
+                this.value = normalCurrentPage + 1;
+            });
+            
+            newJump.addEventListener('touchstart', function(e) {
+                this.focus();
+            }, { passive: true });
+        }
+
+        setTimeout(syncPageInput, 100);
+    } else {
+        e.style.display = "none";
+        e.innerHTML = "";
+    }
+}
 
         // Patch renderNormalSidebar and renderSidebarUI to sync after rendering
         const origRenderNormalSidebar = renderNormalSidebar;
