@@ -4453,47 +4453,34 @@ window.clearAllCache = async function() {
         let lastRandomIndicesStr = "";
 
         function renderRandomSidebar(e) {
-            const t = vocabList[e];
-            if (!t) return;
-            // Make sure the index is in the filtered list
-            if (!filteredList.includes(e)) {
-                // Find the first available in filtered list
-                if (filteredList.length > 0) {
-                    const firstAvailable = filteredList.find(idx => !softDeletedIndices.has(idx));
-                    if (firstAvailable !== undefined) {
-                        e = firstAvailable;
-                    } else {
-                        return;
-                    }
-                } else {
-                    return;
-                }
-            }
-            const newIndices = getRelatedIndices(e);
-            const newIndicesStr = newIndices.join(",");
-            if (newIndicesStr !== lastRandomIndicesStr) {
-                sidebarIndices = newIndices;
-                lastRandomIndicesStr = newIndicesStr;
-                sidebarFocusIdx = 0;
-                renderSidebarUI();
-            } else {
-                sidebarFocusIdx = 0;
-                document.querySelectorAll(".vocab-item").forEach((el, idx) => {
-                    if (idx === 0) el.classList.add("active");
-                    else el.classList.remove("active");
-                });
-                updateDisplay();
-                const word = vocabList[sidebarIndices[sidebarFocusIdx]];
-                if (word && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
-                    speakAutoSequence(word.chinese, word.khmer);
-                }
-                scrollToActiveSidebarItem();
-            }
-            updateDisplay();
-            if (!softDeletedIndices.has(e)) {
-                speakAutoSequence(t.chinese, t.khmer);
-            }
+    const t = vocabList[e];
+    if (!t) return;
+    // Do NOT check filteredList – always use the given index directly
+    const newIndices = getRelatedIndices(e);
+    const newIndicesStr = newIndices.join(",");
+    if (newIndicesStr !== lastRandomIndicesStr) {
+        sidebarIndices = newIndices;
+        lastRandomIndicesStr = newIndicesStr;
+        sidebarFocusIdx = 0;
+        renderSidebarUI();
+    } else {
+        sidebarFocusIdx = 0;
+        document.querySelectorAll(".vocab-item").forEach((el, idx) => {
+            if (idx === 0) el.classList.add("active");
+            else el.classList.remove("active");
+        });
+        updateDisplay();
+        const word = vocabList[sidebarIndices[sidebarFocusIdx]];
+        if (word && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
+            speakAutoSequence(word.chinese, word.khmer);
         }
+        scrollToActiveSidebarItem();
+    }
+    updateDisplay();
+    if (!softDeletedIndices.has(e)) {
+        speakAutoSequence(t.chinese, t.khmer);
+    }
+}
 
         function loadWordByMode(e, t = !0) {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), killAllSpeech(), !vocabList[e]) return;
@@ -4631,55 +4618,69 @@ window.clearAllCache = async function() {
         }
 
         function toggleAppMode() {
-            autoTimer && (clearTimeout(autoTimer), autoTimer = null);
-            const e = document.getElementById("modeToggleBtn");
-            if ("random" === appMode) {
-                appMode = "sequential";
-                e.innerText = "SEQUENTIAL";
-                e.classList.remove("mode-random-active");
-                e.classList.add("mode-sequential-active");
-                // Use filteredList instead of all vocabList
-                const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
-                if (filtered.length > 0) {
-                    normalCurrentIdx = filtered[0];
-                } else {
-                    normalCurrentIdx = 0;
-                }
-                normalCurrentPage = 0;
-                renderNormalSidebar();
+    autoTimer && (clearTimeout(autoTimer), autoTimer = null);
+    const e = document.getElementById("modeToggleBtn");
+    if ("random" === appMode) {
+        appMode = "sequential";
+        e.innerText = "SEQUENTIAL";
+        e.classList.remove("mode-random-active");
+        e.classList.add("mode-sequential-active");
+        // Use filteredList to get the list of available words
+        const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
+        if (filtered.length > 0) {
+            // Try to keep the current word (if it is still in the filtered list)
+            let currentIdx = -1;
+            if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
+                currentIdx = sidebarIndices[sidebarFocusIdx];
+            }
+            if (currentIdx !== -1 && filtered.includes(currentIdx)) {
+                normalCurrentIdx = currentIdx;
             } else {
-                appMode = "random";
-                e.innerText = "RANDOM";
-                e.classList.remove("mode-sequential-active");
-                e.classList.add("mode-random-active");
-                // Use filteredList instead of all vocabList
-                const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
-                if (filtered.length > 0) {
-                    const idx = filtered[Math.floor(Math.random() * filtered.length)];
-                    if (idx !== undefined) {
-                        history = [idx];
-                        historyIndex = 0;
-                        renderRandomSidebar(idx);
-                    }
-                } else if (vocabList.length > 0) {
-                    pickRandom();
-                }
+                normalCurrentIdx = filtered[0];
             }
-            saveAllData();
-            const randomIcon = document.getElementById("modeRandomIconHeader");
-            const normalIcon = document.getElementById("modeNormalIconHeader");
-            if (randomIcon && normalIcon) {
-                if ("random" === appMode) {
-                    randomIcon.classList.add("active");
-                    normalIcon.classList.remove("active");
-                } else {
-                    normalIcon.classList.add("active");
-                    randomIcon.classList.remove("active");
-                }
-            }
-            renderSidebarUI();
-            reattachGroupFilterListener();
+            // Calculate the correct page for that index
+            const pos = filtered.indexOf(normalCurrentIdx);
+            normalCurrentPage = Math.floor(pos / ITEMS_PER_PAGE);
+        } else {
+            normalCurrentIdx = 0;
+            normalCurrentPage = 0;
         }
+        renderNormalSidebar();
+    } else {
+        // === Switching from SEQUENTIAL to RANDOM ===
+        appMode = "random";
+        e.innerText = "RANDOM";
+        e.classList.remove("mode-sequential-active");
+        e.classList.add("mode-random-active");
+        
+        // Use the current sequential word directly – IGNORE group filter entirely
+        const currentIdx = normalCurrentIdx;
+        if (currentIdx !== undefined && currentIdx >= 0 && currentIdx < vocabList.length &&
+            !softDeletedIndices.has(currentIdx) && !pendingDeletions.has(currentIdx)) {
+            // Keep the exact same word
+            history = [currentIdx];
+            historyIndex = 0;
+            renderRandomSidebar(currentIdx);
+        } else if (vocabList.length > 0) {
+            // Fallback: if current word is invalid (e.g., soft‑deleted), pick any random
+            pickRandom();
+        }
+    }
+    saveAllData();
+    const randomIcon = document.getElementById("modeRandomIconHeader");
+    const normalIcon = document.getElementById("modeNormalIconHeader");
+    if (randomIcon && normalIcon) {
+        if ("random" === appMode) {
+            randomIcon.classList.add("active");
+            normalIcon.classList.remove("active");
+        } else {
+            normalIcon.classList.add("active");
+            randomIcon.classList.remove("active");
+        }
+    }
+    renderSidebarUI();
+    reattachGroupFilterListener();
+}
 
         function toggleAuto() {
             autoActive = !autoActive;
