@@ -5522,8 +5522,7 @@ window.clearAllCache = async function() {
                 newPrev.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !
-                        softDeletedIndices.has(idx));
+                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
                     if (normalCurrentPage > 0) {
                         normalCurrentPage--;
                         renderNormalSidebar();
@@ -5539,8 +5538,7 @@ window.clearAllCache = async function() {
                 newNext.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !
-                        softDeletedIndices.has(idx));
+                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
                     const totalPages = Math.ceil(filtered.length / 40);
                     if (normalCurrentPage + 1 < totalPages) {
                         normalCurrentPage++;
@@ -5556,8 +5554,7 @@ window.clearAllCache = async function() {
                 newJump._handlersAttached = true;
                 const handleJump = function() {
                     let val = parseInt(this.value);
-                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !
-                        softDeletedIndices.has(idx));
+                    const filtered = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
                     const maxPages = Math.ceil(filtered.length / 40) || 1;
                     if (isNaN(val) || val < 1) val = 1;
                     if (val > maxPages) val = maxPages;
@@ -9691,437 +9688,443 @@ if (deltaX > 0) {
                 (e.preventDefault(), moveSidebarFocus(1)) : "ArrowUp" === e.code && (e.preventDefault(),
                     moveSidebarFocus(-1)) : e.stopPropagation()
         })), window.onload = async () => {
-            // Show loading overlay with ABA icon
-            const loadingOverlay = document.createElement('div');
-            loadingOverlay.id = 'loadingOverlay';
-            loadingOverlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: #0f172a;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                z-index: 99999;
-                transition: opacity 0.5s ease;
-            `;
+    // Show loading overlay with ABA icon
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loadingOverlay';
+    loadingOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #0f172a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        transition: opacity 0.5s ease;
+    `;
 
-            const style = document.createElement('style');
-            style.textContent = `
-                .loading-dots::after {
-                    content: '';
-                    animation: dots 1.5s steps(4, end) infinite;
-                }
-                @keyframes dots {
-                    0% { content: ''; }
-                    25% { content: '.'; }
-                    50% { content: '..'; }
-                    75% { content: '...'; }
-                    100% { content: ''; }
-                }
-                .loading-dots {
-                    display: inline-block;
-                    min-width: 30px;
-                }
-            `;
-            document.head.appendChild(style);
+    const style = document.createElement('style');
+    style.textContent = `
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+            100% { content: ''; }
+        }
+        .loading-dots {
+            display: inline-block;
+            min-width: 30px;
+        }
+    `;
+    document.head.appendChild(style);
 
-            loadingOverlay.innerHTML = `
-                <img src="/static/ABAicon.png" alt="ABA Icon" style="width:80px; height:80px; border-radius:16px; margin-bottom:20px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-                <div style="color:white; font-size:1.4rem; font-weight:600; font-family:Inter, system-ui, sans-serif; margin-bottom:16px;">
-                    Loading<span class="loading-dots"></span>
-                </div>
-                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; background:rgba(251,191,36,0.08); padding:12px 28px; border-radius:12px; border:1px solid rgba(251,191,36,0.15);">
-                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;">
-                        <span style="color:#fbbf24; font-size:0.9rem; font-weight:500; font-family:Inter, system-ui, sans-serif;">⚠️ 本应用目前仅供测试。</span>
-                        <span style="color:rgba(251,191,36,0.5); font-size:0.8rem;">•</span>
-                        <span style="color:rgba(251,191,36,0.7); font-size:0.85rem; font-weight:400; font-family:'KHLazySmooth', 'Noto Sans Khmer', system-ui, sans-serif;">កម្មវិធីនេះកំពុងស្ថិតក្នុងការសាកល្បង។</span>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(loadingOverlay);
+    loadingOverlay.innerHTML = `
+        <img src="/static/ABAicon.png" alt="ABA Icon" style="width:80px; height:80px; border-radius:16px; margin-bottom:20px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div style="color:white; font-size:1.4rem; font-weight:600; font-family:Inter, system-ui, sans-serif; margin-bottom:16px;">
+            Loading<span class="loading-dots"></span>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; background:rgba(251,191,36,0.08); padding:12px 28px; border-radius:12px; border:1px solid rgba(251,191,36,0.15);">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;">
+                <span style="color:#fbbf24; font-size:0.9rem; font-weight:500; font-family:Inter, system-ui, sans-serif;">⚠️ 本应用目前仅供测试。</span>
+                <span style="color:rgba(251,191,36,0.5); font-size:0.8rem;">•</span>
+                <span style="color:rgba(251,191,36,0.7); font-size:0.85rem; font-weight:400; font-family:'KHLazySmooth', 'Noto Sans Khmer', system-ui, sans-serif;">កម្មវិធីនេះកំពុងស្ថិតក្នុងការសាកល្បង។</span>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingOverlay);
 
-            initCopyPopup();
-            emojiContainer = document.getElementById("emojiContainer");
-            if (emojiContainer) {
-                emojiContainer.addEventListener("touchstart", handleEmojiPinchStart, { passive: false });
-                emojiContainer.addEventListener("touchmove", handleEmojiPinchMove, { passive: false });
-                emojiContainer.addEventListener("touchend", handleEmojiPinchEnd);
-                emojiContainer.addEventListener("wheel", handleEmojiWheel, { passive: false });
-                initEmojiDrag();
-                loadEmojiPosition();
-            }
+    initCopyPopup();
+    emojiContainer = document.getElementById("emojiContainer");
+    if (emojiContainer) {
+        emojiContainer.addEventListener("touchstart", handleEmojiPinchStart, { passive: false });
+        emojiContainer.addEventListener("touchmove", handleEmojiPinchMove, { passive: false });
+        emojiContainer.addEventListener("touchend", handleEmojiPinchEnd);
+        emojiContainer.addEventListener("wheel", handleEmojiWheel, { passive: false });
+        initEmojiDrag();
+        loadEmojiPosition();
+    }
 
-           loadSettings();
+    loadSettings();
     resetQuotaState(); // <-- ADD THIS LINE HERE
     loadSheetHistory();
 
-            if (currentSheetId) {
-                try {
-                    await loadApiAndPasswordFromSheet();
-                    console.log("✅ API and password refreshed from sheet");
-                } catch (e) {
-                    console.warn("Could not refresh API/password from sheet, using cached values:", e);
-                }
+    // ---- FIX: reload sheet if vocab list is empty but sheet ID exists ----
+    if (vocabList.length === 0 && currentSheetId) {
+        console.log('🔄 Vocab list empty – reloading sheet...');
+        await loadSheetData(true);
+    }
+
+    if (currentSheetId) {
+        try {
+            await loadApiAndPasswordFromSheet();
+            console.log("✅ API and password refreshed from sheet");
+        } catch (e) {
+            console.warn("Could not refresh API/password from sheet, using cached values:", e);
+        }
+    }
+
+    await loadChineseVoices();
+
+    const orderBtn = document.getElementById('speechOrderToggle');
+    if (orderBtn) {
+        const stored = safeGetItem('speechOrder', 'zh_first');
+        speechOrder = (stored === 'km_first') ? 'km_first' : 'zh_first';
+        orderBtn.textContent = speechOrder === 'zh_first' ? 'ZH → KM' : 'KM → ZH';
+        orderBtn.addEventListener('click', toggleSpeechOrder);
+    }
+
+    setTimeout(setupInsertSymbolLongPress, 300);
+
+    if (vocabList.length > 0) {
+        buildFirstCharCache();
+        // Build group map from vocabList
+        buildGroupMap();
+        // Apply saved filter
+        const savedFilter = safeGetItem('groupFilter', '__ALL__');
+        if (savedFilter && groupMap.has(savedFilter)) {
+            groupFilter = savedFilter;
+        } else {
+            groupFilter = '__ALL__';
+        }
+        applyGroupFilter();
+
+        if (appMode === "random") {
+            if (history.length === 0 && filteredList.length > 0) {
+                history = [filteredList[0]];
+                historyIndex = 0;
+            }
+            if (sidebarIndices.length === 0 && filteredList.length > 0) {
+                renderRandomSidebar(filteredList[0]);
+            } else if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
+                loadWordByMode(sidebarIndices[sidebarFocusIdx], true);
+            } else if (filteredList.length > 0) {
+                pickRandom();
+            }
+        } else {
+            if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = 0;
+            renderNormalSidebar();
+        }
+    } else {
+        renderSidebarUI();
+        updateChineseDisplay("");
+        document.getElementById("khmerWord").innerText = "";
+        document.getElementById("studioTitleSpan").innerText = "Vocab Master";
+    }
+
+    // Remove loading overlay
+    if (loadingOverlay) {
+        loadingOverlay.style.opacity = '0';
+        setTimeout(() => {
+            if (loadingOverlay.parentNode) loadingOverlay.parentNode.removeChild(loadingOverlay);
+        }, 500);
+    }
+
+    initNightMode();
+    applyStyles();
+    initGearDrag();
+    setupQRPopup();
+    setupBackgroundClick();
+    initChineseDrag();
+    initKhmerDrag();
+    loadAllDragPositions();
+    initFloatingMenuDrag();
+    initSidebarResizer();
+    initSwipeNavigation();
+    initGearLongPress();
+    setupSidebarWheelNavigation();
+
+    const trigger = document.getElementById("minimizedTrigger");
+    if (trigger) {
+        trigger.addEventListener("click", e => e.stopPropagation());
+        trigger.addEventListener("touchstart", e => e.stopPropagation());
+        trigger.addEventListener("mousedown", e => e.stopPropagation());
+    }
+
+    const closeBtn = document.getElementById("closeFloatingMenuBtn");
+    if (closeBtn) {
+        const newClose = closeBtn.cloneNode(true);
+        closeBtn.parentNode.replaceChild(newClose, closeBtn);
+        newClose.addEventListener("click", function(e) { e.preventDefault();
+            e.stopPropagation();
+            toggleMenu(true); });
+        newClose.addEventListener("touchstart", function(e) { e.preventDefault();
+            e.stopPropagation();
+            toggleMenu(true); }, { passive: false });
+    }
+
+    const darkBtn = document.getElementById("dragDarkModeBtn");
+    if (darkBtn) {
+        const newDark = darkBtn.cloneNode(true);
+        darkBtn.parentNode.replaceChild(newDark, darkBtn);
+        newDark.addEventListener("click", function(e) { e.preventDefault();
+            e.stopPropagation();
+            toggleNightMode(); });
+        newDark.addEventListener("touchstart", function(e) { e.preventDefault();
+            e.stopPropagation();
+            toggleNightMode(); }, { passive: false });
+    }
+
+    const abaIcon = document.getElementById("abaIconInline");
+    if (abaIcon) {
+        const newAba = abaIcon.cloneNode(true);
+        abaIcon.parentNode.replaceChild(newAba, abaIcon);
+        newAba.addEventListener("click", async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const overlay = document.getElementById("qrPopupOverlay");
+            if (overlay) overlay.style.display = "flex";
+        });
+        newAba.addEventListener("touchstart", async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const overlay = document.getElementById("qrPopupOverlay");
+            if (overlay) overlay.style.display = "flex";
+        }, { passive: false });
+    }
+
+    // Recycle Bin button handler
+    const rbBtn = document.getElementById('recycleBinBtn');
+    if (rbBtn) {
+        rbBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showRecycleBinModal(false);
+        });
+        // Long press on recycle bin button: delete all
+        let holdTimer = null;
+        let isLongPress = false;
+        let longPressHandled = false;
+        let pointerMoved = false;
+        let pointerDownTime = 0;
+
+        const startHold = function(e) {
+            isLongPress = false;
+            longPressHandled = false;
+            pointerMoved = false;
+            pointerDownTime = Date.now();
+
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
             }
 
-            await loadChineseVoices();
-
-            const orderBtn = document.getElementById('speechOrderToggle');
-            if (orderBtn) {
-                const stored = safeGetItem('speechOrder', 'zh_first');
-                speechOrder = (stored === 'km_first') ? 'km_first' : 'zh_first';
-                orderBtn.textContent = speechOrder === 'zh_first' ? 'ZH → KM' : 'KM → ZH';
-                orderBtn.addEventListener('click', toggleSpeechOrder);
-            }
-
-            setTimeout(setupInsertSymbolLongPress, 300);
-
-            if (vocabList.length > 0) {
-                buildFirstCharCache();
-                // Build group map from vocabList
-                buildGroupMap();
-                // Apply saved filter
-                const savedFilter = safeGetItem('groupFilter', '__ALL__');
-                if (savedFilter && groupMap.has(savedFilter)) {
-                    groupFilter = savedFilter;
-                } else {
-                    groupFilter = '__ALL__';
-                }
-                applyGroupFilter();
-
-                if (appMode === "random") {
-                    if (history.length === 0 && filteredList.length > 0) {
-                        history = [filteredList[0]];
-                        historyIndex = 0;
-                    }
-                    if (sidebarIndices.length === 0 && filteredList.length > 0) {
-                        renderRandomSidebar(filteredList[0]);
-                    } else if (sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
-                        loadWordByMode(sidebarIndices[sidebarFocusIdx], true);
-                    } else if (filteredList.length > 0) {
-                        pickRandom();
-                    }
-                } else {
-                    if (normalCurrentIdx >= vocabList.length) normalCurrentIdx = 0;
-                    renderNormalSidebar();
-                }
-            } else {
-                renderSidebarUI();
-                updateChineseDisplay("");
-                document.getElementById("khmerWord").innerText = "";
-                document.getElementById("studioTitleSpan").innerText = "Vocab Master";
-            }
-
-            // Remove loading overlay
-            if (loadingOverlay) {
-                loadingOverlay.style.opacity = '0';
-                setTimeout(() => {
-                    if (loadingOverlay.parentNode) loadingOverlay.parentNode.removeChild(loadingOverlay);
-                }, 500);
-            }
-
-            initNightMode();
-            applyStyles();
-            initGearDrag();
-            setupQRPopup();
-            setupBackgroundClick();
-            initChineseDrag();
-            initKhmerDrag();
-            loadAllDragPositions();
-            initFloatingMenuDrag();
-            initSidebarResizer();
-            initSwipeNavigation();
-            initGearLongPress();
-            setupSidebarWheelNavigation();
-
-            const trigger = document.getElementById("minimizedTrigger");
-            if (trigger) {
-                trigger.addEventListener("click", e => e.stopPropagation());
-                trigger.addEventListener("touchstart", e => e.stopPropagation());
-                trigger.addEventListener("mousedown", e => e.stopPropagation());
-            }
-
-            const closeBtn = document.getElementById("closeFloatingMenuBtn");
-            if (closeBtn) {
-                const newClose = closeBtn.cloneNode(true);
-                closeBtn.parentNode.replaceChild(newClose, closeBtn);
-                newClose.addEventListener("click", function(e) { e.preventDefault();
-                    e.stopPropagation();
-                    toggleMenu(true); });
-                newClose.addEventListener("touchstart", function(e) { e.preventDefault();
-                    e.stopPropagation();
-                    toggleMenu(true); }, { passive: false });
-            }
-
-            const darkBtn = document.getElementById("dragDarkModeBtn");
-            if (darkBtn) {
-                const newDark = darkBtn.cloneNode(true);
-                darkBtn.parentNode.replaceChild(newDark, darkBtn);
-                newDark.addEventListener("click", function(e) { e.preventDefault();
-                    e.stopPropagation();
-                    toggleNightMode(); });
-                newDark.addEventListener("touchstart", function(e) { e.preventDefault();
-                    e.stopPropagation();
-                    toggleNightMode(); }, { passive: false });
-            }
-
-            const abaIcon = document.getElementById("abaIconInline");
-            if (abaIcon) {
-                const newAba = abaIcon.cloneNode(true);
-                abaIcon.parentNode.replaceChild(newAba, abaIcon);
-                newAba.addEventListener("click", async function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const overlay = document.getElementById("qrPopupOverlay");
-                    if (overlay) overlay.style.display = "flex";
-                });
-                newAba.addEventListener("touchstart", async function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const overlay = document.getElementById("qrPopupOverlay");
-                    if (overlay) overlay.style.display = "flex";
-                }, { passive: false });
-            }
-
-            // Recycle Bin button handler
-            const rbBtn = document.getElementById('recycleBinBtn');
-            if (rbBtn) {
-                rbBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    showRecycleBinModal(false);
-                });
-                // Long press on recycle bin button: delete all
-                let holdTimer = null;
-                let isLongPress = false;
-                let longPressHandled = false;
-                let pointerMoved = false;
-                let pointerDownTime = 0;
-
-                const startHold = function(e) {
-                    isLongPress = false;
-                    longPressHandled = false;
-                    pointerMoved = false;
-                    pointerDownTime = Date.now();
-
-                    if (holdTimer) {
-                        clearTimeout(holdTimer);
-                        holdTimer = null;
-                    }
-
-                    holdTimer = setTimeout(async () => {
-                        if (!pointerMoved) {
-                            isLongPress = true;
-                            longPressHandled = true;
-                            const count = softDeletedIndices.size;
-                            if (count === 0) {
-                                showToast("Recycle bin is empty");
-                                return;
-                            }
-                            if (!confirm(
-                                    `⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`
-                                    )) return;
-
-                            const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-                            let successCount = 0,
-                                failCount = 0;
-                            for (const idx of indices) {
-                                if (!softDeletedIndices.has(idx)) continue;
-                                const result = await permanentlyDeleteSoftDeleted(idx);
-                                if (result) { successCount++; } else { failCount++; }
-                                await new Promise(resolve => setTimeout(resolve, 100));
-                            }
-                            renderSidebarUI();
-                            updateRecycleBinBadge();
-                            if (vocabList.length === 0) {
-                                updateChineseDisplay("");
-                                document.getElementById("khmerWord").innerText = "";
-                            } else {
-                                const nextIdx = findNextAvailableIndex(0);
-                                if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-                            }
-                            saveAllData();
-                            showToast(
-                                `🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`
-                                );
-                            updateRecycleBinCountInModals();
-                            setTimeout(() => { longPressHandled = false; }, 300);
-                        }
-                        holdTimer = null;
-                    }, 500);
-                };
-
-                const endHold = function(e) {
-                    if (holdTimer) {
-                        clearTimeout(holdTimer);
-                        holdTimer = null;
-                    }
-                    setTimeout(() => {
-                        if (isLongPress) {
-                            isLongPress = false;
-                        }
-                    }, 100);
-                };
-
-                const handleClick = function(e) {
-                    if (longPressHandled) {
-                        e.preventDefault();
-                        e.stopPropagation();
+            holdTimer = setTimeout(async () => {
+                if (!pointerMoved) {
+                    isLongPress = true;
+                    longPressHandled = true;
+                    const count = softDeletedIndices.size;
+                    if (count === 0) {
+                        showToast("Recycle bin is empty");
                         return;
                     }
-                    if (isLongPress) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        return;
+                    if (!confirm(
+                            `⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`
+                            )) return;
+
+                    const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
+                    let successCount = 0,
+                        failCount = 0;
+                    for (const idx of indices) {
+                        if (!softDeletedIndices.has(idx)) continue;
+                        const result = await permanentlyDeleteSoftDeleted(idx);
+                        if (result) { successCount++; } else { failCount++; }
+                        await new Promise(resolve => setTimeout(resolve, 100));
                     }
-                    e.stopPropagation();
-                    showRecycleBinModal(false);
-                };
-
-                rbBtn.addEventListener('pointerdown', function(e) {
-                    startHold(e);
-                });
-                rbBtn.addEventListener('pointerup', function(e) {
-                    endHold(e);
-                });
-                rbBtn.addEventListener('pointercancel', function(e) {
-                    if (holdTimer) {
-                        clearTimeout(holdTimer);
-                        holdTimer = null;
+                    renderSidebarUI();
+                    updateRecycleBinBadge();
+                    if (vocabList.length === 0) {
+                        updateChineseDisplay("");
+                        document.getElementById("khmerWord").innerText = "";
+                    } else {
+                        const nextIdx = findNextAvailableIndex(0);
+                        if (nextIdx !== -1) loadWordByMode(nextIdx, true);
                     }
-                    isLongPress = false;
-                    longPressHandled = false;
-                });
-                rbBtn.addEventListener('pointermove', function(e) {
-                    pointerMoved = true;
-                });
-                rbBtn.addEventListener('click', handleClick);
-            }
-
-            if (!sidebarVisible) document.getElementById("sidebarControlsContainer")?.classList.add(
-                "sidebar-controls-hidden");
-
-            const topSec = document.getElementById("topPinyinSection");
-            const topToggle = document.getElementById("toggleTopPinyinSectionBtn");
-            const bottomSec = document.getElementById("bottomSection");
-            const bottomToggle = document.getElementById("toggleBottomSectionBtn");
-            const topHidden = safeGetItem("topPinyinSectionHidden", "false") === "true";
-            const bottomHidden = safeGetItem("bottomSectionHidden", "false") === "true";
-
-            if (topHidden) {
-                topSec.classList.add("hidden");
-                topToggle.innerText = "🫣";
-                topPinyinVisible = false;
-            } else {
-                topPinyinVisible = true;
-                topToggle.innerText = "😱";
-            }
-            if (bottomHidden) {
-                bottomSec.classList.add("hidden");
-                bottomToggle.innerText = "🫣";
-                bottomCharVisible = false;
-            } else {
-                bottomCharVisible = true;
-                bottomToggle.innerText = "😱";
-            }
-            applyTextVisibility();
-
-            topToggle.addEventListener("click", () => {
-                topSec.classList.toggle("hidden");
-                const hidden = topSec.classList.contains("hidden");
-                topToggle.innerText = hidden ? "🫣" : "😱";
-                topPinyinVisible = !hidden;
-                applyTextVisibility();
-                safeSetItem("topPinyinSectionHidden", hidden);
-                saveAllData();
-            });
-
-            bottomToggle.addEventListener("click", () => {
-                bottomSec.classList.toggle("hidden");
-                const hidden = bottomSec.classList.contains("hidden");
-                bottomToggle.innerText = hidden ? "🫣" : "😱";
-                bottomCharVisible = !hidden;
-                applyTextVisibility();
-                safeSetItem("bottomSectionHidden", hidden);
-                saveAllData();
-            });
-
-            document.getElementById("sVocabSpacing").addEventListener("input", function() {
-                const val = this.value;
-                document.getElementById("vocabSpacingVal").innerText = val + "px";
-                document.body.style.setProperty("--vocab-spacing", val + "px");
-                saveAllData();
-            });
-            document.getElementById("autoDelay").addEventListener("input", applyStyles);
-            document.getElementById("zhReps").addEventListener("input", applyStyles);
-            document.getElementById("kmReps").addEventListener("input", applyStyles);
-            document.getElementById("mZhSize").addEventListener("input", function() { setChineseFontSize(
-                    parseFloat(this.value));
-                saveAllData(); });
-            document.getElementById("mKmSize").addEventListener("input", function() { setKhmerFontSize(
-                    parseFloat(this.value));
-                saveAllData(); });
-            document.getElementById("mZhColor").addEventListener("input", applyStyles);
-            document.getElementById("mKmColor").addEventListener("input", applyStyles);
-            document.getElementById("shadowSlider").addEventListener("input", function() { applyShadow();
-                saveAllData(); });
-            document.getElementById("sZhSize").addEventListener("input", applyStyles);
-            document.getElementById("sKmSize").addEventListener("input", applyStyles);
-            document.getElementById("sZhColor").addEventListener("input", applyStyles);
-            document.getElementById("sKmColor").addEventListener("input", applyStyles);
-            document.getElementById("mZhFont").addEventListener("change", function() { applyChineseMainStyle();
-                saveAllData(); });
-            document.getElementById("mKmFont").addEventListener("change", applyStyles);
-            document.getElementById("sZhFont").addEventListener("change", applyStyles);
-            document.getElementById("sKmFont").addEventListener("change", applyStyles);
-            document.getElementById("zhRateSlider").addEventListener("input", function() { applyRateDisplay();
-                saveAllData(); });
-            document.getElementById("pinyinFont").addEventListener("change", applyPinyinStyles);
-            document.getElementById("pinyinColor").addEventListener("input", applyPinyinStyles);
-            document.getElementById("pinyinSizePx").addEventListener("input", function() { applyPinyinStyles();
-                saveAllData(); });
-            document.getElementById("pinyinSpacing").addEventListener("input", applyPinyinStyles);
-            document.getElementById("bottomFont").addEventListener("change", applyBottomStyles);
-            document.getElementById("bottomCharColor").addEventListener("input", applyBottomStyles);
-            document.getElementById("bottomSizePx").addEventListener("input", function() {
-                userSetBottomFontSize = parseInt(this.value);
-                document.getElementById("bottomSizeVal").innerText = userSetBottomFontSize + "px";
-                applyBottomAutoScale();
-                saveAllData();
-            });
-
-            if (vocabList.length) updateDisplay();
-            setTimeout(() => {
-                loadAllDragPositions();
-                forceShrink();
-                applyBottomAutoScale();
-            }, 100);
-
-            document.getElementById("insertDataBtn").onclick = () => { showLoadVocabularyModal(); };
-
-            // ----- KEYBOARD SHORTCUTS -----
-            document.addEventListener('keydown', function(e) {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-                    e.preventDefault();
-                    requestAddNewVocab();
+                    saveAllData();
+                    showToast(
+                        `🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`
+                        );
+                    updateRecycleBinCountInModals();
+                    setTimeout(() => { longPressHandled = false; }, 300);
                 }
-                if (e.key === 'Escape') {
-                    const modals = document.querySelectorAll('.modal-overlay');
-                    if (modals.length) {
-                        modals.forEach(m => m.remove());
-                        showToast('Closed');
-                    }
-                }
-            });
-
-            updateRecycleBinBadge();
-
-            // Create group filter UI if not exists
-            createGroupFilterUI();
+                holdTimer = null;
+            }, 500);
         };
+
+        const endHold = function(e) {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            setTimeout(() => {
+                if (isLongPress) {
+                    isLongPress = false;
+                }
+            }, 100);
+        };
+
+        const handleClick = function(e) {
+            if (longPressHandled) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            if (isLongPress) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            e.stopPropagation();
+            showRecycleBinModal(false);
+        };
+
+        rbBtn.addEventListener('pointerdown', function(e) {
+            startHold(e);
+        });
+        rbBtn.addEventListener('pointerup', function(e) {
+            endHold(e);
+        });
+        rbBtn.addEventListener('pointercancel', function(e) {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            isLongPress = false;
+            longPressHandled = false;
+        });
+        rbBtn.addEventListener('pointermove', function(e) {
+            pointerMoved = true;
+        });
+        rbBtn.addEventListener('click', handleClick);
+    }
+
+    if (!sidebarVisible) document.getElementById("sidebarControlsContainer")?.classList.add(
+        "sidebar-controls-hidden");
+
+    const topSec = document.getElementById("topPinyinSection");
+    const topToggle = document.getElementById("toggleTopPinyinSectionBtn");
+    const bottomSec = document.getElementById("bottomSection");
+    const bottomToggle = document.getElementById("toggleBottomSectionBtn");
+    const topHidden = safeGetItem("topPinyinSectionHidden", "false") === "true";
+    const bottomHidden = safeGetItem("bottomSectionHidden", "false") === "true";
+
+    if (topHidden) {
+        topSec.classList.add("hidden");
+        topToggle.innerText = "🫣";
+        topPinyinVisible = false;
+    } else {
+        topPinyinVisible = true;
+        topToggle.innerText = "😱";
+    }
+    if (bottomHidden) {
+        bottomSec.classList.add("hidden");
+        bottomToggle.innerText = "🫣";
+        bottomCharVisible = false;
+    } else {
+        bottomCharVisible = true;
+        bottomToggle.innerText = "😱";
+    }
+    applyTextVisibility();
+
+    topToggle.addEventListener("click", () => {
+        topSec.classList.toggle("hidden");
+        const hidden = topSec.classList.contains("hidden");
+        topToggle.innerText = hidden ? "🫣" : "😱";
+        topPinyinVisible = !hidden;
+        applyTextVisibility();
+        safeSetItem("topPinyinSectionHidden", hidden);
+        saveAllData();
+    });
+
+    bottomToggle.addEventListener("click", () => {
+        bottomSec.classList.toggle("hidden");
+        const hidden = bottomSec.classList.contains("hidden");
+        bottomToggle.innerText = hidden ? "🫣" : "😱";
+        bottomCharVisible = !hidden;
+        applyTextVisibility();
+        safeSetItem("bottomSectionHidden", hidden);
+        saveAllData();
+    });
+
+    document.getElementById("sVocabSpacing").addEventListener("input", function() {
+        const val = this.value;
+        document.getElementById("vocabSpacingVal").innerText = val + "px";
+        document.body.style.setProperty("--vocab-spacing", val + "px");
+        saveAllData();
+    });
+    document.getElementById("autoDelay").addEventListener("input", applyStyles);
+    document.getElementById("zhReps").addEventListener("input", applyStyles);
+    document.getElementById("kmReps").addEventListener("input", applyStyles);
+    document.getElementById("mZhSize").addEventListener("input", function() { setChineseFontSize(
+            parseFloat(this.value));
+        saveAllData(); });
+    document.getElementById("mKmSize").addEventListener("input", function() { setKhmerFontSize(
+            parseFloat(this.value));
+        saveAllData(); });
+    document.getElementById("mZhColor").addEventListener("input", applyStyles);
+    document.getElementById("mKmColor").addEventListener("input", applyStyles);
+    document.getElementById("shadowSlider").addEventListener("input", function() { applyShadow();
+        saveAllData(); });
+    document.getElementById("sZhSize").addEventListener("input", applyStyles);
+    document.getElementById("sKmSize").addEventListener("input", applyStyles);
+    document.getElementById("sZhColor").addEventListener("input", applyStyles);
+    document.getElementById("sKmColor").addEventListener("input", applyStyles);
+    document.getElementById("mZhFont").addEventListener("change", function() { applyChineseMainStyle();
+        saveAllData(); });
+    document.getElementById("mKmFont").addEventListener("change", applyStyles);
+    document.getElementById("sZhFont").addEventListener("change", applyStyles);
+    document.getElementById("sKmFont").addEventListener("change", applyStyles);
+    document.getElementById("zhRateSlider").addEventListener("input", function() { applyRateDisplay();
+        saveAllData(); });
+    document.getElementById("pinyinFont").addEventListener("change", applyPinyinStyles);
+    document.getElementById("pinyinColor").addEventListener("input", applyPinyinStyles);
+    document.getElementById("pinyinSizePx").addEventListener("input", function() { applyPinyinStyles();
+        saveAllData(); });
+    document.getElementById("pinyinSpacing").addEventListener("input", applyPinyinStyles);
+    document.getElementById("bottomFont").addEventListener("change", applyBottomStyles);
+    document.getElementById("bottomCharColor").addEventListener("input", applyBottomStyles);
+    document.getElementById("bottomSizePx").addEventListener("input", function() {
+        userSetBottomFontSize = parseInt(this.value);
+        document.getElementById("bottomSizeVal").innerText = userSetBottomFontSize + "px";
+        applyBottomAutoScale();
+        saveAllData();
+    });
+
+    if (vocabList.length) updateDisplay();
+    setTimeout(() => {
+        loadAllDragPositions();
+        forceShrink();
+        applyBottomAutoScale();
+    }, 100);
+
+    document.getElementById("insertDataBtn").onclick = () => { showLoadVocabularyModal(); };
+
+    // ----- KEYBOARD SHORTCUTS -----
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            requestAddNewVocab();
+        }
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal-overlay');
+            if (modals.length) {
+                modals.forEach(m => m.remove());
+                showToast('Closed');
+            }
+        }
+    });
+
+    updateRecycleBinBadge();
+
+    // Create group filter UI if not exists
+    createGroupFilterUI();
+};
     </script>
 </body>
 </html>
