@@ -3907,18 +3907,17 @@ window.clearAllCache = async function() {
 
         // ---- APPLY FILTER ----
         function applyGroupFilter() {
-            if (groupFilter === '__ALL__') {
-                filteredList = vocabList.map((_, idx) => idx);
-            } else {
-                filteredList = groupMap.get(groupFilter) || [];
-            }
-            // Ensure current index is valid
-            if (filteredList.length === 0) {
-                normalCurrentIdx = 0;
-                sidebarIndices = [];
-            } else if (normalCurrentIdx >= filteredList.length) {
-                normalCurrentIdx = 0;
-            }
+              if (groupFilter !== '__ALL__' && !groupMap.has(groupFilter)) {
+        groupFilter = '__ALL__';
+        safeSetItem('groupFilter', groupFilter);
+    }
+    // --- end fix ---
+
+    if (groupFilter === '__ALL__') {
+        filteredList = vocabList.map((_, idx) => idx);
+    } else {
+        filteredList = groupMap.get(groupFilter) || [];
+    }
             // Also update filteredIndices for compatibility
             filteredIndices = filteredList;
             // Rebuild sidebar indices based on filter
