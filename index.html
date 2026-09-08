@@ -9283,14 +9283,15 @@ function loadSettings() {
         } else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
             moved = true;
             isSwiping = true;
-            if (deltaX > 0) {
-                // Swipe right → next
-                historyNext();
-            } else {
-                // Swipe left → previous
-                historyPrev();
-            }
-            e.preventDefault();
+if (deltaX > 0) {
+    // Swipe right → next
+    if (appMode === "random") historyNext();
+    else goNextNormal();
+} else {
+    // Swipe left → previous
+    if (appMode === "random") historyPrev();
+    else goPrevNormal();
+}           e.preventDefault();
         }
     }, { passive: false });
 
