@@ -9235,77 +9235,70 @@ function loadSettings() {
         }
 
         function initSwipeNavigation() {
-            const area = document.getElementById("displayArea");
-            if (!area) return;
-            let startY = 0,
-                startX = 0,
-                moved = false;
+    const area = document.getElementById("displayArea");
+    if (!area) return;
+    let startY = 0, startX = 0, moved = false;
 
-            const isDraggableElement = (target) => {
-                return target.closest('.khmer-text') ||
-                    target.closest('.chinese-word') ||
-                    target.closest('.emoji-container');
-            };
+    const isDraggableElement = (target) => {
+        return target.closest('.khmer-text') ||
+            target.closest('.chinese-word') ||
+            target.closest('.emoji-container');
+    };
 
-            area.addEventListener("touchstart", function(e) {
-                if (isDraggableElement(e.target)) {
-                    startY = 0;
-                    startX = 0;
-                    moved = false;
-                    return;
-                }
-
-                const touch = e.touches[0];
-                if (window.innerHeight - touch.clientY < 80) {
-                    startY = 0;
-                    startX = 0;
-                    moved = false;
-                    return;
-                }
-                startY = touch.clientY;
-                startX = touch.clientX;
-                moved = false;
-                isSwiping = false;
-            }, { passive: true });
-
-            area.addEventListener("touchmove", function(e) {
-                if (isDraggableElement(e.target)) {
-                    return;
-                }
-                if (!startY) return;
-                const touch = e.touches[0];
-                const deltaY = touch.clientY - startY;
-                const deltaX = touch.clientX - startX;
-                if (Math.abs(deltaY) > 30 && !moved) {
-                    moved = true;
-                    isSwiping = true;
-                    if (deltaY > 0) {
-                        if (appMode === "random") historyNext();
-                        else goNextNormal();
-                    } else {
-                        if (appMode === "random") historyPrev();
-                        else goPrevNormal();
-                    }
-                    e.preventDefault();
-                } else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
-                    moved = true;
-                    isSwiping = true;
-                    if (deltaX > 0) {
-                        moveSidebarFocus(1);
-                    } else {
-                        moveSidebarFocus(-1);
-                    }
-                    e.preventDefault();
-                }
-            }, { passive: false });
-
-            area.addEventListener("touchend", function() {
-                startY = 0;
-                startX = 0;
-                moved = false;
-                setTimeout(() => { isSwiping = false; }, 100);
-            });
+    area.addEventListener("touchstart", function(e) {
+        if (isDraggableElement(e.target)) {
+            startY = 0; startX = 0; moved = false;
+            return;
         }
+        const touch = e.touches[0];
+        if (window.innerHeight - touch.clientY < 80) {
+            startY = 0; startX = 0; moved = false;
+            return;
+        }
+        startY = touch.clientY;
+        startX = touch.clientX;
+        moved = false;
+        isSwiping = false;
+    }, { passive: true });
+
+    area.addEventListener("touchmove", function(e) {
+        if (isDraggableElement(e.target)) {
+            return;
+        }
+        if (!startY) return;
+        const touch = e.touches[0];
+        const deltaY = touch.clientY - startY;
+        const deltaX = touch.clientX - startX;
+        if (Math.abs(deltaY) > 30 && !moved) {
+            moved = true;
+            isSwiping = true;
+            if (deltaY > 0) {
+                if (appMode === "random") historyNext();
+                else goNextNormal();
+            } else {
+                if (appMode === "random") historyPrev();
+                else goPrevNormal();
+            }
+            e.preventDefault();
+        } else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
+            moved = true;
+            isSwiping = true;
+            if (deltaX > 0) {
+                // Swipe right → next
+                historyNext();
+            } else {
+                // Swipe left → previous
+                historyPrev();
+            }
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    area.addEventListener("touchend", function() {
+        startY = 0; startX = 0; moved = false;
+        setTimeout(() => { isSwiping = false; }, 100);
+    });
+}
 
         function addLog(e, t = !1) { console.log(e), t && showToast(`⚠️ ${e.substring(0,80)}`) }
         let longPressTriggered = !1;
