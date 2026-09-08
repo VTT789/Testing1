@@ -4100,7 +4100,7 @@ window.clearAllCache = async function() {
             }
         }
 
-        async function callApi(e, t) {
+       async function callApi(e, t) {
     if (!editUnlocked) return showPasswordModal((async n => { n && await callApi(e, t) })), !1;
     if (!detectedApiUrl || !detectedApiUrl.startsWith("http")) return showToast("❌ No valid API URL found."),
         !1;
@@ -4109,14 +4109,18 @@ window.clearAllCache = async function() {
         sheetId: currentSheetId,
         sheetName: "Sheet1" };
     try {
+        console.log('📤 API Request:', n);
         const e = await fetch(detectedApiUrl, {
             method: "POST",
             headers: { "Content-Type": "text/plain" },
             body: JSON.stringify(n)
         });
         const o = await e.text();
+        console.log('📥 API Response:', o);
         let i = o;
-        try { i = JSON.parse(o) } catch (e) {}
+        try { i = JSON.parse(o) } catch (e) {
+            console.warn('Response not JSON:', o);
+        }
         if (e.ok && "success" === i.result) {
             showToast(`✅ ${t} successful`);
             return !0;
@@ -4180,6 +4184,36 @@ window.clearAllCache = async function() {
             return await callApi({ action: "delete", row: e - 1 }, "DELETE");
         }
 
+
+// ===== DELETE MULTIPLE VOCAB - FIXED =====
+async function deleteMultipleVocab(rows) {
+    if (!editUnlocked) {
+        return new Promise((resolve, reject) => {
+            showPasswordModal(async (n) => {
+                if (n) {
+                    try { const res = await deleteMultipleVocab(rows);
+                        resolve(res); } catch (err) { reject(err); }
+                } else reject(new Error('Password required'));
+            });
+        });
+    }
+    if (!rows || !Array.isArray(rows) || rows.length === 0) {
+        showToast("❌ No rows to delete");
+        throw new Error('No rows to delete');
+    }
+    
+    // Convert to 0-based indices for the API
+    const zeroBasedRows = rows.map(row => row - 1);
+    
+    console.log('📤 Deleting rows (1-based):', rows);
+    console.log('📤 Deleting rows (0-based):', zeroBasedRows);
+    
+    return await callApi({ 
+        action: "deleteMultiple", 
+        rows: zeroBasedRows 
+    }, "DELETE MULTIPLE");
+}
+// ===== END OF ADDED FUNCTION =====
         function scrollToSidebarItem() { setTimeout((() => { const e = document.querySelector(".vocab-item.active");
                 e && e.scrollIntoView({ behavior: "smooth", block: "center" }) }), 100) }
 
@@ -5046,67 +5080,65 @@ window.clearAllCache = async function() {
 
         // ---- Batch permanent delete WITHOUT individual item confirmations ----
         async function permanentlyDeleteSoftDeleted(idx) {
-            if (!softDeletedIndices.has(idx)) {
-                showToast("⚠️ Not in recycle bin");
-                return false;
-            }
-            const item = vocabList[idx];
-            if (!item) return false;
-            const rowToDelete = item.sheetRow;
+    if (!softDeletedIndices.has(idx)) {
+        showToast("⚠️ Not in recycle bin");
+        return false;
+    }
+    const item = vocabList[idx];
+    if (!item) return false;
+    const rowToDelete = item.sheetRow;
 
-            try {
-                // Step 1: Delete from Google Sheet (this updates the sheet)
-                await deleteVocabByRow(rowToDelete);
+    try {
+        // Step 1: Delete from Google Sheet
+        await deleteVocabByRow(rowToDelete);
 
-                // Step 2: Remove from vocabList FIRST (before updating sheetRow values)
-                vocabList.splice(idx, 1);
+        // Step 2: Remove from vocabList
+        vocabList.splice(idx, 1);
+        
+        // Step 3: Remove from soft-deleted collections
+        softDeletedIndices.delete(idx);
+        softDeletedData.delete(idx);
 
-                // Step 3: Remove from soft-deleted collections
-                softDeletedIndices.delete(idx);
-                softDeletedData.delete(idx);
-
-                // Step 4: Update sheetRow for all remaining items
-                // IMPORTANT: We must update BOTH the vocabList and softDeletedData
-                // After splice, the indices changed, so we need to rebuild the mapping
-
-                // Update vocabList sheetRow values - subtract 1 from any row > rowToDelete
-                for (let i = 0; i < vocabList.length; i++) {
-                    if (vocabList[i].sheetRow > rowToDelete) {
-                        vocabList[i].sheetRow--;
-                    }
-                }
-
-                // Update softDeletedData sheetRow values
-                const newSoftData = new Map();
-                for (let [k, v] of softDeletedData) {
-                    if (v.sheetRow > rowToDelete) {
-                        v.sheetRow--;
-                    }
-                    // Key is the index in the ORIGINAL vocabList
-                    // Since we spliced at idx, all keys >= idx need to shift down by 1
-                    const newKey = k > idx ? k - 1 : k;
-                    newSoftData.set(newKey, v);
-                }
-                softDeletedData = newSoftData;
-
-                // Update softDeletedIndices set
-                const newSoftIndices = new Set();
-                for (let k of softDeletedIndices) {
-                    const newKey = k > idx ? k - 1 : k;
-                    newSoftIndices.add(newKey);
-                }
-                softDeletedIndices = newSoftIndices;
-
-                // Remove any pending deletion flag
-                pendingDeletions.delete(idx);
-
-                return true;
-            } catch (err) {
-                console.warn("Delete failed for row", rowToDelete, err);
-                showToast(`❌ Delete failed: ${err.message || 'Network error'}`);
-                return false;
+        // Step 4: Update sheetRow for remaining items
+        for (let i = 0; i < vocabList.length; i++) {
+            if (vocabList[i].sheetRow > rowToDelete) {
+                vocabList[i].sheetRow--;
             }
         }
+
+        // Step 5: Update softDeletedData keys
+        const newSoftData = new Map();
+        for (let [k, v] of softDeletedData) {
+            if (v.sheetRow > rowToDelete) {
+                v.sheetRow--;
+            }
+            const newKey = k > idx ? k - 1 : k;
+            newSoftData.set(newKey, v);
+        }
+        softDeletedData.clear();
+        for (let [k, v] of newSoftData) {
+            softDeletedData.set(k, v);
+        }
+
+        // Step 6: Update softDeletedIndices
+        const newSoftIndices = new Set();
+        for (let k of softDeletedIndices) {
+            const newKey = k > idx ? k - 1 : k;
+            newSoftIndices.add(newKey);
+        }
+        softDeletedIndices.clear();
+        for (let k of newSoftIndices) {
+            softDeletedIndices.add(k);
+        }
+
+        pendingDeletions.delete(idx);
+        return true;
+    } catch (err) {
+        console.warn("Delete failed for row", rowToDelete, err);
+        showToast(`❌ Delete failed: ${err.message || 'Network error'}`);
+        return false;
+    }
+}
 
         async function retryFailedDeletion(idx) {
             if (!softDeletedIndices.has(idx)) {
@@ -5162,38 +5194,138 @@ window.clearAllCache = async function() {
             }
         }
 
-        // ---- NEW: permanently delete all soft-deleted items (without closing any modal) ----
-        async function permanentlyDeleteAllSoftDeleted() {
-            const count = softDeletedIndices.size;
-            if (count === 0) {
-                showToast("Recycle bin is empty");
-                return;
-            }
-            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
+     async function permanentlyDeleteAllSoftDeletedAndClose() {
+    const count = softDeletedIndices.size;
+    if (count === 0) {
+        showToast("Recycle bin is empty");
+        return;
+    }
+    if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
-            const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-            let successCount = 0,
-                failCount = 0;
-            for (const idx of indices) {
-                if (!softDeletedIndices.has(idx)) continue;
-                const result = await permanentlyDeleteSoftDeleted(idx);
-                if (result) { successCount++; } else { failCount++;
-                    softDeletedIndices.delete(idx);
-                    softDeletedData.delete(idx); }
-            }
-            renderSidebarUI();
-            updateRecycleBinBadge();
-            if (vocabList.length === 0) {
-                updateChineseDisplay("");
-                document.getElementById("khmerWord").innerText = "";
-            } else {
-                const nextIdx = findNextAvailableIndex(0);
-                if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-            }
-            saveAllData();
-            showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
-            updateRecycleBinCountInModals();
+    // ===== STEP 1: Get all data BEFORE modifying =====
+    const indicesToDelete = Array.from(softDeletedIndices);
+    const rowsToDelete = [];
+    const itemsToRemove = [];
+    
+    for (const idx of indicesToDelete) {
+        const item = vocabList[idx];
+        if (item && item.sheetRow) {
+            rowsToDelete.push(item.sheetRow);
+            itemsToRemove.push(idx);
         }
+    }
+    
+    if (rowsToDelete.length === 0) {
+        showToast("No valid rows to delete");
+        return;
+    }
+    
+    // ===== STEP 2: Remove ALL items from vocabList at once =====
+    const newVocabList = [];
+    const deletedSet = new Set(itemsToRemove);
+    
+    for (let i = 0; i < vocabList.length; i++) {
+        if (!deletedSet.has(i)) {
+            newVocabList.push(vocabList[i]);
+        }
+    }
+    
+    // ===== STEP 3: Update sheetRow values =====
+    for (let i = 0; i < newVocabList.length; i++) {
+        const row = newVocabList[i].sheetRow;
+        let shiftCount = 0;
+        for (const delRow of rowsToDelete) {
+            if (delRow < row) shiftCount++;
+        }
+        newVocabList[i].sheetRow = row - shiftCount;
+    }
+    
+    // ===== STEP 4: Replace vocabList =====
+    vocabList.length = 0;
+    for (const item of newVocabList) {
+        vocabList.push(item);
+    }
+    
+    // ===== STEP 5: Clear ALL soft-deleted data at once =====
+    softDeletedIndices.clear();
+    softDeletedData.clear();
+    
+    // ===== STEP 6: IMMEDIATELY REFRESH UI =====
+    renderSidebarUI();
+    updateRecycleBinBadge();
+    
+    // ===== STEP 7: Update vocabSearchResults IMMEDIATELY (NO WAITING) =====
+    // Update Add modal search results
+    const addInput = document.getElementById('addChineseInput');
+    if (addInput && window.addModalPerformSearch) {
+        // Use setTimeout to ensure it runs after render
+        setTimeout(() => {
+            window.addModalPerformSearch(addInput.value);
+        }, 10);
+    }
+    
+    // Update Edit modal search results
+    const editInput = document.getElementById('editChineseInput');
+    if (editInput && window.editModalPerformSearch) {
+        setTimeout(() => {
+            window.editModalPerformSearch(editInput.value);
+        }, 10);
+    }
+    
+    // Update the current display
+    if (vocabList.length === 0) {
+        updateChineseDisplay("");
+        document.getElementById("khmerWord").innerText = "";
+    } else {
+        const nextIdx = 0;
+        if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+    }
+    
+    // ===== STEP 8: Close the recycle bin modal =====
+    const rbModal = document.querySelector('.modal-overlay[data-is-recycle-bin="true"]');
+    if (rbModal) rbModal.remove();
+    updateRecycleBinCountInModals();
+    
+    // ===== STEP 9: Show success message ONLY ONCE =====
+    const deletedCount = itemsToRemove.length;
+    showToast(`✅ Successfully deleted ${deletedCount} items from sheet`);
+    
+    // ===== STEP 10: SEND API REQUEST IN BACKGROUND (completely silent) =====
+    // Use a flag to prevent any toasts from the API call
+    const originalShowToast = showToast;
+    let toastSuppressed = false;
+    
+    try {
+        // Temporarily override showToast to suppress API messages
+        const suppressToast = function(msg) {
+            // Only show errors, but don't show success messages
+            if (msg.includes('failed') || msg.includes('error') || msg.includes('Error')) {
+                originalShowToast(msg);
+            }
+            // Suppress all other messages (including success)
+        };
+        
+        // Replace showToast temporarily
+        window.showToast = suppressToast;
+        
+        await deleteMultipleVocab(rowsToDelete);
+        
+        // Restore original showToast
+        window.showToast = originalShowToast;
+        
+        console.log(`✅ Background delete completed for ${rowsToDelete.length} rows`);
+    } catch (err) {
+        // Restore original showToast
+        window.showToast = originalShowToast;
+        // Only show error if it's a real error
+        if (err.message && !err.message.includes('success')) {
+            showToast(`⚠️ Background sync failed: ${err.message}`);
+        }
+        console.error("Background delete API error:", err);
+    }
+    
+    saveAllData();
+}
 
         // ---- Batch actions (kept for recycle bin modal) ----
         async function restoreAllSoftDeletedAndClose() {
@@ -5226,36 +5358,96 @@ window.clearAllCache = async function() {
             if (rbModal) rbModal.remove();
         }
 
-        async function permanentlyDeleteAllSoftDeletedAndClose() {
-            const count = softDeletedIndices.size;
-            if (count === 0) {
-                showToast("Recycle bin is empty");
-                return;
-            }
-            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
+       async function permanentlyDeleteAllSoftDeletedAndClose() {
+    const count = softDeletedIndices.size;
+    if (count === 0) {
+        showToast("Recycle bin is empty");
+        return;
+    }
+    if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
-            const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-            let successCount = 0,
-                failCount = 0;
-
-            for (const idx of indices) {
-                if (!softDeletedIndices.has(idx)) continue;
-                showToast(`⏳ Deleting #${getDisplayNumberFromArrayIndex(idx)}...`);
-
-                const result = await permanentlyDeleteSoftDeleted(idx);
-                if (result) {
-                    successCount++;
-                } else {
-                    failCount++;
+    // Get all soft-deleted indices and their sheet rows
+    const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
+    
+    // Collect all sheet rows to delete
+    const rowsToDelete = [];
+    const validIndices = [];
+    
+    for (const idx of indices) {
+        if (!softDeletedIndices.has(idx)) continue;
+        const item = vocabList[idx];
+        if (item && item.sheetRow) {
+            rowsToDelete.push(item.sheetRow);
+            validIndices.push(idx);
+        }
+    }
+    
+    if (rowsToDelete.length === 0) {
+        showToast("No valid rows to delete");
+        return;
+    }
+    
+    // Show progress
+    showToast(`⏳ Deleting ${rowsToDelete.length} rows from sheet...`);
+    
+    try {
+        // Use deleteMultiple API to delete all rows at once
+        const result = await deleteMultipleVocab(rowsToDelete);
+        
+        if (result) {
+            // Remove from local data
+            let deletedCount = 0;
+            let failCount = 0;
+            
+            // Sort indices descending for safe removal
+            const sortedIndices = validIndices.sort((a, b) => b - a);
+            
+            for (const idx of sortedIndices) {
+                if (softDeletedIndices.has(idx)) {
+                    // Remove from vocabList
+                    vocabList.splice(idx, 1);
                     softDeletedIndices.delete(idx);
                     softDeletedData.delete(idx);
+                    deletedCount++;
                 }
-                await new Promise(resolve => setTimeout(resolve, 100));
             }
-
+            
+            // Update sheetRow values for remaining items
+            for (let i = 0; i < vocabList.length; i++) {
+                const row = vocabList[i].sheetRow;
+                // Count how many deleted rows were before this one
+                let shiftCount = 0;
+                for (const delRow of rowsToDelete) {
+                    if (delRow < row) shiftCount++;
+                }
+                if (shiftCount > 0) {
+                    vocabList[i].sheetRow = row - shiftCount;
+                }
+            }
+            
+            // Update softDeletedData and indices
+            const newSoftData = new Map();
+            for (let [k, v] of softDeletedData) {
+                let shiftCount = 0;
+                for (const delRow of rowsToDelete) {
+                    if (delRow < v.sheetRow) shiftCount++;
+                }
+                const newKey = k - validIndices.filter(idx => idx < k).length;
+                v.sheetRow = v.sheetRow - shiftCount;
+                newSoftData.set(newKey, v);
+            }
+            softDeletedData = newSoftData;
+            
+            const newSoftIndices = new Set();
+            for (let k of softDeletedIndices) {
+                const shift = validIndices.filter(idx => idx < k).length;
+                newSoftIndices.add(k - shift);
+            }
+            softDeletedIndices = newSoftIndices;
+            
             renderSidebarUI();
             updateRecycleBinBadge();
-
+            
             if (vocabList.length === 0) {
                 updateChineseDisplay("");
                 document.getElementById("khmerWord").innerText = "";
@@ -5263,14 +5455,22 @@ window.clearAllCache = async function() {
                 const nextIdx = findNextAvailableIndex(0);
                 if (nextIdx !== -1) loadWordByMode(nextIdx, true);
             }
-
+            
             saveAllData();
-            showToast(`🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`);
-
-            const rbModal = document.querySelector('.modal-overlay[data-is-recycle-bin="true"]');
-            if (rbModal) rbModal.remove();
-            updateRecycleBinCountInModals();
+            showToast(`🗑️ Permanently deleted ${deletedCount} items from sheet`);
+        } else {
+            showToast("❌ Failed to delete rows from sheet");
         }
+        
+    } catch (err) {
+        showToast(`❌ Error: ${err.message || 'Network error'}`);
+        console.error("Delete all error:", err);
+    }
+    
+    const rbModal = document.querySelector('.modal-overlay[data-is-recycle-bin="true"]');
+    if (rbModal) rbModal.remove();
+    updateRecycleBinCountInModals();
+}
 
         function updateRecycleBinBadge() {
             const badge = document.getElementById('rbCountBadge');
@@ -5298,63 +5498,92 @@ window.clearAllCache = async function() {
 
         // ---- Show Recycle Bin Modal ----
         function showRecycleBinModal(keepParentModal = false) {
-            const overlay = document.createElement("div");
-            overlay.className = "modal-overlay";
-            const hasItems = softDeletedIndices.size > 0;
-            overlay.innerHTML = `
-                <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%; position:relative;">
-                    <h3>🗑️ Recycle Bin <span class="recycle-bin-count" style="font-size:1.2rem;">${softDeletedIndices.size}</span></h3>
-                    <div id="recycleBinList" style="max-height:400px; overflow-y:auto; margin:16px 0; text-align:left;">
-                        ${renderRecycleBinItems()}
-                    </div>
-                    <div id="recycleBinActions" class="rb-batch-actions" style="display:${hasItems ? 'flex' : 'none'};">
-                        <button id="restoreAllBtn" class="rb-restore-all">↩️ Restore All</button>
-                        <button id="deleteAllBtn" class="rb-delete-all">🗑️ Delete All</button>
-                    </div>
-                    <button class="choice-cancel" id="closeRecycleBinBtn">✕ Close</button>
-                </div>
-            `;
-            document.body.appendChild(overlay);
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    const hasItems = softDeletedIndices.size > 0;
+    overlay.innerHTML = `
+        <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%; position:relative;">
+            <h3>🗑️ Recycle Bin <span class="recycle-bin-count" style="font-size:1.2rem;">${softDeletedIndices.size}</span></h3>
+            <div id="recycleBinList" style="max-height:400px; overflow-y:auto; margin:16px 0; text-align:left;">
+                ${renderRecycleBinItems()}
+            </div>
+            <div id="recycleBinActions" class="rb-batch-actions" style="display:${hasItems ? 'flex' : 'none'};">
+                <button id="restoreAllBtn" class="rb-restore-all">↩️ Restore All</button>
+                <button id="deleteAllBtn" class="rb-delete-all">🗑️ Delete All</button>
+            </div>
+            <button class="choice-cancel" id="closeRecycleBinBtn">✕ Close</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
 
-            if (keepParentModal) {
-                overlay._keepParent = true;
+    if (keepParentModal) {
+        overlay._keepParent = true;
+    }
+
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            if (overlay._keepParent) {
+                overlay.remove();
+            } else {
+                overlay.remove();
             }
+        }
+    };
 
-            overlay.onclick = (e) => {
-                if (e.target === overlay) {
-                    if (overlay._keepParent) {
-                        overlay.remove();
-                    } else {
-                        overlay.remove();
+    const closeBtn = overlay.querySelector("#closeRecycleBinBtn");
+    closeBtn.onclick = () => {
+        if (overlay._keepParent) {
+            overlay.remove();
+        } else {
+            overlay.remove();
+        }
+    };
+
+    const list = overlay.querySelector("#recycleBinList");
+    if (list) {
+        list.addEventListener('click', function(e) {
+            const restoreBtn = e.target.closest('.rb-restore');
+            const deleteBtn = e.target.closest('.rb-permadel');
+            const retryBtn = e.target.closest('.rb-retry');
+
+            if (restoreBtn) {
+                e.stopPropagation();
+                const idx = parseInt(restoreBtn.dataset.idx);
+                if (!isNaN(idx)) {
+                    restoreSoftDeleted(idx);
+                    list.innerHTML = renderRecycleBinItems();
+                    updateRecycleBinBadge();
+                    const actions = overlay.querySelector("#recycleBinActions");
+                    if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+                    if (softDeletedIndices.size === 0) {
+                        if (overlay._keepParent) {
+                            overlay.remove();
+                        } else {
+                            setTimeout(() => overlay.remove(), 600);
+                        }
                     }
                 }
-            };
+            }
 
-            const closeBtn = overlay.querySelector("#closeRecycleBinBtn");
-            closeBtn.onclick = () => {
-                if (overlay._keepParent) {
-                    overlay.remove();
-                } else {
-                    overlay.remove();
-                }
-            };
+            if (deleteBtn) {
+                e.stopPropagation();
+                const idx = parseInt(deleteBtn.dataset.idx);
+                if (!isNaN(idx)) {
+                    if (softDeletedIndices.has(idx)) {
+                        const item = vocabList[idx];
+                        if (item && !confirm(`⚠️ Permanently delete Display #${getDisplayNumberFromArrayIndex(idx)} (${item.chinese || item.khmer}) from sheet?`))
+                            return;
+                    }
+                    deleteBtn.textContent = '⏳';
+                    deleteBtn.style.opacity = '0.6';
 
-            const list = overlay.querySelector("#recycleBinList");
-            if (list) {
-                list.addEventListener('click', function(e) {
-                    const restoreBtn = e.target.closest('.rb-restore');
-                    const deleteBtn = e.target.closest('.rb-permadel');
-                    const retryBtn = e.target.closest('.rb-retry');
-
-                    if (restoreBtn) {
-                        e.stopPropagation();
-                        const idx = parseInt(restoreBtn.dataset.idx);
-                        if (!isNaN(idx)) {
-                            restoreSoftDeleted(idx);
+                    permanentlyDeleteSoftDeleted(idx).then((result) => {
+                        if (result) {
                             list.innerHTML = renderRecycleBinItems();
                             updateRecycleBinBadge();
                             const actions = overlay.querySelector("#recycleBinActions");
-                            if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
+                            if (actions) actions.style.display = softDeletedIndices.size > 0 ?
+                                'flex' : 'none';
                             if (softDeletedIndices.size === 0) {
                                 if (overlay._keepParent) {
                                     overlay.remove();
@@ -5362,105 +5591,76 @@ window.clearAllCache = async function() {
                                     setTimeout(() => overlay.remove(), 600);
                                 }
                             }
-                        }
-                    }
-
-                    if (deleteBtn) {
-                        e.stopPropagation();
-                        const idx = parseInt(deleteBtn.dataset.idx);
-                        if (!isNaN(idx)) {
-                            if (softDeletedIndices.has(idx)) {
-                                const item = vocabList[idx];
-                                if (item && !confirm(`⚠️ Permanently delete Display #${getDisplayNumberFromArrayIndex(idx)} (${item.chinese || item.khmer}) from sheet?`))
-                                    return;
+                        } else {
+                            const itemEl = document.getElementById(`rb-item-${idx}`);
+                            if (itemEl) {
+                                const retryBtn = itemEl.querySelector('.rb-retry');
+                                if (retryBtn) retryBtn.style.display = 'inline-block';
+                                const delBtn = itemEl.querySelector('.rb-permadel');
+                                if (delBtn) {
+                                    delBtn.textContent = '🗑️ Delete';
+                                    delBtn.style.opacity = '1';
+                                }
+                                showToast('❌ Delete failed. Tap Retry ⟳');
                             }
-                            deleteBtn.textContent = '⏳';
-                            deleteBtn.style.opacity = '0.6';
-
-                            permanentlyDeleteSoftDeleted(idx).then((result) => {
-                                if (result) {
-                                    list.innerHTML = renderRecycleBinItems();
-                                    updateRecycleBinBadge();
-                                    const actions = overlay.querySelector("#recycleBinActions");
-                                    if (actions) actions.style.display = softDeletedIndices.size > 0 ?
-                                        'flex' : 'none';
-                                    if (softDeletedIndices.size === 0) {
-                                        if (overlay._keepParent) {
-                                            overlay.remove();
-                                        } else {
-                                            setTimeout(() => overlay.remove(), 600);
-                                        }
-                                    }
-                                } else {
-                                    const itemEl = document.getElementById(`rb-item-${idx}`);
-                                    if (itemEl) {
-                                        const retryBtn = itemEl.querySelector('.rb-retry');
-                                        if (retryBtn) retryBtn.style.display = 'inline-block';
-                                        const delBtn = itemEl.querySelector('.rb-permadel');
-                                        if (delBtn) {
-                                            delBtn.textContent = '🗑️ Delete';
-                                            delBtn.style.opacity = '1';
-                                        }
-                                        showToast('❌ Delete failed. Tap Retry ⟳');
-                                    }
-                                }
-                            });
                         }
-                    }
+                    });
+                }
+            }
 
-                    if (retryBtn) {
-                        e.stopPropagation();
-                        const idx = parseInt(retryBtn.dataset.idx);
-                        if (!isNaN(idx) && softDeletedIndices.has(idx)) {
-                            retryBtn.textContent = '⏳';
-                            retryBtn.style.opacity = '0.6';
+            if (retryBtn) {
+                e.stopPropagation();
+                const idx = parseInt(retryBtn.dataset.idx);
+                if (!isNaN(idx) && softDeletedIndices.has(idx)) {
+                    retryBtn.textContent = '⏳';
+                    retryBtn.style.opacity = '0.6';
 
-                            retryFailedDeletion(idx).then((result) => {
-                                if (result) {
-                                    list.innerHTML = renderRecycleBinItems();
-                                    updateRecycleBinBadge();
-                                    const actions = overlay.querySelector("#recycleBinActions");
-                                    if (actions) actions.style.display = softDeletedIndices.size > 0 ?
-                                        'flex' : 'none';
-                                    if (softDeletedIndices.size === 0) {
-                                        if (overlay._keepParent) {
-                                            overlay.remove();
-                                        } else {
-                                            setTimeout(() => overlay.remove(), 600);
-                                        }
-                                    }
+                    retryFailedDeletion(idx).then((result) => {
+                        if (result) {
+                            list.innerHTML = renderRecycleBinItems();
+                            updateRecycleBinBadge();
+                            const actions = overlay.querySelector("#recycleBinActions");
+                            if (actions) actions.style.display = softDeletedIndices.size > 0 ?
+                                'flex' : 'none';
+                            if (softDeletedIndices.size === 0) {
+                                if (overlay._keepParent) {
+                                    overlay.remove();
                                 } else {
-                                    retryBtn.textContent = '⟳ Retry';
-                                    retryBtn.style.opacity = '1';
+                                    setTimeout(() => overlay.remove(), 600);
                                 }
-                            });
+                            }
+                        } else {
+                            retryBtn.textContent = '⟳ Retry';
+                            retryBtn.style.opacity = '1';
                         }
-                    }
-                });
+                    });
+                }
             }
+        });
+    }
 
-            const restoreAllBtn = overlay.querySelector("#restoreAllBtn");
-            if (restoreAllBtn) {
-                restoreAllBtn.addEventListener("click", async function(e) {
-                    e.stopPropagation();
-                    await restoreAllSoftDeletedAndClose();
-                    if (overlay._keepParent) {
-                        overlay.remove();
-                    }
-                });
+    const restoreAllBtn = overlay.querySelector("#restoreAllBtn");
+    if (restoreAllBtn) {
+        restoreAllBtn.addEventListener("click", async function(e) {
+            e.stopPropagation();
+            await restoreAllSoftDeletedAndClose();
+            if (overlay._keepParent) {
+                overlay.remove();
             }
+        });
+    }
 
-            const deleteAllBtn = overlay.querySelector("#deleteAllBtn");
-            if (deleteAllBtn) {
-                deleteAllBtn.addEventListener("click", async function(e) {
-                    e.stopPropagation();
-                    await permanentlyDeleteAllSoftDeletedAndClose();
-                    if (overlay._keepParent) {
-                        overlay.remove();
-                    }
-                });
-            }
-        }
+    const deleteAllBtn = overlay.querySelector("#deleteAllBtn");
+if (deleteAllBtn) {
+    deleteAllBtn.addEventListener("click", async function(e) {
+        e.stopPropagation();
+        // Close the modal immediately
+        overlay.remove();
+        // Then perform the deletion (which updates UI immediately)
+        await permanentlyDeleteAllSoftDeletedAndClose();
+    });
+}
+}
 
         function renderRecycleBinItems() {
             if (softDeletedIndices.size === 0) {
@@ -6637,51 +6837,138 @@ window.clearAllCache = async function() {
                 holdTimer = null;
             }
 
-            holdTimer = setTimeout(async () => {
-                if (!pointerMoved) {
-                    isLongPress = true;
-                    longPressHandled = true;
-                    const count = softDeletedIndices.size;
-                    if (count === 0) {
-                        showToast("Recycle bin is empty");
-                        return;
-                    }
-                    if (!confirm(
-                            `⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`
-                            )) return;
+          // Long press on recycle bin button: delete all immediately
+holdTimer = setTimeout(async () => {
+    if (!pointerMoved) {
+        isLongPress = true;
+        longPressHandled = true;
+        const count = softDeletedIndices.size;
+        if (count === 0) {
+            showToast("Recycle bin is empty");
+            return;
+        }
+        if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
-                    const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-                    let successCount = 0,
-                        failCount = 0;
-                    for (const idx of indices) {
-                        if (!softDeletedIndices.has(idx)) continue;
-                        const result = await permanentlyDeleteSoftDeleted(idx);
-                        if (result) { successCount++; } else { failCount++; }
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                    renderSidebarUI();
-                    updateRecycleBinBadge();
-                    if (vocabList.length === 0) {
-                        updateChineseDisplay("");
-                        document.getElementById("khmerWord").innerText = "";
-                    } else {
-                        const nextIdx = findNextAvailableIndex(0);
-                        if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-                    }
-                    saveAllData();
-                    showToast(
-                        `🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`
-                        );
-                    const input = document.getElementById('editChineseInput');
-                    if (input && window.editModalPerformSearch) {
-                        window.editModalPerformSearch(input.value);
-                    }
-                    const rbCount = document.getElementById('rbCountEditModal');
-                    if (rbCount) rbCount.textContent = softDeletedIndices.size;
-                    setTimeout(() => { longPressHandled = false; }, 300);
+        // Collect all sheet rows to delete
+        const rowsToDelete = [];
+        const validIndices = [];
+        for (const idx of softDeletedIndices) {
+            const item = vocabList[idx];
+            if (item && item.sheetRow) {
+                rowsToDelete.push(item.sheetRow);
+                validIndices.push(idx);
+            }
+        }
+        
+        if (rowsToDelete.length === 0) {
+            showToast("No valid rows to delete");
+            return;
+        }
+        
+        // ===== IMMEDIATE UI UPDATE =====
+        const sortedIndices = validIndices.sort((a, b) => b - a);
+        for (const idx of sortedIndices) {
+            if (softDeletedIndices.has(idx)) {
+                vocabList.splice(idx, 1);
+                softDeletedIndices.delete(idx);
+                softDeletedData.delete(idx);
+            }
+        }
+        
+        // Update sheetRow values
+        for (let i = 0; i < vocabList.length; i++) {
+            let shiftCount = 0;
+            for (const delRow of rowsToDelete) {
+                if (delRow < vocabList[i].sheetRow) shiftCount++;
+            }
+            if (shiftCount > 0) {
+                vocabList[i].sheetRow = vocabList[i].sheetRow - shiftCount;
+            }
+        }
+        
+        // Update softDeletedData
+        const newSoftData = new Map();
+        for (let [k, v] of softDeletedData) {
+            let shiftCount = 0;
+            for (const delRow of rowsToDelete) {
+                if (delRow < v.sheetRow) shiftCount++;
+            }
+            const newKey = k - validIndices.filter(idx => idx < k).length;
+            v.sheetRow = v.sheetRow - shiftCount;
+            newSoftData.set(newKey, v);
+        }
+        softDeletedData.clear();
+        for (let [k, v] of newSoftData) {
+            softDeletedData.set(k, v);
+        }
+        
+        // Update softDeletedIndices
+        const newSoftIndices = new Set();
+        for (let k of softDeletedIndices) {
+            const shift = validIndices.filter(idx => idx < k).length;
+            newSoftIndices.add(k - shift);
+        }
+        softDeletedIndices.clear();
+        for (let k of newSoftIndices) {
+            softDeletedIndices.add(k);
+        }
+        
+        // ===== IMMEDIATE UI REFRESH =====
+        renderSidebarUI();
+        updateRecycleBinBadge();
+        
+        // Update vocabSearchResults IMMEDIATELY
+        const addInput = document.getElementById('addChineseInput');
+        if (addInput && window.addModalPerformSearch) {
+            setTimeout(() => {
+                window.addModalPerformSearch(addInput.value);
+            }, 10);
+        }
+        const editInput = document.getElementById('editChineseInput');
+        if (editInput && window.editModalPerformSearch) {
+            setTimeout(() => {
+                window.editModalPerformSearch(editInput.value);
+            }, 10);
+        }
+        
+        if (vocabList.length === 0) {
+            updateChineseDisplay("");
+            document.getElementById("khmerWord").innerText = "";
+        } else {
+            const nextIdx = findNextAvailableIndex(0);
+            if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+        }
+        
+        saveAllData();
+        
+        // Show success message ONLY ONCE
+        showToast(`✅ Successfully deleted ${validIndices.length} items from sheet`);
+        
+        // ===== SEND API REQUEST IN BACKGROUND (completely silent) =====
+        const originalShowToast = showToast;
+        try {
+            // Suppress all toast messages from API
+            window.showToast = function(msg) {
+                if (msg.includes('failed') || msg.includes('error') || msg.includes('Error')) {
+                    originalShowToast(msg);
                 }
-                holdTimer = null;
-            }, 500);
+            };
+            
+            await deleteMultipleVocab(rowsToDelete);
+            window.showToast = originalShowToast;
+            console.log(`✅ Background delete completed for ${rowsToDelete.length} rows`);
+        } catch (err) {
+            window.showToast = originalShowToast;
+            if (err.message && !err.message.includes('success')) {
+                showToast(`⚠️ Background sync failed: ${err.message}`);
+            }
+            console.error("Background delete API error:", err);
+        }
+        
+        setTimeout(() => { longPressHandled = false; }, 300);
+    }
+    holdTimer = null;
+}, 500);
         };
 
         const endHold = function(e) {
@@ -6981,121 +7268,212 @@ window.clearAllCache = async function() {
         if (input) input.focus();
     }, 150);
     const rbAddBtn = document.getElementById('recycleBinAddBtn');
-    if (rbAddBtn) {
-        let holdTimer = null;
-        let isLongPress = false;
-        let longPressHandled = false;
-        let pointerDownTime = 0;
-        let pointerMoved = false;
+if (rbAddBtn) {
+    let holdTimer = null;
+    let isLongPress = false;
+    let longPressHandled = false;
+    let pointerDownTime = 0;
+    let pointerMoved = false;
 
-        const startHold = function(e) {
-            isLongPress = false;
-            longPressHandled = false;
-            pointerMoved = false;
-            pointerDownTime = Date.now();
+    const startHold = function(e) {
+        isLongPress = false;
+        longPressHandled = false;
+        pointerMoved = false;
+        pointerDownTime = Date.now();
 
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
-            }
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
 
-            holdTimer = setTimeout(async () => {
-                if (!pointerMoved) {
-                    isLongPress = true;
-                    longPressHandled = true;
-                    const count = softDeletedIndices.size;
-                    if (count === 0) {
-                        showToast("Recycle bin is empty");
-                        return;
-                    }
-                    if (!confirm(
-                            `⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`
-                            )) return;
-
-                    const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-                    let successCount = 0,
-                        failCount = 0;
-                    for (const idx of indices) {
-                        if (!softDeletedIndices.has(idx)) continue;
-                        const result = await permanentlyDeleteSoftDeleted(idx);
-                        if (result) { successCount++; } else { failCount++; }
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                    renderSidebarUI();
-                    updateRecycleBinBadge();
-                    if (vocabList.length === 0) {
-                        updateChineseDisplay("");
-                        document.getElementById("khmerWord").innerText = "";
-                    } else {
-                        const nextIdx = findNextAvailableIndex(0);
-                        if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-                    }
-                    saveAllData();
-                    showToast(
-                        `🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`
-                        );
-                    const input = document.getElementById('addChineseInput');
-                    if (input && window.addModalPerformSearch) {
-                        window.addModalPerformSearch(input.value);
-                    }
-                    const rbCount = document.getElementById('rbCountAddModal');
-                    if (rbCount) rbCount.textContent = softDeletedIndices.size;
-                    setTimeout(() => { longPressHandled = false; }, 300);
+        holdTimer = setTimeout(async () => {
+            if (!pointerMoved) {
+                isLongPress = true;
+                longPressHandled = true;
+                const count = softDeletedIndices.size;
+                if (count === 0) {
+                    showToast("Recycle bin is empty");
+                    return;
                 }
-                holdTimer = null;
-            }, 500);
-        };
+                if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
-        const endHold = function(e) {
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
-            }
-            setTimeout(() => {
-                if (isLongPress) {
-                    isLongPress = false;
+                // Collect all sheet rows to delete
+                const rowsToDelete = [];
+                const validIndices = [];
+                for (const idx of softDeletedIndices) {
+                    const item = vocabList[idx];
+                    if (item && item.sheetRow) {
+                        rowsToDelete.push(item.sheetRow);
+                        validIndices.push(idx);
+                    }
                 }
-            }, 100);
-        };
-
-        const handleClick = function(e) {
-            if (longPressHandled) {
-                e.preventDefault();
-                e.stopPropagation();
-                return;
+                
+                if (rowsToDelete.length === 0) {
+                    showToast("No valid rows to delete");
+                    return;
+                }
+                
+                // ===== IMMEDIATE UI UPDATE =====
+                const sortedIndices = validIndices.sort((a, b) => b - a);
+                for (const idx of sortedIndices) {
+                    if (softDeletedIndices.has(idx)) {
+                        vocabList.splice(idx, 1);
+                        softDeletedIndices.delete(idx);
+                        softDeletedData.delete(idx);
+                    }
+                }
+                
+                // Update sheetRow values
+                for (let i = 0; i < vocabList.length; i++) {
+                    let shiftCount = 0;
+                    for (const delRow of rowsToDelete) {
+                        if (delRow < vocabList[i].sheetRow) shiftCount++;
+                    }
+                    if (shiftCount > 0) {
+                        vocabList[i].sheetRow = vocabList[i].sheetRow - shiftCount;
+                    }
+                }
+                
+                // Update softDeletedData
+                const newSoftData = new Map();
+                for (let [k, v] of softDeletedData) {
+                    let shiftCount = 0;
+                    for (const delRow of rowsToDelete) {
+                        if (delRow < v.sheetRow) shiftCount++;
+                    }
+                    const newKey = k - validIndices.filter(idx => idx < k).length;
+                    v.sheetRow = v.sheetRow - shiftCount;
+                    newSoftData.set(newKey, v);
+                }
+                softDeletedData.clear();
+                for (let [k, v] of newSoftData) {
+                    softDeletedData.set(k, v);
+                }
+                
+                // Update softDeletedIndices
+                const newSoftIndices = new Set();
+                for (let k of softDeletedIndices) {
+                    const shift = validIndices.filter(idx => idx < k).length;
+                    newSoftIndices.add(k - shift);
+                }
+                softDeletedIndices.clear();
+                for (let k of newSoftIndices) {
+                    softDeletedIndices.add(k);
+                }
+                
+                // ===== IMMEDIATE UI REFRESH =====
+                renderSidebarUI();
+                updateRecycleBinBadge();
+                
+                // Update vocabSearchResults IMMEDIATELY (Add modal)
+                const addInput = document.getElementById('addChineseInput');
+                if (addInput && window.addModalPerformSearch) {
+                    setTimeout(() => {
+                        window.addModalPerformSearch(addInput.value);
+                    }, 10);
+                }
+                
+                // Update Edit modal search results too
+                const editInput = document.getElementById('editChineseInput');
+                if (editInput && window.editModalPerformSearch) {
+                    setTimeout(() => {
+                        window.editModalPerformSearch(editInput.value);
+                    }, 10);
+                }
+                
+                if (vocabList.length === 0) {
+                    updateChineseDisplay("");
+                    document.getElementById("khmerWord").innerText = "";
+                } else {
+                    const nextIdx = findNextAvailableIndex(0);
+                    if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+                }
+                
+                saveAllData();
+                
+                // Update the recycle bin count in the add modal
+                const rbCount = document.getElementById('rbCountAddModal');
+                if (rbCount) rbCount.textContent = softDeletedIndices.size;
+                
+                // ===== SHOW SUCCESS MESSAGE ONLY ONCE =====
+                showToast(`✅ Successfully deleted ${validIndices.length} items from sheet`);
+                
+                // ===== SEND API REQUEST IN BACKGROUND (completely silent) =====
+                const originalShowToast = showToast;
+                try {
+                    window.showToast = function(msg) {
+                        if (msg.includes('failed') || msg.includes('error') || msg.includes('Error')) {
+                            originalShowToast(msg);
+                        }
+                    };
+                    
+                    await deleteMultipleVocab(rowsToDelete);
+                    window.showToast = originalShowToast;
+                    console.log(`✅ Background delete completed for ${rowsToDelete.length} rows`);
+                } catch (err) {
+                    window.showToast = originalShowToast;
+                    if (err.message && !err.message.includes('success')) {
+                        showToast(`⚠️ Background sync failed: ${err.message}`);
+                    }
+                    console.error("Background delete API error:", err);
+                }
+                
+                setTimeout(() => { longPressHandled = false; }, 300);
             }
+            holdTimer = null;
+        }, 500);
+    };
+
+    const endHold = function(e) {
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
+        setTimeout(() => {
             if (isLongPress) {
-                e.preventDefault();
-                e.stopPropagation();
-                return;
+                isLongPress = false;
             }
-            e.stopPropagation();
+        }, 100);
+    };
+
+    const handleClick = function(e) {
+        if (longPressHandled) {
             e.preventDefault();
-            showRecycleBinModal(true);
-        };
+            e.stopPropagation();
+            return;
+        }
+        if (isLongPress) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        e.stopPropagation();
+        e.preventDefault();
+        showRecycleBinModal(true);
+    };
 
-        const newBtn = rbAddBtn.cloneNode(true);
-        rbAddBtn.parentNode.replaceChild(newBtn, rbAddBtn);
+    const newBtn = rbAddBtn.cloneNode(true);
+    rbAddBtn.parentNode.replaceChild(newBtn, rbAddBtn);
 
-        newBtn.addEventListener('pointerdown', function(e) {
-            startHold(e);
-        });
-        newBtn.addEventListener('pointerup', function(e) {
-            endHold(e);
-        });
-        newBtn.addEventListener('pointercancel', function(e) {
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
-            }
-            isLongPress = false;
-            longPressHandled = false;
-        });
-        newBtn.addEventListener('pointermove', function(e) {
-            pointerMoved = true;
-        });
-        newBtn.addEventListener('click', handleClick);
-    }
+    newBtn.addEventListener('pointerdown', function(e) {
+        startHold(e);
+    });
+    newBtn.addEventListener('pointerup', function(e) {
+        endHold(e);
+    });
+    newBtn.addEventListener('pointercancel', function(e) {
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
+        isLongPress = false;
+        longPressHandled = false;
+    });
+    newBtn.addEventListener('pointermove', function(e) {
+        pointerMoved = true;
+    });
+    newBtn.addEventListener('click', handleClick);
+}
 }
         // Find resetBottomLayer function and replace with:
 
@@ -7598,121 +7976,213 @@ window.clearAllCache = async function() {
     }, 150);
 
     const rbBtn = document.getElementById('recycleBinEditBtn');
-    if (rbBtn) {
-        let holdTimer = null;
-        let isLongPress = false;
-        let longPressHandled = false;
-        let pointerDownTime = 0;
-        let pointerMoved = false;
+if (rbBtn) {
+    let holdTimer = null;
+    let isLongPress = false;
+    let longPressHandled = false;
+    let pointerDownTime = 0;
+    let pointerMoved = false;
 
-        const startHold = function(e) {
-            isLongPress = false;
-            longPressHandled = false;
-            pointerMoved = false;
-            pointerDownTime = Date.now();
+    const startHold = function(e) {
+        isLongPress = false;
+        longPressHandled = false;
+        pointerMoved = false;
+        pointerDownTime = Date.now();
 
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
-            }
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
 
-            holdTimer = setTimeout(async () => {
-                if (!pointerMoved) {
-                    isLongPress = true;
-                    longPressHandled = true;
-                    const count = softDeletedIndices.size;
-                    if (count === 0) {
-                        showToast("Recycle bin is empty");
-                        return;
-                    }
-                    if (!confirm(
-                            `⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`
-                            )) return;
-
-                    const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-                    let successCount = 0,
-                        failCount = 0;
-                    for (const idx of indices) {
-                        if (!softDeletedIndices.has(idx)) continue;
-                        const result = await permanentlyDeleteSoftDeleted(idx);
-                        if (result) { successCount++; } else { failCount++; }
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                    renderSidebarUI();
-                    updateRecycleBinBadge();
-                    if (vocabList.length === 0) {
-                        updateChineseDisplay("");
-                        document.getElementById("khmerWord").innerText = "";
-                    } else {
-                        const nextIdx = findNextAvailableIndex(0);
-                        if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-                    }
-                    saveAllData();
-                    showToast(
-                        `🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`
-                        );
-                    const input = document.getElementById('editChineseInput');
-                    if (input && window.editModalPerformSearch) {
-                        window.editModalPerformSearch(input.value);
-                    }
-                    const rbCount = document.getElementById('rbCountEditModal');
-                    if (rbCount) rbCount.textContent = softDeletedIndices.size;
-                    setTimeout(() => { longPressHandled = false; }, 300);
+        holdTimer = setTimeout(async () => {
+            if (!pointerMoved) {
+                isLongPress = true;
+                longPressHandled = true;
+                const count = softDeletedIndices.size;
+                if (count === 0) {
+                    showToast("Recycle bin is empty");
+                    return;
                 }
-                holdTimer = null;
-            }, 500);
-        };
+                if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
-        const endHold = function(e) {
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
-            }
-            setTimeout(() => {
-                if (isLongPress) {
-                    isLongPress = false;
+                // Collect all sheet rows to delete
+                const rowsToDelete = [];
+                const validIndices = [];
+                for (const idx of softDeletedIndices) {
+                    const item = vocabList[idx];
+                    if (item && item.sheetRow) {
+                        rowsToDelete.push(item.sheetRow);
+                        validIndices.push(idx);
+                    }
                 }
-            }, 100);
-        };
-
-        const handleClick = function(e) {
-            if (longPressHandled) {
-                e.preventDefault();
-                e.stopPropagation();
-                return;
+                
+                if (rowsToDelete.length === 0) {
+                    showToast("No valid rows to delete");
+                    return;
+                }
+                
+                // ===== IMMEDIATE UI UPDATE =====
+                const sortedIndices = validIndices.sort((a, b) => b - a);
+                for (const idx of sortedIndices) {
+                    if (softDeletedIndices.has(idx)) {
+                        vocabList.splice(idx, 1);
+                        softDeletedIndices.delete(idx);
+                        softDeletedData.delete(idx);
+                    }
+                }
+                
+                // Update sheetRow values
+                for (let i = 0; i < vocabList.length; i++) {
+                    let shiftCount = 0;
+                    for (const delRow of rowsToDelete) {
+                        if (delRow < vocabList[i].sheetRow) shiftCount++;
+                    }
+                    if (shiftCount > 0) {
+                        vocabList[i].sheetRow = vocabList[i].sheetRow - shiftCount;
+                    }
+                }
+                
+                // Update softDeletedData
+                const newSoftData = new Map();
+                for (let [k, v] of softDeletedData) {
+                    let shiftCount = 0;
+                    for (const delRow of rowsToDelete) {
+                        if (delRow < v.sheetRow) shiftCount++;
+                    }
+                    const newKey = k - validIndices.filter(idx => idx < k).length;
+                    v.sheetRow = v.sheetRow - shiftCount;
+                    newSoftData.set(newKey, v);
+                }
+                softDeletedData.clear();
+                for (let [k, v] of newSoftData) {
+                    softDeletedData.set(k, v);
+                }
+                
+                // Update softDeletedIndices
+                const newSoftIndices = new Set();
+                for (let k of softDeletedIndices) {
+                    const shift = validIndices.filter(idx => idx < k).length;
+                    newSoftIndices.add(k - shift);
+                }
+                softDeletedIndices.clear();
+                for (let k of newSoftIndices) {
+                    softDeletedIndices.add(k);
+                }
+                
+                // ===== IMMEDIATE UI REFRESH =====
+                renderSidebarUI();
+                updateRecycleBinBadge();
+                
+                // Update vocabSearchResults IMMEDIATELY (Edit modal)
+                const editInput = document.getElementById('editChineseInput');
+                if (editInput && window.editModalPerformSearch) {
+                    setTimeout(() => {
+                        window.editModalPerformSearch(editInput.value);
+                    }, 10);
+                }
+                
+                // Update Add modal search results too
+                const addInput = document.getElementById('addChineseInput');
+                if (addInput && window.addModalPerformSearch) {
+                    setTimeout(() => {
+                        window.addModalPerformSearch(addInput.value);
+                    }, 10);
+                }
+                
+                if (vocabList.length === 0) {
+                    updateChineseDisplay("");
+                    document.getElementById("khmerWord").innerText = "";
+                } else {
+                    const nextIdx = findNextAvailableIndex(0);
+                    if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+                }
+                
+                saveAllData();
+                
+                // Update the recycle bin count in the edit modal
+                const rbCount = document.getElementById('rbCountEditModal');
+                if (rbCount) rbCount.textContent = softDeletedIndices.size;
+                
+                // ===== SHOW SUCCESS MESSAGE ONLY ONCE =====
+                showToast(`✅ Successfully deleted ${validIndices.length} items from sheet`);
+                
+                // ===== SEND API REQUEST IN BACKGROUND (completely silent) =====
+                const originalShowToast = showToast;
+                try {
+                    // Suppress all toast messages from API
+                    window.showToast = function(msg) {
+                        if (msg.includes('failed') || msg.includes('error') || msg.includes('Error')) {
+                            originalShowToast(msg);
+                        }
+                    };
+                    
+                    await deleteMultipleVocab(rowsToDelete);
+                    window.showToast = originalShowToast;
+                    console.log(`✅ Background delete completed for ${rowsToDelete.length} rows`);
+                } catch (err) {
+                    window.showToast = originalShowToast;
+                    if (err.message && !err.message.includes('success')) {
+                        showToast(`⚠️ Background sync failed: ${err.message}`);
+                    }
+                    console.error("Background delete API error:", err);
+                }
+                
+                setTimeout(() => { longPressHandled = false; }, 300);
             }
+            holdTimer = null;
+        }, 500);
+    };
+
+    const endHold = function(e) {
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
+        setTimeout(() => {
             if (isLongPress) {
-                e.preventDefault();
-                e.stopPropagation();
-                return;
+                isLongPress = false;
             }
-            e.stopPropagation();
+        }, 100);
+    };
+
+    const handleClick = function(e) {
+        if (longPressHandled) {
             e.preventDefault();
-            showRecycleBinModal(true);
-        };
+            e.stopPropagation();
+            return;
+        }
+        if (isLongPress) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        e.stopPropagation();
+        e.preventDefault();
+        showRecycleBinModal(true);
+    };
 
-        const newBtn = rbBtn.cloneNode(true);
-        rbBtn.parentNode.replaceChild(newBtn, rbBtn);
+    const newBtn = rbBtn.cloneNode(true);
+    rbBtn.parentNode.replaceChild(newBtn, rbBtn);
 
-        newBtn.addEventListener('pointerdown', function(e) {
-            startHold(e);
-        });
-        newBtn.addEventListener('pointerup', function(e) {
-            endHold(e);
-        });
-        newBtn.addEventListener('pointercancel', function(e) {
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
-            }
-            isLongPress = false;
-            longPressHandled = false;
-        });
-        newBtn.addEventListener('pointermove', function(e) {
-            pointerMoved = true;
-        });
-        newBtn.addEventListener('click', handleClick);
-    }
+    newBtn.addEventListener('pointerdown', function(e) {
+        startHold(e);
+    });
+    newBtn.addEventListener('pointerup', function(e) {
+        endHold(e);
+    });
+    newBtn.addEventListener('pointercancel', function(e) {
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
+        isLongPress = false;
+        longPressHandled = false;
+    });
+    newBtn.addEventListener('pointermove', function(e) {
+        pointerMoved = true;
+    });
+    newBtn.addEventListener('click', handleClick);
+}
 };
 
         // ---- Recycle bin long-press handler helper (FIXED) ----
@@ -9891,119 +10361,194 @@ if (deltaX > 0) {
         }, { passive: false });
     }
 
-    // Recycle Bin button handler
-    const rbBtn = document.getElementById('recycleBinBtn');
-    if (rbBtn) {
-        rbBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            showRecycleBinModal(false);
-        });
-        // Long press on recycle bin button: delete all
-        let holdTimer = null;
-        let isLongPress = false;
-        let longPressHandled = false;
-        let pointerMoved = false;
-        let pointerDownTime = 0;
+    // Recycle Bin button handler - Updated with silent background delete
+const rbBtn = document.getElementById('recycleBinBtn');
+if (rbBtn) {
+    rbBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        showRecycleBinModal(false);
+    });
+    
+    // Long press on recycle bin button: delete all immediately
+    let holdTimer = null;
+    let isLongPress = false;
+    let longPressHandled = false;
+    let pointerMoved = false;
+    let pointerDownTime = 0;
 
-        const startHold = function(e) {
-            isLongPress = false;
-            longPressHandled = false;
-            pointerMoved = false;
-            pointerDownTime = Date.now();
+    const startHold = function(e) {
+        isLongPress = false;
+        longPressHandled = false;
+        pointerMoved = false;
+        pointerDownTime = Date.now();
 
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
-            }
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
 
-            holdTimer = setTimeout(async () => {
-                if (!pointerMoved) {
-                    isLongPress = true;
-                    longPressHandled = true;
-                    const count = softDeletedIndices.size;
-                    if (count === 0) {
-                        showToast("Recycle bin is empty");
-                        return;
-                    }
-                    if (!confirm(
-                            `⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`
-                            )) return;
-
-                    const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-                    let successCount = 0,
-                        failCount = 0;
-                    for (const idx of indices) {
-                        if (!softDeletedIndices.has(idx)) continue;
-                        const result = await permanentlyDeleteSoftDeleted(idx);
-                        if (result) { successCount++; } else { failCount++; }
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                    renderSidebarUI();
-                    updateRecycleBinBadge();
-                    if (vocabList.length === 0) {
-                        updateChineseDisplay("");
-                        document.getElementById("khmerWord").innerText = "";
-                    } else {
-                        const nextIdx = findNextAvailableIndex(0);
-                        if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-                    }
-                    saveAllData();
-                    showToast(
-                        `🗑️ Permanently deleted ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`
-                        );
-                    updateRecycleBinCountInModals();
-                    setTimeout(() => { longPressHandled = false; }, 300);
+        holdTimer = setTimeout(async () => {
+            if (!pointerMoved) {
+                isLongPress = true;
+                longPressHandled = true;
+                const count = softDeletedIndices.size;
+                if (count === 0) {
+                    showToast("Recycle bin is empty");
+                    return;
                 }
-                holdTimer = null;
-            }, 500);
-        };
+                if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
-        const endHold = function(e) {
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
-            }
-            setTimeout(() => {
-                if (isLongPress) {
-                    isLongPress = false;
+                // Collect all sheet rows to delete
+                const rowsToDelete = [];
+                const validIndices = [];
+                for (const idx of softDeletedIndices) {
+                    const item = vocabList[idx];
+                    if (item && item.sheetRow) {
+                        rowsToDelete.push(item.sheetRow);
+                        validIndices.push(idx);
+                    }
                 }
-            }, 100);
-        };
-
-        const handleClick = function(e) {
-            if (longPressHandled) {
-                e.preventDefault();
-                e.stopPropagation();
-                return;
+                
+                if (rowsToDelete.length === 0) {
+                    showToast("No valid rows to delete");
+                    return;
+                }
+                
+                // ===== IMMEDIATE UI UPDATE =====
+                const sortedIndices = validIndices.sort((a, b) => b - a);
+                for (const idx of sortedIndices) {
+                    if (softDeletedIndices.has(idx)) {
+                        vocabList.splice(idx, 1);
+                        softDeletedIndices.delete(idx);
+                        softDeletedData.delete(idx);
+                    }
+                }
+                
+                // Update sheetRow values
+                for (let i = 0; i < vocabList.length; i++) {
+                    let shiftCount = 0;
+                    for (const delRow of rowsToDelete) {
+                        if (delRow < vocabList[i].sheetRow) shiftCount++;
+                    }
+                    if (shiftCount > 0) {
+                        vocabList[i].sheetRow = vocabList[i].sheetRow - shiftCount;
+                    }
+                }
+                
+                // Update softDeletedData
+                const newSoftData = new Map();
+                for (let [k, v] of softDeletedData) {
+                    let shiftCount = 0;
+                    for (const delRow of rowsToDelete) {
+                        if (delRow < v.sheetRow) shiftCount++;
+                    }
+                    const newKey = k - validIndices.filter(idx => idx < k).length;
+                    v.sheetRow = v.sheetRow - shiftCount;
+                    newSoftData.set(newKey, v);
+                }
+                softDeletedData.clear();
+                for (let [k, v] of newSoftData) {
+                    softDeletedData.set(k, v);
+                }
+                
+                // Update softDeletedIndices
+                const newSoftIndices = new Set();
+                for (let k of softDeletedIndices) {
+                    const shift = validIndices.filter(idx => idx < k).length;
+                    newSoftIndices.add(k - shift);
+                }
+                softDeletedIndices.clear();
+                for (let k of newSoftIndices) {
+                    softDeletedIndices.add(k);
+                }
+                
+                // ===== IMMEDIATE UI REFRESH =====
+                renderSidebarUI();
+                updateRecycleBinBadge();
+                
+                // Update vocabSearchResults immediately
+                const addInput = document.getElementById('addChineseInput');
+                if (addInput && window.addModalPerformSearch) {
+                    window.addModalPerformSearch(addInput.value);
+                }
+                const editInput = document.getElementById('editChineseInput');
+                if (editInput && window.editModalPerformSearch) {
+                    window.editModalPerformSearch(editInput.value);
+                }
+                
+                if (vocabList.length === 0) {
+                    updateChineseDisplay("");
+                    document.getElementById("khmerWord").innerText = "";
+                } else {
+                    const nextIdx = findNextAvailableIndex(0);
+                    if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+                }
+                
+                saveAllData();
+                
+                // Show success message ONLY ONCE
+                showToast(`✅ Successfully deleted ${validIndices.length} items from sheet`);
+                
+                // ===== SEND API REQUEST IN BACKGROUND (silent) =====
+                try {
+                    await deleteMultipleVocab(rowsToDelete);
+                    console.log(`✅ Background delete completed for ${rowsToDelete.length} rows`);
+                } catch (err) {
+                    console.error("Background delete API error:", err);
+                }
+                
+                setTimeout(() => { longPressHandled = false; }, 300);
             }
+            holdTimer = null;
+        }, 500);
+    };
+
+    const endHold = function(e) {
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
+        setTimeout(() => {
             if (isLongPress) {
-                e.preventDefault();
-                e.stopPropagation();
-                return;
+                isLongPress = false;
             }
-            e.stopPropagation();
-            showRecycleBinModal(false);
-        };
+        }, 100);
+    };
 
-        rbBtn.addEventListener('pointerdown', function(e) {
-            startHold(e);
-        });
-        rbBtn.addEventListener('pointerup', function(e) {
-            endHold(e);
-        });
-        rbBtn.addEventListener('pointercancel', function(e) {
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
-            }
-            isLongPress = false;
-            longPressHandled = false;
-        });
-        rbBtn.addEventListener('pointermove', function(e) {
-            pointerMoved = true;
-        });
-        rbBtn.addEventListener('click', handleClick);
-    }
+    const handleClick = function(e) {
+        if (longPressHandled) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        if (isLongPress) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        e.stopPropagation();
+        showRecycleBinModal(false);
+    };
+
+    rbBtn.addEventListener('pointerdown', function(e) {
+        startHold(e);
+    });
+    rbBtn.addEventListener('pointerup', function(e) {
+        endHold(e);
+    });
+    rbBtn.addEventListener('pointercancel', function(e) {
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
+        isLongPress = false;
+        longPressHandled = false;
+    });
+    rbBtn.addEventListener('pointermove', function(e) {
+        pointerMoved = true;
+    });
+    rbBtn.addEventListener('click', handleClick);
+}
 
     if (!sidebarVisible) document.getElementById("sidebarControlsContainer")?.classList.add(
         "sidebar-controls-hidden");
