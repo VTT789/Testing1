@@ -9245,6 +9245,7 @@ function loadSettings() {
             target.closest('.emoji-container');
     };
 
+    // Use capture: true so this fires even if a child stops propagation
     area.addEventListener("touchstart", function(e) {
         if (isDraggableElement(e.target)) {
             startY = 0; startX = 0; moved = false;
@@ -9259,7 +9260,7 @@ function loadSettings() {
         startX = touch.clientX;
         moved = false;
         isSwiping = false;
-    }, { passive: true });
+    }, { passive: true, capture: true });
 
     area.addEventListener("touchmove", function(e) {
         if (isDraggableElement(e.target)) {
