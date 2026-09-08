@@ -9234,7 +9234,7 @@ function loadSettings() {
             }
         }
 
-        function initSwipeNavigation() {
+       function initSwipeNavigation() {
     const area = document.getElementById("displayArea");
     if (!area) return;
     let startY = 0, startX = 0, moved = false;
@@ -9245,7 +9245,7 @@ function loadSettings() {
             target.closest('.emoji-container');
     };
 
-    // Use capture: true so this fires even if a child stops propagation
+    // capture: true ensures this fires even if a child stops propagation
     area.addEventListener("touchstart", function(e) {
         if (isDraggableElement(e.target)) {
             startY = 0; startX = 0; moved = false;
