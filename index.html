@@ -1674,69 +1674,122 @@ body.night-mode .resizer {
             }
         }
         .qr-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, .75);
-            justify-content: center;
-            align-items: center;
-            z-index: 10001;
-            backdrop-filter: blur(4px)
-        }
-        .qr-card {
-            position: relative;
-            background: #fff;
-            border-radius: 24px;
-            padding: 20px;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, .3);
-            max-width: 90%;
-            width: auto;
-            display: inline-block;
-            animation: fadeInScale .2s ease
-        }
-        .qr-card img {
-            width: 280px;
-            max-width: 70vw;
-            height: auto;
-            border-radius: 16px;
-            display: block;
-            cursor: pointer;
-        }
-        .qr-close-btn {
-            position: absolute;
-            top: -12px;
-            right: -12px;
-            background: #1e293b;
-            color: #fff;
-            border: none;
-            border-radius: 40px;
-            width: 32px;
-            height: 32px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, .2);
-            transition: background .2s
-        }
-        .qr-close-btn:hover {
-            background: #ef4444
-        }
-        @keyframes fadeInScale {
-            from {
-                opacity: 0;
-                transform: scale(.95)
-            }
-            to {
-                opacity: 1;
-                transform: scale(1)
-            }
-        }
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, .75);
+    justify-content: center;
+    align-items: center;
+    z-index: 10001;
+    backdrop-filter: blur(4px);
+}
+
+.qr-overlay > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.qr-card {
+    position: relative;
+    background: #fff;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 25px 45px rgba(0, 0, 0, .3);
+    max-width: 90%;
+    width: auto;
+    display: inline-block;
+    animation: fadeInScale .2s ease;
+}
+
+.qr-close-btn {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: #1e293b;
+    color: #fff;
+    border: none;
+    border-radius: 40px;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .2);
+    transition: background .2s;
+}
+.qr-close-btn:hover {
+    background: #ef4444;
+}
+
+/* TikTok link button styles */
+.tiktok-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 12px 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 60px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: fadeInUp 0.3s ease 0.1s both;
+}
+
+.tiktok-link:active {
+    transform: scale(0.96) !important;
+}
+
+/* Night mode support for TikTok link */
+body.night-mode .tiktok-link {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+body.night-mode .tiktok-link span {
+    color: #e2e8f0 !important;
+}
+
+body.night-mode .tiktok-link span:last-child {
+    color: #60a5fa !important;
+}
+
+body.night-mode .tiktok-link span:nth-child(3) {
+    color: #60a5fa !important;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
         .vis-toggle-btn {
             flex: 1;
             background: #e2e8f0;
@@ -2883,7 +2936,21 @@ body.night-mode .resizer {
         </div>
     </div>
     <div id=copyPopup class=copy-popup><span id=popupMessage>📋 Ready to copy</span><button id=copyActionBtn>Copy</button></div>
-    <div id=qrPopupOverlay class=qr-overlay><div class=qr-card><button class=qr-close-btn id=qrCloseBtn>✕</button><img src=/static/QR.png alt="QR Code"></div></div>
+   <div id=qrPopupOverlay class=qr-overlay>
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;">
+        <div class=qr-card>
+            <button class=qr-close-btn id=qrCloseBtn>✕</button>
+            <img src=/static/QR.png alt="QR Code">
+        </div>
+        <!-- TikTok Link - BELOW the QR card -->
+        <div class="tiktok-link" style="display:flex; align-items:center; justify-content:center; gap:12px; cursor:pointer; padding:12px 28px; background:rgba(255,255,255,0.95); border-radius:60px; box-shadow:0 4px 20px rgba(0,0,0,0.15); backdrop-filter:blur(8px); transition:all 0.2s ease; border:1px solid rgba(255,255,255,0.2);" onclick="window.open('https://www.tiktok.com/@kunthea_xiaoyazi', '_blank')" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.25)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.15)';">
+            <img src="/static/ABAicon.png" alt="ABA" style="width:32px; height:32px; border-radius:10px; flex-shrink:0;">
+            <span style="font-weight:700; color:#1a1a2e; font-size:1rem; letter-spacing:0.3px;">Kunthea_xiaoyazi</span>
+            <span style="color:#3b82f6; font-size:0.85rem; font-weight:500;">@ TikTok</span>
+            <span style="font-size:1.3rem; color:#3b82f6; margin-left:4px;">↗</span>
+        </div>
+    </div>
+</div>
     <script src=https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js>
     </script>
     <script>
@@ -4603,18 +4670,37 @@ async function deleteMultipleVocab(rows) {
         }
 
         function pickRandom() {
-            if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), "normal" === appMode) goNextNormal();
-            else if (vocabList.length) {
-                // Find a non-soft-deleted word from the filtered list
-                const available = filteredList.filter(idx => !softDeletedIndices.has(idx));
-                if (available.length === 0) {
-                    showToast("⚠️ No words available in this group!");
-                    return;
-                }
-                const newIdx = available[Math.floor(Math.random() * available.length)];
-                if (newIdx !== -1) loadWordByMode(newIdx, !0);
+    // Clear any existing timer when manually picking
+    if (autoTimer) {
+        clearTimeout(autoTimer);
+        autoTimer = null;
+    }
+    if ("normal" === appMode) {
+        goNextNormal();
+        // If auto is active, reschedule after picking
+        if (autoActive) {
+            setTimeout(() => startAutoCycle(), 100);
+        }
+    } else if (vocabList.length) {
+        // Find a non-soft-deleted word from the filtered list
+        const available = filteredList.filter(idx => !softDeletedIndices.has(idx));
+        if (available.length === 0) {
+            showToast("⚠️ No words available in this group!");
+            return;
+        }
+        const newIdx = available[Math.floor(Math.random() * available.length)];
+        if (newIdx !== -1) {
+            loadWordByMode(newIdx, !0);
+            // If auto is active, reschedule after the word loads and speech completes
+            if (autoActive) {
+                // Wait a bit longer for speech to start, then schedule next
+                setTimeout(() => {
+                    if (autoActive) startAutoCycle();
+                }, 500);
             }
         }
+    }
+}
 
         function historyPrev() { autoTimer && (clearTimeout(autoTimer), autoTimer = null); if ("random" === appMode) { if (
                     historyIndex > 0) { historyIndex--;
@@ -4733,28 +4819,56 @@ async function deleteMultipleVocab(rows) {
     reattachGroupFilterListener();
 }
 
-        function toggleAuto() {
-            autoActive = !autoActive;
-            const e = document.getElementById("autoBtn");
+      function toggleAuto() {
+    autoActive = !autoActive;
+    const e = document.getElementById("autoBtn");
+    if (autoActive) {
+        e.classList.remove("off");
+        e.classList.add("active");
+        e.innerText = "AUTO: ON";
+        // Kill any existing speech
+        killAllSpeech();
+        // Start the cycle immediately
+        setTimeout(() => {
             if (autoActive) {
-                e.classList.remove("off");
-                e.classList.add("active");
-                e.innerText = "AUTO: ON";
                 pickRandom();
-            } else {
-                e.classList.remove("active");
-                e.classList.add("off");
-                e.innerText = "AUTO: OFF";
-                autoTimer && (clearTimeout(autoTimer), autoTimer = null);
-                killAllSpeech();
+                // The next cycle will be scheduled by startAutoCycle
             }
+        }, 100);
+    } else {
+        e.classList.remove("active");
+        e.classList.add("off");
+        e.innerText = "AUTO: OFF";
+        if (autoTimer) {
+            clearTimeout(autoTimer);
+            autoTimer = null;
         }
+        killAllSpeech();
+    }
+    saveAllData();
+}
 
         function startAutoCycle() {
-            if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), autoActive) { const e = 1e3 * parseInt(document
-                    .getElementById("autoDelay").value);
-                autoTimer = setTimeout((() => { autoActive && pickRandom(), autoTimer = null }), e) }
-        }
+           if (autoTimer) {
+        clearTimeout(autoTimer);
+        autoTimer = null;
+    }
+    if (autoActive) {
+        const delay = 1000 * parseInt(document.getElementById("autoDelay").value);
+        // Use a more robust approach for mobile
+        autoTimer = setTimeout(() => {
+            if (autoActive) {
+                pickRandom();
+                // Schedule the next cycle immediately after pickRandom completes
+                // But use a small delay to ensure speech completes
+                setTimeout(() => {
+                    if (autoActive) startAutoCycle();
+                }, 200);
+            }
+            autoTimer = null;
+        }, delay);
+    }
+}
 
         function toggleSidebar() {
             sidebarVisible = !sidebarVisible;
@@ -7911,24 +8025,45 @@ holdTimer = setTimeout(async () => {
         const newRow = vocabList.length > 0 ? vocabList[vocabList.length - 1].sheetRow + 1 : 2;
         // If group is empty, save as empty string (not "Uncategorized")
         const newEntry = { khmer: khmer || '', chinese: chinese || '', sheetRow: newRow, group: selectedGroup || '' };
-        vocabList.push(newEntry);
-        buildFirstCharCache();
-        buildGroupMap();
-        saveAllData();
-        const newIdx = vocabList.length - 1;
-        if (appMode === 'random') {
-            history = [newIdx];
-            historyIndex = 0;
-            renderRandomSidebar(newIdx);
-        } else {
-            normalCurrentIdx = newIdx;
-            const filtered = filterVocabBySearch(vocabList);
-            const page = Math.floor(filtered.findIndex(v => v === vocabList[newIdx]) / 40);
-            if (page >= 0) normalCurrentPage = page;
-            renderNormalSidebar();
-        }
-        updateDisplay();
-        applyGroupFilter();
+vocabList.push(newEntry);
+buildFirstCharCache();
+buildGroupMap();
+saveAllData();
+const newIdx = vocabList.length - 1;
+
+// --- FIX: Ensure new vocab is displayed on main screen ---
+// Update the filtered list to include the new item
+applyGroupFilter();
+
+if (appMode === 'random') {
+    history = [newIdx];
+    historyIndex = 0;
+    renderRandomSidebar(newIdx);
+} else {
+    normalCurrentIdx = newIdx;
+    // Calculate page based on filtered list
+    const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
+    const pos = filtered.indexOf(newIdx);
+    if (pos !== -1) {
+        normalCurrentPage = Math.floor(pos / 40);
+    } else {
+        normalCurrentPage = Math.floor((filtered.length - 1) / 40);
+    }
+    renderNormalSidebar();
+}
+// Force display update with the new word
+const word = vocabList[newIdx];
+if (word) {
+    updateChineseDisplay(word.chinese || word.khmer);
+    document.getElementById("khmerWord").innerText = word.khmer || "";
+    applyStyles();
+    forceShrink();
+    applyBottomAutoScale();
+    if (!softDeletedIndices.has(newIdx)) {
+        speakAutoSequence(word.chinese, word.khmer);
+    }
+}
+scrollToSidebarItem();
         showToast(`✅ Added "${chinese || khmer}" as #${getDisplayNumberFromArrayIndex(newIdx)}`);
         scrollToSidebarItem();
         if (window.addModalPerformSearch) {
@@ -11046,6 +11181,40 @@ if (deltaX > 0) {
             if (loadingOverlay.parentNode) loadingOverlay.parentNode.removeChild(loadingOverlay);
         }, 500);
     }
+	
+	// ===== ADD WAKE LOCK REQUEST HERE =====
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) {
+            const wakeLock = await navigator.wakeLock.request('screen');
+            console.log('✅ Wake Lock acquired');
+            // Store reference to release when auto is turned off
+            window._wakeLock = wakeLock;
+            // Override toggleAuto to handle wake lock
+            const originalToggle = toggleAuto;
+            toggleAuto = function() {
+                if (autoActive) {
+                    // Turning off - release wake lock
+                    if (window._wakeLock) {
+                        try { 
+                            window._wakeLock.release(); 
+                            window._wakeLock = null; 
+                        } catch(e) {}
+                    }
+                } else {
+                    // Turning on - request wake lock
+                    requestWakeLock();
+                }
+                // Call original toggle function
+                originalToggle.call(this);
+            };
+        }
+    } catch (err) {
+        console.log('⚠️ Wake Lock not available:', err);
+    }
+}
+// Call it on load
+requestWakeLock();
 
     initNightMode();
     applyStyles();
@@ -11390,7 +11559,21 @@ if (rbBtn) {
         applyBottomAutoScale();
         saveAllData();
     });
-
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && autoActive) {
+        // Tab became visible again - restart auto if needed
+        if (autoTimer) {
+            clearTimeout(autoTimer);
+            autoTimer = null;
+        }
+        // Restart the cycle
+        setTimeout(() => {
+            if (autoActive) {
+                pickRandom();
+            }
+        }, 300);
+    }
+});
     if (vocabList.length) updateDisplay();
     setTimeout(() => {
         loadAllDragPositions();
