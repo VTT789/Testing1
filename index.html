@@ -246,6 +246,23 @@
             color: #e2e8f0;
             border: 1px solid #475569
         }
+		body.night-mode .size-slider {
+    background: var(--slider-track)
+}
+body.night-mode .select-main-btn {
+    background: #334155;
+    color: #e2e8f0;
+    border: 1px solid #475569
+}
+body.night-mode .select-main-btn:hover {
+    background: #475569
+}
+body.night-mode #editGroupNameBtn {
+    background: #7c3aed !important;
+}
+body.night-mode .resizer {
+    background: #334155
+}
         body.night-mode .select-main-btn:hover {
             background: #475569
         }
@@ -4100,41 +4117,41 @@ window.clearAllCache = async function() {
             }
         }
 
-       async function callApi(e, t) {
-    if (!editUnlocked) return showPasswordModal((async n => { n && await callApi(e, t) })), !1;
-    if (!detectedApiUrl || !detectedApiUrl.startsWith("http")) return showToast("❌ No valid API URL found."),
-        !1;
-    if (!currentSheetId) return showToast("❌ No sheet loaded"), !1;
-    const n = { ...e,
-        sheetId: currentSheetId,
-        sheetName: "Sheet1" };
-    try {
-        console.log('📤 API Request:', n);
-        const e = await fetch(detectedApiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify(n)
-        });
-        const o = await e.text();
-        console.log('📥 API Response:', o);
-        let i = o;
-        try { i = JSON.parse(o) } catch (e) {
-            console.warn('Response not JSON:', o);
-        }
-        if (e.ok && "success" === i.result) {
-            showToast(`✅ ${t} successful`);
-            return !0;
-        } else {
-            const errMsg = i.message || i.result || 'Unknown error';
-            showToast(`❌ ${t} failed: ${errMsg}`);
-            throw new Error(errMsg);
-        }
-    } catch (e) {
-        const errMsg = e.message || 'Network error';
-        showToast(`❌ ${t} failed: ${errMsg}`);
-        throw new Error(errMsg);
-    }
-}
+		   async function callApi(e, t) {
+		if (!editUnlocked) return showPasswordModal((async n => { n && await callApi(e, t) })), !1;
+		if (!detectedApiUrl || !detectedApiUrl.startsWith("http")) return showToast("❌ No valid API URL found."),
+			!1;
+		if (!currentSheetId) return showToast("❌ No sheet loaded"), !1;
+		const n = { ...e,
+			sheetId: currentSheetId,
+			sheetName: "Sheet1" };
+		try {
+			console.log('📤 API Request:', n);
+			const e = await fetch(detectedApiUrl, {
+				method: "POST",
+				headers: { "Content-Type": "text/plain" },
+				body: JSON.stringify(n)
+			});
+			const o = await e.text();
+			console.log('📥 API Response:', o);
+			let i = o;
+			try { i = JSON.parse(o) } catch (e) {
+				console.warn('Response not JSON:', o);
+			}
+			if (e.ok && "success" === i.result) {
+				showToast(`✅ ${t} successful`);
+				return !0;
+			} else {
+				const errMsg = i.message || i.result || 'Unknown error';
+				showToast(`❌ ${t} failed: ${errMsg}`);
+				throw new Error(errMsg);
+			}
+		} catch (e) {
+			const errMsg = e.message || 'Network error';
+			showToast(`❌ ${t} failed: ${errMsg}`);
+			throw new Error(errMsg);
+		}
+	}
 
         async function addVocabToSheet(e, t, group = '') {
     if (!editUnlocked) {
@@ -5140,61 +5157,71 @@ async function deleteMultipleVocab(rows) {
     }
 }
 
-        async function retryFailedDeletion(idx) {
-            if (!softDeletedIndices.has(idx)) {
-                showToast("⚠️ Not in recycle bin");
-                return false;
-            }
-            const item = vocabList[idx];
-            if (!item) return false;
-            const rowToDelete = item.sheetRow;
+      // Replace the existing permanentlyDeleteSoftDeleted function with this fixed version
 
-            showToast(`⏳ Retrying deletion of #${getDisplayNumberFromArrayIndex(idx)}...`);
+async function permanentlyDeleteSoftDeleted(idx) {
+    if (!softDeletedIndices.has(idx)) {
+        showToast("⚠️ Not in recycle bin");
+        return false;
+    }
+    const item = vocabList[idx];
+    if (!item) return false;
+    const rowToDelete = item.sheetRow;
 
-            try {
-                await deleteVocabByRow(rowToDelete);
+    try {
+        // Step 1: Delete from Google Sheet
+        await deleteVocabByRow(rowToDelete);
 
-                // Success - remove from all collections
-                vocabList.splice(idx, 1);
-                softDeletedIndices.delete(idx);
-                softDeletedData.delete(idx);
+        // Step 2: Remove from vocabList
+        vocabList.splice(idx, 1);
+        
+        // Step 3: Remove from soft-deleted collections
+        softDeletedIndices.delete(idx);
+        softDeletedData.delete(idx);
 
-                // Update sheetRow values
-                for (let i = 0; i < vocabList.length; i++) {
-                    if (vocabList[i].sheetRow > rowToDelete) {
-                        vocabList[i].sheetRow--;
-                    }
-                }
-
-                // Update softDeletedData and indices (shift keys)
-                const newSoftData = new Map();
-                for (let [k, v] of softDeletedData) {
-                    const newKey = k > idx ? k - 1 : k;
-                    newSoftData.set(newKey, v);
-                }
-                softDeletedData = newSoftData;
-
-                const newSoftIndices = new Set();
-                for (let k of softDeletedIndices) {
-                    const newKey = k > idx ? k - 1 : k;
-                    newSoftIndices.add(newKey);
-                }
-                softDeletedIndices = newSoftIndices;
-
-                pendingDeletions.delete(idx);
-
-                renderSidebarUI();
-                updateRecycleBinBadge();
-                saveAllData();
-                showToast(`✅ Successfully deleted #${getDisplayNumberFromArrayIndex(idx)}`);
-                return true;
-            } catch (err) {
-                showToast(`❌ Retry failed: ${err.message || 'Network error'}`);
-                return false;
+        // Step 4: Update sheetRow for remaining items
+        for (let i = 0; i < vocabList.length; i++) {
+            if (vocabList[i].sheetRow > rowToDelete) {
+                vocabList[i].sheetRow--;
             }
         }
 
-     async function permanentlyDeleteAllSoftDeletedAndClose() {
+        // Step 5: Update softDeletedData keys (create new Map, don't reassign)
+        const newSoftData = new Map();
+        for (let [k, v] of softDeletedData) {
+            if (v.sheetRow > rowToDelete) {
+                v.sheetRow--;
+            }
+            const newKey = k > idx ? k - 1 : k;
+            newSoftData.set(newKey, v);
+        }
+        softDeletedData.clear();
+        for (let [k, v] of newSoftData) {
+            softDeletedData.set(k, v);
+        }
+
+        // Step 6: Update softDeletedIndices
+        const newSoftIndices = new Set();
+        for (let k of softDeletedIndices) {
+            const newKey = k > idx ? k - 1 : k;
+            newSoftIndices.add(newKey);
+        }
+        softDeletedIndices.clear();
+        for (let k of newSoftIndices) {
+            softDeletedIndices.add(k);
+        }
+
+        pendingDeletions.delete(idx);
+        return true;
+    } catch (err) {
+        console.warn("Delete failed for row", rowToDelete, err);
+        showToast(`❌ Delete failed: ${err.message || 'Network error'}`);
+        return false;
+    }
+}
+     // Replace the permanentlyDeleteAllSoftDeletedAndClose function with this:
+
+async function permanentlyDeleteAllSoftDeletedAndClose() {
     const count = softDeletedIndices.size;
     if (count === 0) {
         showToast("Recycle bin is empty");
@@ -5202,16 +5229,19 @@ async function deleteMultipleVocab(rows) {
     }
     if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
-    // ===== STEP 1: Get all data BEFORE modifying =====
-    const indicesToDelete = Array.from(softDeletedIndices);
-    const rowsToDelete = [];
-    const itemsToRemove = [];
+    // Get all soft-deleted indices and their sheet rows
+    const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
     
-    for (const idx of indicesToDelete) {
+    // Collect all sheet rows to delete
+    const rowsToDelete = [];
+    const validIndices = [];
+    
+    for (const idx of indices) {
+        if (!softDeletedIndices.has(idx)) continue;
         const item = vocabList[idx];
         if (item && item.sheetRow) {
             rowsToDelete.push(item.sheetRow);
-            itemsToRemove.push(idx);
+            validIndices.push(idx);
         }
     }
     
@@ -5220,45 +5250,85 @@ async function deleteMultipleVocab(rows) {
         return;
     }
     
-    // ===== STEP 2: Remove ALL items from vocabList at once =====
-    const newVocabList = [];
-    const deletedSet = new Set(itemsToRemove);
+    // ===== IMMEDIATE UI UPDATE (no waiting for API) =====
     
-    for (let i = 0; i < vocabList.length; i++) {
-        if (!deletedSet.has(i)) {
-            newVocabList.push(vocabList[i]);
+    // Remove from local data
+    let deletedCount = 0;
+    
+    // Sort indices descending for safe removal
+    const sortedIndices = validIndices.sort((a, b) => b - a);
+    
+    for (const idx of sortedIndices) {
+        if (softDeletedIndices.has(idx)) {
+            // Remove from vocabList
+            vocabList.splice(idx, 1);
+            softDeletedIndices.delete(idx);
+            softDeletedData.delete(idx);
+            deletedCount++;
         }
     }
     
-    // ===== STEP 3: Update sheetRow values =====
-    for (let i = 0; i < newVocabList.length; i++) {
-        const row = newVocabList[i].sheetRow;
+    // Update sheetRow values for remaining items
+    for (let i = 0; i < vocabList.length; i++) {
+        const row = vocabList[i].sheetRow;
         let shiftCount = 0;
         for (const delRow of rowsToDelete) {
             if (delRow < row) shiftCount++;
         }
-        newVocabList[i].sheetRow = row - shiftCount;
+        if (shiftCount > 0) {
+            vocabList[i].sheetRow = row - shiftCount;
+        }
     }
     
-    // ===== STEP 4: Replace vocabList =====
-    vocabList.length = 0;
-    for (const item of newVocabList) {
-        vocabList.push(item);
+    // Update softDeletedData
+    const newSoftData = new Map();
+    for (let [k, v] of softDeletedData) {
+        let shiftCount = 0;
+        for (const delRow of rowsToDelete) {
+            if (delRow < v.sheetRow) shiftCount++;
+        }
+        const newKey = k - validIndices.filter(idx => idx < k).length;
+        v.sheetRow = v.sheetRow - shiftCount;
+        newSoftData.set(newKey, v);
     }
-    
-    // ===== STEP 5: Clear ALL soft-deleted data at once =====
-    softDeletedIndices.clear();
     softDeletedData.clear();
+    for (let [k, v] of newSoftData) {
+        softDeletedData.set(k, v);
+    }
     
-    // ===== STEP 6: IMMEDIATELY REFRESH UI =====
+    // Update softDeletedIndices
+    const newSoftIndices = new Set();
+    for (let k of softDeletedIndices) {
+        const shift = validIndices.filter(idx => idx < k).length;
+        newSoftIndices.add(k - shift);
+    }
+    softDeletedIndices.clear();
+    for (let k of newSoftIndices) {
+        softDeletedIndices.add(k);
+    }
+    
+    // ===== CLEAR CACHED DATA IMMEDIATELY =====
+    // This ensures that if the user reloads, they get fresh data from the sheet
+    try {
+        // Clear the cached vocab list from localStorage
+        localStorage.removeItem("vocabMaster_List_Compressed");
+        localStorage.removeItem("vocabMaster_List_StoredInIndexedDB");
+        
+        // Clear from IndexedDB as well
+        await clearVocabListFromIndexedDB();
+        
+        console.log("🗑️ Cache cleared, reload will fetch fresh data");
+    } catch (e) {
+        console.warn("Could not clear cache:", e);
+    }
+    
+    // ===== IMMEDIATE UI REFRESH (same as long-press behavior) =====
     renderSidebarUI();
     updateRecycleBinBadge();
     
-    // ===== STEP 7: Update vocabSearchResults IMMEDIATELY (NO WAITING) =====
-    // Update Add modal search results
+    // Update vocabSearchResults IMMEDIATELY (Add modal)
     const addInput = document.getElementById('addChineseInput');
     if (addInput && window.addModalPerformSearch) {
-        // Use setTimeout to ensure it runs after render
         setTimeout(() => {
             window.addModalPerformSearch(addInput.value);
         }, 10);
@@ -5272,59 +5342,44 @@ async function deleteMultipleVocab(rows) {
         }, 10);
     }
     
-    // Update the current display
     if (vocabList.length === 0) {
         updateChineseDisplay("");
         document.getElementById("khmerWord").innerText = "";
     } else {
-        const nextIdx = 0;
+        const nextIdx = findNextAvailableIndex(0);
         if (nextIdx !== -1) loadWordByMode(nextIdx, true);
     }
     
-    // ===== STEP 8: Close the recycle bin modal =====
+    saveAllData();
+    
+    // Close the recycle bin modal immediately (like long-press behavior)
     const rbModal = document.querySelector('.modal-overlay[data-is-recycle-bin="true"]');
     if (rbModal) rbModal.remove();
     updateRecycleBinCountInModals();
     
-    // ===== STEP 9: Show success message ONLY ONCE =====
-    const deletedCount = itemsToRemove.length;
+    // Show success message ONLY ONCE (like long-press behavior)
     showToast(`✅ Successfully deleted ${deletedCount} items from sheet`);
     
-    // ===== STEP 10: SEND API REQUEST IN BACKGROUND (completely silent) =====
-    // Use a flag to prevent any toasts from the API call
+    // ===== SEND API REQUEST IN BACKGROUND (completely silent) =====
     const originalShowToast = showToast;
-    let toastSuppressed = false;
-    
     try {
-        // Temporarily override showToast to suppress API messages
-        const suppressToast = function(msg) {
-            // Only show errors, but don't show success messages
+        // Suppress all toast messages from API
+        window.showToast = function(msg) {
             if (msg.includes('failed') || msg.includes('error') || msg.includes('Error')) {
                 originalShowToast(msg);
             }
-            // Suppress all other messages (including success)
         };
         
-        // Replace showToast temporarily
-        window.showToast = suppressToast;
-        
         await deleteMultipleVocab(rowsToDelete);
-        
-        // Restore original showToast
         window.showToast = originalShowToast;
-        
         console.log(`✅ Background delete completed for ${rowsToDelete.length} rows`);
     } catch (err) {
-        // Restore original showToast
         window.showToast = originalShowToast;
-        // Only show error if it's a real error
         if (err.message && !err.message.includes('success')) {
             showToast(`⚠️ Background sync failed: ${err.message}`);
         }
         console.error("Background delete API error:", err);
     }
-    
-    saveAllData();
 }
 
         // ---- Batch actions (kept for recycle bin modal) ----
@@ -5358,7 +5413,7 @@ async function deleteMultipleVocab(rows) {
             if (rbModal) rbModal.remove();
         }
 
-       async function permanentlyDeleteAllSoftDeletedAndClose() {
+      async function permanentlyDeleteAllSoftDeletedAndClose() {
     const count = softDeletedIndices.size;
     if (count === 0) {
         showToast("Recycle bin is empty");
@@ -5387,89 +5442,121 @@ async function deleteMultipleVocab(rows) {
         return;
     }
     
-    // Show progress
-    showToast(`⏳ Deleting ${rowsToDelete.length} rows from sheet...`);
+    // ===== IMMEDIATE UI UPDATE (no waiting for API) =====
     
-    try {
-        // Use deleteMultiple API to delete all rows at once
-        const result = await deleteMultipleVocab(rowsToDelete);
-        
-        if (result) {
-            // Remove from local data
-            let deletedCount = 0;
-            let failCount = 0;
-            
-            // Sort indices descending for safe removal
-            const sortedIndices = validIndices.sort((a, b) => b - a);
-            
-            for (const idx of sortedIndices) {
-                if (softDeletedIndices.has(idx)) {
-                    // Remove from vocabList
-                    vocabList.splice(idx, 1);
-                    softDeletedIndices.delete(idx);
-                    softDeletedData.delete(idx);
-                    deletedCount++;
-                }
-            }
-            
-            // Update sheetRow values for remaining items
-            for (let i = 0; i < vocabList.length; i++) {
-                const row = vocabList[i].sheetRow;
-                // Count how many deleted rows were before this one
-                let shiftCount = 0;
-                for (const delRow of rowsToDelete) {
-                    if (delRow < row) shiftCount++;
-                }
-                if (shiftCount > 0) {
-                    vocabList[i].sheetRow = row - shiftCount;
-                }
-            }
-            
-            // Update softDeletedData and indices
-            const newSoftData = new Map();
-            for (let [k, v] of softDeletedData) {
-                let shiftCount = 0;
-                for (const delRow of rowsToDelete) {
-                    if (delRow < v.sheetRow) shiftCount++;
-                }
-                const newKey = k - validIndices.filter(idx => idx < k).length;
-                v.sheetRow = v.sheetRow - shiftCount;
-                newSoftData.set(newKey, v);
-            }
-            softDeletedData = newSoftData;
-            
-            const newSoftIndices = new Set();
-            for (let k of softDeletedIndices) {
-                const shift = validIndices.filter(idx => idx < k).length;
-                newSoftIndices.add(k - shift);
-            }
-            softDeletedIndices = newSoftIndices;
-            
-            renderSidebarUI();
-            updateRecycleBinBadge();
-            
-            if (vocabList.length === 0) {
-                updateChineseDisplay("");
-                document.getElementById("khmerWord").innerText = "";
-            } else {
-                const nextIdx = findNextAvailableIndex(0);
-                if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-            }
-            
-            saveAllData();
-            showToast(`🗑️ Permanently deleted ${deletedCount} items from sheet`);
-        } else {
-            showToast("❌ Failed to delete rows from sheet");
+    // Remove from local data
+    let deletedCount = 0;
+    
+    // Sort indices descending for safe removal
+    const sortedIndices = validIndices.sort((a, b) => b - a);
+    
+    for (const idx of sortedIndices) {
+        if (softDeletedIndices.has(idx)) {
+            // Remove from vocabList
+            vocabList.splice(idx, 1);
+            softDeletedIndices.delete(idx);
+            softDeletedData.delete(idx);
+            deletedCount++;
         }
-        
-    } catch (err) {
-        showToast(`❌ Error: ${err.message || 'Network error'}`);
-        console.error("Delete all error:", err);
     }
     
+    // Update sheetRow values for remaining items
+    for (let i = 0; i < vocabList.length; i++) {
+        const row = vocabList[i].sheetRow;
+        let shiftCount = 0;
+        for (const delRow of rowsToDelete) {
+            if (delRow < row) shiftCount++;
+        }
+        if (shiftCount > 0) {
+            vocabList[i].sheetRow = row - shiftCount;
+        }
+    }
+    
+    // Update softDeletedData
+    const newSoftData = new Map();
+    for (let [k, v] of softDeletedData) {
+        let shiftCount = 0;
+        for (const delRow of rowsToDelete) {
+            if (delRow < v.sheetRow) shiftCount++;
+        }
+        const newKey = k - validIndices.filter(idx => idx < k).length;
+        v.sheetRow = v.sheetRow - shiftCount;
+        newSoftData.set(newKey, v);
+    }
+    softDeletedData.clear();
+    for (let [k, v] of newSoftData) {
+        softDeletedData.set(k, v);
+    }
+    
+    // Update softDeletedIndices
+    const newSoftIndices = new Set();
+    for (let k of softDeletedIndices) {
+        const shift = validIndices.filter(idx => idx < k).length;
+        newSoftIndices.add(k - shift);
+    }
+    softDeletedIndices.clear();
+    for (let k of newSoftIndices) {
+        softDeletedIndices.add(k);
+    }
+    
+    // ===== IMMEDIATE UI REFRESH (same as long-press behavior) =====
+    renderSidebarUI();
+    updateRecycleBinBadge();
+    
+    // Update vocabSearchResults IMMEDIATELY (Add modal)
+    const addInput = document.getElementById('addChineseInput');
+    if (addInput && window.addModalPerformSearch) {
+        setTimeout(() => {
+            window.addModalPerformSearch(addInput.value);
+        }, 10);
+    }
+    
+    // Update Edit modal search results
+    const editInput = document.getElementById('editChineseInput');
+    if (editInput && window.editModalPerformSearch) {
+        setTimeout(() => {
+            window.editModalPerformSearch(editInput.value);
+        }, 10);
+    }
+    
+    if (vocabList.length === 0) {
+        updateChineseDisplay("");
+        document.getElementById("khmerWord").innerText = "";
+    } else {
+        const nextIdx = findNextAvailableIndex(0);
+        if (nextIdx !== -1) loadWordByMode(nextIdx, true);
+    }
+    
+    saveAllData();
+    
+    // Close the recycle bin modal immediately (like long-press behavior)
     const rbModal = document.querySelector('.modal-overlay[data-is-recycle-bin="true"]');
     if (rbModal) rbModal.remove();
     updateRecycleBinCountInModals();
+    
+    // Show success message ONLY ONCE (like long-press behavior)
+    showToast(`✅ Successfully deleted ${deletedCount} items from sheet`);
+    
+    // ===== SEND API REQUEST IN BACKGROUND (completely silent) =====
+    const originalShowToast = showToast;
+    try {
+        // Suppress all toast messages from API
+        window.showToast = function(msg) {
+            if (msg.includes('failed') || msg.includes('error') || msg.includes('Error')) {
+                originalShowToast(msg);
+            }
+        };
+        
+        await deleteMultipleVocab(rowsToDelete);
+        window.showToast = originalShowToast;
+        console.log(`✅ Background delete completed for ${rowsToDelete.length} rows`);
+    } catch (err) {
+        window.showToast = originalShowToast;
+        if (err.message && !err.message.includes('success')) {
+            showToast(`⚠️ Background sync failed: ${err.message}`);
+        }
+        console.error("Background delete API error:", err);
+    }
 }
 
         function updateRecycleBinBadge() {
@@ -5662,6 +5749,499 @@ if (deleteAllBtn) {
 }
 }
 
+// ===== FUNCTION TO EDIT GROUP NAME (updates all items in that group) =====
+async function editGroupName(oldGroupName, newGroupName) {
+    if (!editUnlocked) {
+        return new Promise((resolve, reject) => {
+            showPasswordModal(async (n) => {
+                if (n) {
+                    try { const res = await editGroupName(oldGroupName, newGroupName);
+                        resolve(res); } catch (err) { reject(err); }
+                } else reject(new Error('Password required'));
+            });
+        });
+    }
+    
+    if (!oldGroupName || !newGroupName || oldGroupName === newGroupName) {
+        showToast("⚠️ Please enter a new group name");
+        return false;
+    }
+    
+    if (oldGroupName === 'Uncategorized') {
+        showToast("⚠️ Cannot rename 'Uncategorized' group");
+        return false;
+    }
+    
+    // Check if new group name already exists
+    if (groupMap.has(newGroupName) && newGroupName !== oldGroupName) {
+        if (!confirm(`⚠️ Group "${newGroupName}" already exists. Merge "${oldGroupName}" into "${newGroupName}"?`)) {
+            return false;
+        }
+    }
+    
+    // Get all indices in the old group
+    const indices = groupMap.get(oldGroupName) || [];
+    if (indices.length === 0) {
+        showToast("⚠️ Group is empty");
+        return false;
+    }
+    
+    // Collect all sheet rows to update
+    const rowsToUpdate = [];
+    for (const idx of indices) {
+        const item = vocabList[idx];
+        if (item && item.sheetRow) {
+            rowsToUpdate.push({
+                row: item.sheetRow,
+                khmer: item.khmer,
+                chinese: item.chinese,
+                group: newGroupName
+            });
+        }
+    }
+    
+    if (rowsToUpdate.length === 0) {
+        showToast("No valid rows to update");
+        return false;
+    }
+    
+    // ============================================================
+    // ===== IMMEDIATE UI UPDATE (like Delete All) =====
+    // ============================================================
+    
+    // Update all vocab items in the group
+    for (const idx of indices) {
+        if (vocabList[idx]) {
+            vocabList[idx].group = newGroupName;
+        }
+    }
+    
+    // Rebuild group map
+    buildGroupMap();
+    
+    // Apply filter (if we were filtering on the old group, switch to new group)
+    if (groupFilter === oldGroupName) {
+        groupFilter = newGroupName;
+        safeSetItem('groupFilter', groupFilter);
+    }
+    
+    applyGroupFilter();
+    
+    // ===== IMMEDIATE UI REFRESH (same as Delete All) =====
+    renderSidebarUI();
+    updateRecycleBinBadge();
+    updateStatusBar();
+    
+    // Update vocabSearchResults IMMEDIATELY (Add modal)
+    const addInput = document.getElementById('addChineseInput');
+    if (addInput && window.addModalPerformSearch) {
+        setTimeout(() => {
+            window.addModalPerformSearch(addInput.value);
+        }, 10);
+    }
+    
+    // Update Edit modal search results
+    const editInput = document.getElementById('editChineseInput');
+    if (editInput && window.editModalPerformSearch) {
+        setTimeout(() => {
+            window.editModalPerformSearch(editInput.value);
+        }, 10);
+    }
+    
+    saveAllData();
+    
+    // Show success message immediately (like Delete All)
+    showToast(`📁 Renamed "${oldGroupName}" → "${newGroupName}" (${indices.length} items)`);
+    
+    // ============================================================
+    // ===== SEND API REQUEST IN BACKGROUND (like Delete All) =====
+    // ============================================================
+    const originalShowToast = showToast;
+    let successCount = 0;
+    let failCount = 0;
+    
+    try {
+        // Suppress all toast messages from API (only show errors)
+        window.showToast = function(msg) {
+            if (msg.includes('failed') || msg.includes('error') || msg.includes('Error')) {
+                originalShowToast(msg);
+            }
+        };
+        
+        // Update each row with the new group name
+        for (const item of rowsToUpdate) {
+            try {
+                await updateVocabByRow(item.row, item.khmer, item.chinese, newGroupName);
+                successCount++;
+                console.log(`✅ Updated row ${item.row} to group "${newGroupName}"`);
+            } catch (err) {
+                failCount++;
+                console.error(`❌ Failed to update row ${item.row}:`, err);
+            }
+        }
+        
+        window.showToast = originalShowToast;
+        
+        if (failCount === 0) {
+            console.log(`✅ Updated all ${successCount} rows to group "${newGroupName}"`);
+        } else {
+            console.log(`⚠️ Updated ${successCount} rows, ${failCount} failed`);
+            // Only show error if there were failures
+            if (failCount > 0 && successCount === 0) {
+                showToast(`⚠️ Failed to sync group changes to sheet`);
+            }
+        }
+    } catch (err) {
+        window.showToast = originalShowToast;
+        if (err.message && !err.message.includes('success')) {
+            showToast(`⚠️ Background sync failed: ${err.message}`);
+        }
+        console.error("Background update error:", err);
+    }
+    
+    return true;
+}
+
+// ===== FUNCTION TO SHOW GROUP EDIT MODAL =====
+function showEditGroupModal() {
+    if (groupMap.size === 0) {
+        showToast("No groups to edit");
+        return;
+    }
+    
+    // Get all groups except "Uncategorized"
+    const groups = Array.from(groupMap.keys())
+        .filter(g => g !== 'Uncategorized')
+        .sort();
+    
+    if (groups.length === 0) {
+        showToast("No editable groups found (only 'Uncategorized' exists)");
+        return;
+    }
+    
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.innerHTML = `
+        <div class="choice-modal" style="background:#1e293b; max-width:450px; width:90%; position:relative;">
+            <h3>📁 Edit Group Name</h3>
+            <div style="margin:16px 0; text-align:left;">
+                <label style="color:#94a3b8; font-size:0.8rem; font-weight:600; display:block; margin-bottom:6px;">Select Group:</label>
+                <select id="groupSelectEdit" style="width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.4); color:#fff; font-size:0.9rem; margin-bottom:12px;">
+                    ${groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)} (${groupMap.get(g).length} items)</option>`).join('')}
+                </select>
+                <label style="color:#94a3b8; font-size:0.8rem; font-weight:600; display:block; margin-bottom:6px;">New Group Name:</label>
+                <input id="newGroupNameInput" placeholder="Enter new group name..." style="width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.4); color:#fff; font-size:0.9rem; box-sizing:border-box;">
+            </div>
+            <div class="edit-group-buttons">
+                <button id="confirmGroupEditBtn" style="background:#10b981; color:#fff; border:none; padding:12px 24px; border-radius:40px; font-weight:700; cursor:pointer; flex:1;">✅ Rename Group</button>
+                <button id="cancelGroupEditBtn" style="background:#475569; color:#fff; border:none; padding:12px 24px; border-radius:40px; font-weight:700; cursor:pointer; flex:1;">Cancel</button>
+            </div>
+            <button id="closeEditGroupBtn" style="position:absolute; top:-45px; left:50%; transform:translateX(-50%); background:#475569; color:#fff; border:none; border-radius:60px; width:40px; height:40px; font-size:1.5rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.3); transition:all .2s; z-index:10;">✕</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    const groupSelect = overlay.querySelector("#groupSelectEdit");
+    const newNameInput = overlay.querySelector("#newGroupNameInput");
+    const confirmBtn = overlay.querySelector("#confirmGroupEditBtn");
+    const cancelBtn = overlay.querySelector("#cancelGroupEditBtn");
+    const closeBtn = overlay.querySelector("#closeEditGroupBtn");
+    
+    // Auto-focus the new name input
+    setTimeout(() => newNameInput.focus(), 100);
+    
+    // Pre-fill with selected group name
+    groupSelect.addEventListener('change', function() {
+        newNameInput.value = this.value;
+        newNameInput.focus();
+    });
+    
+    // Auto-fill on select
+    const selectedGroup = groupSelect.value;
+    if (selectedGroup) {
+        newNameInput.value = selectedGroup;
+    }
+    
+    const handleConfirm = async () => {
+        const oldGroup = groupSelect.value;
+        const newGroup = newNameInput.value.trim();
+        
+        if (!newGroup) {
+            showToast("⚠️ Please enter a new group name");
+            return;
+        }
+        
+        if (newGroup === oldGroup) {
+            showToast("⚠️ New name is the same as old name");
+            return;
+        }
+        
+        if (newGroup === 'Uncategorized') {
+            showToast("⚠️ Cannot rename to 'Uncategorized'");
+            return;
+        }
+        
+        overlay.remove();
+        await editGroupName(oldGroup, newGroup);
+    };
+    
+    confirmBtn.onclick = () => showPasswordProtectionModal(handleConfirm, "rename group");
+    cancelBtn.onclick = () => overlay.remove();
+    closeBtn.onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    
+    // Enter key to confirm
+    newNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmBtn.click();
+        }
+    });
+}
+
+function showEditGroupModalWithPreset(presetGroup, keepParentModal = false) {
+    if (groupMap.size === 0) {
+        showToast("No groups to edit");
+        return;
+    }
+    
+    const groups = Array.from(groupMap.keys())
+        .filter(g => g !== 'Uncategorized')
+        .sort();
+    
+    if (groups.length === 0) {
+        showToast("No editable groups found (only 'Uncategorized' exists)");
+        return;
+    }
+    
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.innerHTML = `
+        <div class="choice-modal" style="background:#1e293b; max-width:450px; width:90%; position:relative;">
+            <h3>📁 Edit Group Name</h3>
+            <div style="margin:16px 0; text-align:left;">
+                <label style="color:#94a3b8; font-size:0.8rem; font-weight:600; display:block; margin-bottom:6px;">Select Group:</label>
+                <select id="groupSelectEdit" style="width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.4); color:#fff; font-size:0.9rem; margin-bottom:12px;">
+                    ${groups.map(g => `<option value="${escapeHtml(g)}" ${g === presetGroup ? 'selected' : ''}>${escapeHtml(g)} (${groupMap.get(g).length} items)</option>`).join('')}
+                </select>
+                <label style="color:#94a3b8; font-size:0.8rem; font-weight:600; display:block; margin-bottom:6px;">New Group Name:</label>
+                <input id="newGroupNameInput" placeholder="Enter new group name..." style="width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.4); color:#fff; font-size:0.9rem; box-sizing:border-box;">
+            </div>
+            <div class="edit-group-buttons">
+                <button id="confirmGroupEditBtn" style="background:#10b981; color:#fff; border:none; padding:12px 24px; border-radius:40px; font-weight:700; cursor:pointer; flex:1;">✅ Rename Group</button>
+                <button id="cancelGroupEditBtn" style="background:#475569; color:#fff; border:none; padding:12px 24px; border-radius:40px; font-weight:700; cursor:pointer; flex:1;">Cancel</button>
+            </div>
+            <button id="closeEditGroupBtn" style="position:absolute; top:-45px; left:50%; transform:translateX(-50%); background:#475569; color:#fff; border:none; border-radius:60px; width:40px; height:40px; font-size:1.5rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.3); transition:all .2s; z-index:10;">✕</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    const groupSelect = overlay.querySelector("#groupSelectEdit");
+    const newNameInput = overlay.querySelector("#newGroupNameInput");
+    const confirmBtn = overlay.querySelector("#confirmGroupEditBtn");
+    const cancelBtn = overlay.querySelector("#cancelGroupEditBtn");
+    const closeBtn = overlay.querySelector("#closeEditGroupBtn");
+    
+    if (presetGroup) {
+        newNameInput.value = presetGroup;
+        setTimeout(() => newNameInput.focus(), 100);
+        newNameInput.setSelectionRange(0, newNameInput.value.length);
+    }
+    
+    groupSelect.addEventListener('change', function() {
+        newNameInput.value = this.value;
+        newNameInput.focus();
+        newNameInput.setSelectionRange(0, newNameInput.value.length);
+    });
+    
+    const handleConfirm = async () => {
+        const oldGroup = groupSelect.value;
+        const newGroup = newNameInput.value.trim();
+        
+        if (!newGroup) {
+            showToast("⚠️ Please enter a new group name");
+            return;
+        }
+        
+        if (newGroup === oldGroup) {
+            showToast("⚠️ New name is the same as old name");
+            return;
+        }
+        
+        if (newGroup === 'Uncategorized') {
+            showToast("⚠️ Cannot rename to 'Uncategorized'");
+            return;
+        }
+        
+        overlay.remove();
+        await editGroupName(oldGroup, newGroup);
+    };
+    
+    confirmBtn.onclick = () => showPasswordProtectionModal(handleConfirm, "rename group");
+    cancelBtn.onclick = () => overlay.remove();
+    closeBtn.onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    
+    newNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmBtn.click();
+        }
+    });
+}
+// Store reference to the parent modal
+let parentModalRef = null;
+
+function showEditGroupModalOnTop(presetGroup) {
+    // Find the current modal overlay (the parent edit/add modal)
+    const currentModal = document.querySelector('.modal-overlay:not([data-is-group-modal="true"])');
+    if (currentModal) {
+        // Store reference to parent modal
+        parentModalRef = currentModal;
+        // Keep it visible but dim it
+        currentModal.style.opacity = '0.4';
+        currentModal.style.pointerEvents = 'none';
+    }
+    
+    // Remove any existing group modal
+    const existingGroupModal = document.querySelector('.modal-overlay[data-is-group-modal="true"]');
+    if (existingGroupModal) {
+        existingGroupModal.remove();
+    }
+    
+    if (groupMap.size === 0) {
+        showToast("No groups to edit");
+        return;
+    }
+    
+    const groups = Array.from(groupMap.keys())
+        .filter(g => g !== 'Uncategorized')
+        .sort();
+    
+    if (groups.length === 0) {
+        showToast("No editable groups found (only 'Uncategorized' exists)");
+        return;
+    }
+    
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.dataset.isGroupModal = "true";
+    overlay.style.zIndex = "30000";
+    overlay.style.background = "rgba(0,0,0,0.5)";
+    overlay.innerHTML = `
+        <div class="choice-modal" style="background:#1e293b; max-width:450px; width:90%; position:relative; pointer-events:auto;" onclick="event.stopPropagation();">
+            <h3>📁 Edit Group Name</h3>
+            <div style="margin:16px 0; text-align:left;">
+                <label style="color:#94a3b8; font-size:0.8rem; font-weight:600; display:block; margin-bottom:6px;">Select Group:</label>
+                <select id="groupSelectEditTop" style="width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.4); color:#fff; font-size:0.9rem; margin-bottom:12px;">
+                    ${groups.map(g => `<option value="${escapeHtml(g)}" ${g === presetGroup ? 'selected' : ''}>${escapeHtml(g)} (${groupMap.get(g).length} items)</option>`).join('')}
+                </select>
+                <label style="color:#94a3b8; font-size:0.8rem; font-weight:600; display:block; margin-bottom:6px;">New Group Name:</label>
+                <input id="newGroupNameInputTop" placeholder="Enter new group name..." style="width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.4); color:#fff; font-size:0.9rem; box-sizing:border-box;">
+            </div>
+            <div class="edit-group-buttons">
+                <button id="confirmGroupEditTopBtn" style="background:#10b981; color:#fff; border:none; padding:12px 24px; border-radius:40px; font-weight:700; cursor:pointer; flex:1;">✅ Rename Group</button>
+                <button id="cancelGroupEditTopBtn" style="background:#475569; color:#fff; border:none; padding:12px 24px; border-radius:40px; font-weight:700; cursor:pointer; flex:1;">Cancel</button>
+            </div>
+            <button id="closeEditGroupTopBtn" style="position:absolute; top:-45px; left:50%; transform:translateX(-50%); background:#475569; color:#fff; border:none; border-radius:60px; width:40px; height:40px; font-size:1.5rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.3); transition:all .2s; z-index:10;">✕</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    const groupSelect = overlay.querySelector("#groupSelectEditTop");
+    const newNameInput = overlay.querySelector("#newGroupNameInputTop");
+    const confirmBtn = overlay.querySelector("#confirmGroupEditTopBtn");
+    const cancelBtn = overlay.querySelector("#cancelGroupEditTopBtn");
+    const closeBtn = overlay.querySelector("#closeEditGroupTopBtn");
+    
+    if (presetGroup) {
+        newNameInput.value = presetGroup;
+        setTimeout(() => newNameInput.focus(), 100);
+        newNameInput.setSelectionRange(0, newNameInput.value.length);
+    }
+    
+    groupSelect.addEventListener('change', function() {
+        newNameInput.value = this.value;
+        newNameInput.focus();
+        newNameInput.setSelectionRange(0, newNameInput.value.length);
+    });
+    
+    // Function to restore the parent modal
+    const restoreParentModal = () => {
+        if (parentModalRef) {
+            parentModalRef.style.opacity = '1';
+            parentModalRef.style.pointerEvents = 'auto';
+            parentModalRef = null;
+        }
+    };
+    
+    const handleConfirm = async () => {
+        const oldGroup = groupSelect.value;
+        const newGroup = newNameInput.value.trim();
+        
+        if (!newGroup) {
+            showToast("⚠️ Please enter a new group name");
+            return;
+        }
+        
+        if (newGroup === oldGroup) {
+            showToast("⚠️ New name is the same as old name");
+            return;
+        }
+        
+        if (newGroup === 'Uncategorized') {
+            showToast("⚠️ Cannot rename to 'Uncategorized'");
+            return;
+        }
+        
+        overlay.remove();
+        restoreParentModal();
+        await editGroupName(oldGroup, newGroup);
+    };
+    
+    confirmBtn.onclick = () => showPasswordProtectionModal(handleConfirm, "rename group");
+    
+    cancelBtn.onclick = function(e) {
+        e.stopPropagation();
+        overlay.remove();
+        restoreParentModal();
+    };
+    
+    closeBtn.onclick = function(e) {
+        e.stopPropagation();
+        overlay.remove();
+        restoreParentModal();
+    };
+    
+    overlay.onclick = function(e) {
+        if (e.target === overlay) {
+            overlay.remove();
+            restoreParentModal();
+        }
+    };
+    
+    newNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmBtn.click();
+        }
+    });
+    
+    // Escape key closes only the group modal
+    const escHandler = function(e) {
+        if (e.key === 'Escape') {
+            const groupModal = document.querySelector('.modal-overlay[data-is-group-modal="true"]');
+            if (groupModal) {
+                groupModal.remove();
+                restoreParentModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+
         function renderRecycleBinItems() {
             if (softDeletedIndices.size === 0) {
                 return '<div class="recycle-bin-empty">✨ Recycle bin is empty</div>';
@@ -5848,22 +6428,34 @@ if (deleteAllBtn) {
                 <button id="modeNormalIconHeader" class="mode-icon-small ${"sequential"===appMode?"active":""}" style="font-size:1rem; padding:4px 10px;">📋</button>
             </div>
             <div id="groupFilterArea" style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; justify-content: flex-end;">
-                <select id="groupFilterSelect" style="
-                    background: var(--tab-bg);
-                    color: var(--text-primary);
-                    border: 1px solid var(--border);
-                    border-radius: 20px;
-                    padding: 4px 10px;
-                    font-size: 0.7rem;
-                    min-width: 220px;
-                    max-width: 140px;
-                    cursor: pointer;
-                    transition: all .2s;
-                    flex-shrink: 1;
-                ">
-                    <option value="__ALL__">📂 All</option>
-                </select>
-            </div>
+    <button id="editGroupNameBtn" style="
+        background: #8b5cf6;
+        border: none;
+        border-radius: 20px;
+        padding: 4px 10px;
+        font-size: 0.6rem;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all .2s;
+    ">✏️ Group</button>
+    <select id="groupFilterSelect" style="
+        background: var(--tab-bg);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 4px 10px;
+        font-size: 0.7rem;
+        min-width: 120px;
+        max-width: 140px;
+        cursor: pointer;
+        transition: all .2s;
+        flex-shrink: 1;
+    ">
+        <option value="__ALL__">📂 All</option>
+    </select>
+</div>
         </div>
         <div id="paginationContainer"></div>`;
     t.appendChild(o);
@@ -6629,48 +7221,109 @@ if (deleteAllBtn) {
         return allGroups.filter(g => g.toLowerCase().includes(q));
     }
     
-    function renderGroupDropdownEdit(suggestions) {
-        if (!editGroupDropdown) return;
-        if (suggestions.length === 0) {
-            const val = editGroupInput.value.trim();
-            if (val) {
-                editGroupDropdown.innerHTML = `<div class="group-suggestion-item" data-value="${escapeHtml(val)}" style="padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500;">➕ Create "${escapeHtml(val)}"</div>`;
-            } else {
-                editGroupDropdown.innerHTML = `<div style="padding:8px 14px; color:#64748b; font-size:0.75rem;">Type to search or create group</div>`;
-            }
-            editGroupDropdown.style.display = 'block';
-            return;
+   function renderGroupDropdown(suggestions) {
+    if (!groupDropdown) return;
+    if (suggestions.length === 0) {
+        const val = groupInput.value.trim();
+        if (val) {
+            const isExisting = groupMap.has(val);
+            groupDropdown.innerHTML = `<div class="group-suggestion-item" data-value="${escapeHtml(val)}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500;">
+                <span>${isExisting ? '📁' : '➕'} "${escapeHtml(val)}"</span>
+                ${isExisting ? `<span class="group-edit-icon" data-group="${escapeHtml(val)}" style="color:#8b5cf6; font-size:0.9rem; padding:2px 6px; border-radius:4px; cursor:pointer; transition:all 0.15s;">✏️</span>` : ''}
+            </div>`;
+        } else {
+            groupDropdown.innerHTML = `<div style="padding:8px 14px; color:#64748b; font-size:0.75rem;">Type to search or create group</div>`;
         }
-        let html = '';
-        suggestions.forEach(g => {
-            const isActive = g === editGroupInput.value.trim();
-            html += `<div class="group-suggestion-item" data-value="${escapeHtml(g)}" style="padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#ffffff; ${isActive ? 'background:rgba(59,130,246,0.2);' : ''} transition:background 0.15s;">${escapeHtml(g)}</div>`;
-        });
-        const val = editGroupInput.value.trim();
-        if (val && !suggestions.some(g => g.toLowerCase() === val.toLowerCase())) {
-            html += `<div class="group-suggestion-item" data-value="${escapeHtml(val)}" style="padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500; border-top:1px solid rgba(255,255,255,0.08);">➕ Create "${escapeHtml(val)}"</div>`;
-        }
-        editGroupDropdown.innerHTML = html;
-        editGroupDropdown.style.display = 'block';
+        groupDropdown.style.display = 'block';
         
-        editGroupDropdown.querySelectorAll('.group-suggestion-item').forEach(item => {
+        groupDropdown.querySelectorAll('.group-suggestion-item').forEach(item => {
+            const value = item.dataset.value;
+            if (value) {
+                const editIcon = item.querySelector('.group-edit-icon');
+                if (editIcon) {
+                    editIcon.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const groupName = this.dataset.group;
+                        if (groupName && groupMap.has(groupName)) {
+                            groupDropdown.style.display = 'none';
+                            showEditGroupModalOnTop(groupName);
+                        }
+                    });
+                }
+                item.addEventListener('click', function(e) {
+                    if (e.target.closest('.group-edit-icon')) return;
+                    const value = this.dataset.value;
+                    if (value) {
+                        groupInput.value = value;
+                        groupDropdown.style.display = 'none';
+                        showToast(`📁 Group: ${value}`);
+                    }
+                });
+            }
+        });
+        return;
+    }
+    
+    let html = '';
+    suggestions.forEach(g => {
+        const isActive = g === groupInput.value.trim();
+        const count = groupMap.get(g)?.length || 0;
+        html += `<div class="group-suggestion-item" data-value="${escapeHtml(g)}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#ffffff; ${isActive ? 'background:rgba(59,130,246,0.2);' : ''} transition:background 0.15s;">
+            <span>${escapeHtml(g)} <span style="color:#64748b; font-size:0.65rem;">(${count})</span></span>
+            <span class="group-edit-icon" data-group="${escapeHtml(g)}" style="color:#8b5cf6; font-size:0.9rem; padding:2px 6px; border-radius:4px; cursor:pointer; transition:all 0.15s;">✏️</span>
+        </div>`;
+    });
+    
+    const val = groupInput.value.trim();
+    if (val && !suggestions.some(g => g.toLowerCase() === val.toLowerCase())) {
+        const existingMatch = Array.from(groupMap.keys()).find(g => g.toLowerCase() === val.toLowerCase());
+        const isExisting = !!existingMatch;
+        const displayName = existingMatch || val;
+        html += `<div class="group-suggestion-item" data-value="${escapeHtml(displayName)}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500; border-top:1px solid rgba(255,255,255,0.08);">
+            <span>${isExisting ? '📁' : '➕'} "${escapeHtml(val)}"</span>
+            ${isExisting ? `<span class="group-edit-icon" data-group="${escapeHtml(displayName)}" style="color:#8b5cf6; font-size:0.9rem; padding:2px 6px; border-radius:4px; cursor:pointer; transition:all 0.15s;">✏️</span>` : ''}
+        </div>`;
+    }
+    
+    groupDropdown.innerHTML = html;
+    groupDropdown.style.display = 'block';
+    
+    groupDropdown.querySelectorAll('.group-suggestion-item').forEach(item => {
+        const value = item.dataset.value;
+        if (value) {
+            const editIcon = item.querySelector('.group-edit-icon');
+            if (editIcon) {
+                editIcon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const groupName = this.dataset.group;
+                    if (groupName && groupMap.has(groupName)) {
+                        groupDropdown.style.display = 'none';
+                        showEditGroupModalOnTop(groupName);
+                    }
+                });
+            }
             item.addEventListener('click', function(e) {
-                e.stopPropagation();
+                if (e.target.closest('.group-edit-icon')) return;
                 const value = this.dataset.value;
                 if (value) {
-                    editGroupInput.value = value;
-                    editGroupDropdown.style.display = 'none';
+                    groupInput.value = value;
+                    groupDropdown.style.display = 'none';
                     showToast(`📁 Group: ${value}`);
                 }
             });
-            item.addEventListener('mouseenter', function() {
-                this.style.background = 'rgba(59,130,246,0.3)';
-            });
-            item.addEventListener('mouseleave', function() {
-                this.style.background = this.dataset.value === editGroupInput.value.trim() ? 'rgba(59,130,246,0.2)' : '';
-            });
+        }
+    });
+    
+    groupDropdown.querySelectorAll('.group-suggestion-item').forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.background = 'rgba(59,130,246,0.3)';
         });
-    }
+        item.addEventListener('mouseleave', function() {
+            const isActive = this.dataset.value === groupInput.value.trim();
+            this.style.background = isActive ? 'rgba(59,130,246,0.2)' : '';
+        });
+    });
+}
     
     function filterGroupDropdownEdit() {
         const val = editGroupInput.value.trim();
@@ -7103,34 +7756,64 @@ holdTimer = setTimeout(async () => {
         return allGroups.filter(g => g.toLowerCase().includes(q));
     }
     
-    function renderGroupDropdown(suggestions) {
-        if (!groupDropdown) return;
-        if (suggestions.length === 0) {
-            const val = groupInput.value.trim();
-            if (val) {
-                groupDropdown.innerHTML = `<div class="group-suggestion-item" data-value="${escapeHtml(val)}" style="padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500;">➕ Create "${escapeHtml(val)}"</div>`;
-            } else {
-                groupDropdown.innerHTML = `<div style="padding:8px 14px; color:#64748b; font-size:0.75rem;">Type to search or create group</div>`;
-            }
-            groupDropdown.style.display = 'block';
-            return;
-        }
-        let html = '';
-        suggestions.forEach(g => {
-            const isActive = g === groupInput.value.trim();
-            html += `<div class="group-suggestion-item" data-value="${escapeHtml(g)}" style="padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#ffffff; ${isActive ? 'background:rgba(59,130,246,0.2);' : ''} transition:background 0.15s;">${escapeHtml(g)}</div>`;
-        });
+  function renderGroupDropdown(suggestions) {
+    if (!groupDropdown) return;
+    if (suggestions.length === 0) {
         const val = groupInput.value.trim();
-        if (val && !suggestions.some(g => g.toLowerCase() === val.toLowerCase())) {
-            html += `<div class="group-suggestion-item" data-value="${escapeHtml(val)}" style="padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500; border-top:1px solid rgba(255,255,255,0.08);">➕ Create "${escapeHtml(val)}"</div>`;
+        if (val) {
+            // Check if this is a new group or existing
+            const isExisting = groupMap.has(val);
+            groupDropdown.innerHTML = `<div class="group-suggestion-item" data-value="${escapeHtml(val)}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500;">
+                <span>${isExisting ? '📁' : '➕'} "${escapeHtml(val)}"</span>
+                ${isExisting ? `<span class="group-edit-icon" data-group="${escapeHtml(val)}" style="color:#8b5cf6; font-size:0.9rem; padding:2px 6px; border-radius:4px; cursor:pointer; transition:all 0.15s;">✏️</span>` : ''}
+            </div>`;
+        } else {
+            groupDropdown.innerHTML = `<div style="padding:8px 14px; color:#64748b; font-size:0.75rem;">Type to search or create group</div>`;
         }
-        groupDropdown.innerHTML = html;
         groupDropdown.style.display = 'block';
-        
-        // Add click handlers
-        groupDropdown.querySelectorAll('.group-suggestion-item').forEach(item => {
+        return;
+    }
+    let html = '';
+    suggestions.forEach(g => {
+        const isActive = g === groupInput.value.trim();
+        const count = groupMap.get(g)?.length || 0;
+        html += `<div class="group-suggestion-item" data-value="${escapeHtml(g)}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#ffffff; ${isActive ? 'background:rgba(59,130,246,0.2);' : ''} transition:background 0.15s;">
+            <span>${escapeHtml(g)} <span style="color:#64748b; font-size:0.65rem;">(${count})</span></span>
+            <span class="group-edit-icon" data-group="${escapeHtml(g)}" style="color:#8b5cf6; font-size:0.9rem; padding:2px 6px; border-radius:4px; cursor:pointer; transition:all 0.15s;">✏️</span>
+        </div>`;
+    });
+    const val = groupInput.value.trim();
+    if (val && !suggestions.some(g => g.toLowerCase() === val.toLowerCase())) {
+        // Check if this typed value is an existing group (case insensitive match)
+        const existingMatch = Array.from(groupMap.keys()).find(g => g.toLowerCase() === val.toLowerCase());
+        const isExisting = !!existingMatch;
+        const displayName = existingMatch || val;
+        html += `<div class="group-suggestion-item" data-value="${escapeHtml(displayName)}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500; border-top:1px solid rgba(255,255,255,0.08);">
+            <span>${isExisting ? '📁' : '➕'} "${escapeHtml(val)}"</span>
+            ${isExisting ? `<span class="group-edit-icon" data-group="${escapeHtml(displayName)}" style="color:#8b5cf6; font-size:0.9rem; padding:2px 6px; border-radius:4px; cursor:pointer; transition:all 0.15s;">✏️</span>` : ''}
+        </div>`;
+    }
+    groupDropdown.innerHTML = html;
+    groupDropdown.style.display = 'block';
+    
+    // Click handler for group selection
+    groupDropdown.querySelectorAll('.group-suggestion-item').forEach(item => {
+        const value = item.dataset.value;
+        if (value) {
+            const editIcon = item.querySelector('.group-edit-icon');
+            if (editIcon) {
+               editIcon.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const groupName = this.dataset.group;
+    if (groupName && groupMap.has(groupName)) {
+        groupDropdown.style.display = 'none';
+        // Don't close the add modal - show group edit on top
+        showEditGroupModalOnTop(groupName);
+    }
+});
+            }
             item.addEventListener('click', function(e) {
-                e.stopPropagation();
+                if (e.target.closest('.group-edit-icon')) return;
                 const value = this.dataset.value;
                 if (value) {
                     groupInput.value = value;
@@ -7138,14 +7821,19 @@ holdTimer = setTimeout(async () => {
                     showToast(`📁 Group: ${value}`);
                 }
             });
-            item.addEventListener('mouseenter', function() {
-                this.style.background = 'rgba(59,130,246,0.3)';
-            });
-            item.addEventListener('mouseleave', function() {
-                this.style.background = this.dataset.value === groupInput.value.trim() ? 'rgba(59,130,246,0.2)' : '';
-            });
+        }
+    });
+    
+    groupDropdown.querySelectorAll('.group-suggestion-item').forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.background = 'rgba(59,130,246,0.3)';
         });
-    }
+        item.addEventListener('mouseleave', function() {
+            const isActive = this.dataset.value === groupInput.value.trim();
+            this.style.background = isActive ? 'rgba(59,130,246,0.2)' : '';
+        });
+    });
+}
     
     function filterGroupDropdown() {
         const val = groupInput.value.trim();
@@ -7787,32 +8475,88 @@ if (rbAddBtn) {
     }
     
     function renderGroupDropdownEdit(suggestions) {
-        if (!editGroupDropdown) return;
-        if (suggestions.length === 0) {
-            const val = editGroupInput.value.trim();
-            if (val) {
-                editGroupDropdown.innerHTML = `<div class="group-suggestion-item" data-value="${escapeHtml(val)}" style="padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500;">➕ Create "${escapeHtml(val)}"</div>`;
-            } else {
-                editGroupDropdown.innerHTML = `<div style="padding:8px 14px; color:#64748b; font-size:0.75rem;">Type to search or create group</div>`;
-            }
-            editGroupDropdown.style.display = 'block';
-            return;
-        }
-        let html = '';
-        suggestions.forEach(g => {
-            const isActive = g === editGroupInput.value.trim();
-            html += `<div class="group-suggestion-item" data-value="${escapeHtml(g)}" style="padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#ffffff; ${isActive ? 'background:rgba(59,130,246,0.2);' : ''} transition:background 0.15s;">${escapeHtml(g)}</div>`;
-        });
+    if (!editGroupDropdown) return;
+    if (suggestions.length === 0) {
         const val = editGroupInput.value.trim();
-        if (val && !suggestions.some(g => g.toLowerCase() === val.toLowerCase())) {
-            html += `<div class="group-suggestion-item" data-value="${escapeHtml(val)}" style="padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500; border-top:1px solid rgba(255,255,255,0.08);">➕ Create "${escapeHtml(val)}"</div>`;
+        if (val) {
+            const isExisting = groupMap.has(val);
+            editGroupDropdown.innerHTML = `<div class="group-suggestion-item" data-value="${escapeHtml(val)}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500;">
+                <span>${isExisting ? '📁' : '➕'} "${escapeHtml(val)}"</span>
+                ${isExisting ? `<span class="group-edit-icon" data-group="${escapeHtml(val)}" style="color:#8b5cf6; font-size:0.9rem; padding:2px 6px; border-radius:4px; cursor:pointer; transition:all 0.15s;">✏️</span>` : ''}
+            </div>`;
+        } else {
+            editGroupDropdown.innerHTML = `<div style="padding:8px 14px; color:#64748b; font-size:0.75rem;">Type to search or create group</div>`;
         }
-        editGroupDropdown.innerHTML = html;
         editGroupDropdown.style.display = 'block';
         
         editGroupDropdown.querySelectorAll('.group-suggestion-item').forEach(item => {
+            const value = item.dataset.value;
+            if (value) {
+                const editIcon = item.querySelector('.group-edit-icon');
+                if (editIcon) {
+                    editIcon.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const groupName = this.dataset.group;
+                        if (groupName && groupMap.has(groupName)) {
+                            editGroupDropdown.style.display = 'none';
+                            showEditGroupModalOnTop(groupName);
+                        }
+                    });
+                }
+                item.addEventListener('click', function(e) {
+                    if (e.target.closest('.group-edit-icon')) return;
+                    const value = this.dataset.value;
+                    if (value) {
+                        editGroupInput.value = value;
+                        editGroupDropdown.style.display = 'none';
+                        showToast(`📁 Group: ${value}`);
+                    }
+                });
+            }
+        });
+        return;
+    }
+    
+    let html = '';
+    suggestions.forEach(g => {
+        const isActive = g === editGroupInput.value.trim();
+        const count = groupMap.get(g)?.length || 0;
+        html += `<div class="group-suggestion-item" data-value="${escapeHtml(g)}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#ffffff; ${isActive ? 'background:rgba(59,130,246,0.2);' : ''} transition:background 0.15s;">
+            <span>${escapeHtml(g)} <span style="color:#64748b; font-size:0.65rem;">(${count})</span></span>
+            <span class="group-edit-icon" data-group="${escapeHtml(g)}" style="color:#8b5cf6; font-size:0.9rem; padding:2px 6px; border-radius:4px; cursor:pointer; transition:all 0.15s;">✏️</span>
+        </div>`;
+    });
+    
+    const val = editGroupInput.value.trim();
+    if (val && !suggestions.some(g => g.toLowerCase() === val.toLowerCase())) {
+        const existingMatch = Array.from(groupMap.keys()).find(g => g.toLowerCase() === val.toLowerCase());
+        const isExisting = !!existingMatch;
+        const displayName = existingMatch || val;
+        html += `<div class="group-suggestion-item" data-value="${escapeHtml(displayName)}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); color:#10b981; font-weight:500; border-top:1px solid rgba(255,255,255,0.08);">
+            <span>${isExisting ? '📁' : '➕'} "${escapeHtml(val)}"</span>
+            ${isExisting ? `<span class="group-edit-icon" data-group="${escapeHtml(displayName)}" style="color:#8b5cf6; font-size:0.9rem; padding:2px 6px; border-radius:4px; cursor:pointer; transition:all 0.15s;">✏️</span>` : ''}
+        </div>`;
+    }
+    
+    editGroupDropdown.innerHTML = html;
+    editGroupDropdown.style.display = 'block';
+    
+    editGroupDropdown.querySelectorAll('.group-suggestion-item').forEach(item => {
+        const value = item.dataset.value;
+        if (value) {
+            const editIcon = item.querySelector('.group-edit-icon');
+            if (editIcon) {
+                editIcon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const groupName = this.dataset.group;
+                    if (groupName && groupMap.has(groupName)) {
+                        editGroupDropdown.style.display = 'none';
+                        showEditGroupModalOnTop(groupName);
+                    }
+                });
+            }
             item.addEventListener('click', function(e) {
-                e.stopPropagation();
+                if (e.target.closest('.group-edit-icon')) return;
                 const value = this.dataset.value;
                 if (value) {
                     editGroupInput.value = value;
@@ -7820,14 +8564,19 @@ if (rbAddBtn) {
                     showToast(`📁 Group: ${value}`);
                 }
             });
-            item.addEventListener('mouseenter', function() {
-                this.style.background = 'rgba(59,130,246,0.3)';
-            });
-            item.addEventListener('mouseleave', function() {
-                this.style.background = this.dataset.value === editGroupInput.value.trim() ? 'rgba(59,130,246,0.2)' : '';
-            });
+        }
+    });
+    
+    editGroupDropdown.querySelectorAll('.group-suggestion-item').forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.background = 'rgba(59,130,246,0.3)';
         });
-    }
+        item.addEventListener('mouseleave', function() {
+            const isActive = this.dataset.value === editGroupInput.value.trim();
+            this.style.background = isActive ? 'rgba(59,130,246,0.2)' : '';
+        });
+    });
+}
     
     function filterGroupDropdownEdit() {
         const val = editGroupInput.value.trim();
@@ -10670,6 +11419,14 @@ if (rbBtn) {
 
     // Create group filter UI if not exists
     createGroupFilterUI();
+// ===== GROUP EDIT BUTTON HANDLER =====
+    // Group edit button handler - using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'editGroupNameBtn' || e.target.closest('#editGroupNameBtn')) {
+            e.stopPropagation();
+            showEditGroupModal();
+        }
+    });
 };
     </script>
 </body>
