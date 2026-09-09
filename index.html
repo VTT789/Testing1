@@ -1674,122 +1674,69 @@ body.night-mode .resizer {
             }
         }
         .qr-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, .75);
-    justify-content: center;
-    align-items: center;
-    z-index: 10001;
-    backdrop-filter: blur(4px);
-}
-
-.qr-overlay > div {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-}
-
-.qr-card {
-    position: relative;
-    background: #fff;
-    border-radius: 24px;
-    padding: 20px;
-    box-shadow: 0 25px 45px rgba(0, 0, 0, .3);
-    max-width: 90%;
-    width: auto;
-    display: inline-block;
-    animation: fadeInScale .2s ease;
-}
-
-.qr-close-btn {
-    position: absolute;
-    top: -12px;
-    right: -12px;
-    background: #1e293b;
-    color: #fff;
-    border: none;
-    border-radius: 40px;
-    width: 32px;
-    height: 32px;
-    font-size: 18px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, .2);
-    transition: background .2s;
-}
-.qr-close-btn:hover {
-    background: #ef4444;
-}
-
-/* TikTok link button styles */
-.tiktok-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    cursor: pointer;
-    padding: 12px 28px;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 60px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(8px);
-    transition: all 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    animation: fadeInUp 0.3s ease 0.1s both;
-}
-
-.tiktok-link:active {
-    transform: scale(0.96) !important;
-}
-
-/* Night mode support for TikTok link */
-body.night-mode .tiktok-link {
-    background: rgba(30, 41, 59, 0.95);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-}
-
-body.night-mode .tiktok-link span {
-    color: #e2e8f0 !important;
-}
-
-body.night-mode .tiktok-link span:last-child {
-    color: #60a5fa !important;
-}
-
-body.night-mode .tiktok-link span:nth-child(3) {
-    color: #60a5fa !important;
-}
-
-@keyframes fadeInScale {
-    from {
-        opacity: 0;
-        transform: scale(.95);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .75);
+            justify-content: center;
+            align-items: center;
+            z-index: 10001;
+            backdrop-filter: blur(4px)
+        }
+        .qr-card {
+            position: relative;
+            background: #fff;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, .3);
+            max-width: 90%;
+            width: auto;
+            display: inline-block;
+            animation: fadeInScale .2s ease
+        }
+        .qr-card img {
+            width: 280px;
+            max-width: 70vw;
+            height: auto;
+            border-radius: 16px;
+            display: block;
+            cursor: pointer;
+        }
+        .qr-close-btn {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: #1e293b;
+            color: #fff;
+            border: none;
+            border-radius: 40px;
+            width: 32px;
+            height: 32px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, .2);
+            transition: background .2s
+        }
+        .qr-close-btn:hover {
+            background: #ef4444
+        }
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(.95)
+            }
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
         .vis-toggle-btn {
             flex: 1;
             background: #e2e8f0;
@@ -2937,17 +2884,17 @@ body.night-mode .tiktok-link span:nth-child(3) {
     </div>
     <div id=copyPopup class=copy-popup><span id=popupMessage>📋 Ready to copy</span><button id=copyActionBtn>Copy</button></div>
    <div id=qrPopupOverlay class=qr-overlay>
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;">
+    <div class="qr-wrapper">
         <div class=qr-card>
             <button class=qr-close-btn id=qrCloseBtn>✕</button>
             <img src=/static/QR.png alt="QR Code">
         </div>
         <!-- TikTok Link - BELOW the QR card -->
-        <div class="tiktok-link" style="display:flex; align-items:center; justify-content:center; gap:12px; cursor:pointer; padding:12px 28px; background:rgba(255,255,255,0.95); border-radius:60px; box-shadow:0 4px 20px rgba(0,0,0,0.15); backdrop-filter:blur(8px); transition:all 0.2s ease; border:1px solid rgba(255,255,255,0.2);" onclick="window.open('https://www.tiktok.com/@kunthea_xiaoyazi', '_blank')" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.25)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.15)';">
+        <div class="tiktok-link" onclick="window.open('https://www.tiktok.com/@kunthea_xiaoyazi', '_blank')">
             <img src="/static/ABAicon.png" alt="ABA" style="width:32px; height:32px; border-radius:10px; flex-shrink:0;">
-            <span style="font-weight:700; color:#1a1a2e; font-size:1rem; letter-spacing:0.3px;">Kunthea_xiaoyazi</span>
-            <span style="color:#3b82f6; font-size:0.85rem; font-weight:500;">@ TikTok</span>
-            <span style="font-size:1.3rem; color:#3b82f6; margin-left:4px;">↗</span>
+            <span>Kunthea_xiaoyazi</span>
+            <span>@ TikTok</span>
+            <span>↗</span>
         </div>
     </div>
 </div>
