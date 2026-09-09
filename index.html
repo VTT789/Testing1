@@ -2884,17 +2884,17 @@ body.night-mode .resizer {
     </div>
     <div id=copyPopup class=copy-popup><span id=popupMessage>📋 Ready to copy</span><button id=copyActionBtn>Copy</button></div>
    <div id=qrPopupOverlay class=qr-overlay>
-    <div class="qr-wrapper">
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;">
         <div class=qr-card>
             <button class=qr-close-btn id=qrCloseBtn>✕</button>
             <img src=/static/QR.png alt="QR Code">
         </div>
         <!-- TikTok Link - BELOW the QR card -->
-        <div class="tiktok-link" onclick="window.open('https://www.tiktok.com/@kunthea_xiaoyazi', '_blank')">
+        <div class="tiktok-link" style="display:flex; align-items:center; justify-content:center; gap:12px; cursor:pointer; padding:12px 28px; background:rgba(255,255,255,0.95); border-radius:60px; box-shadow:0 4px 20px rgba(0,0,0,0.15); backdrop-filter:blur(8px); transition:all 0.2s ease; border:1px solid rgba(255,255,255,0.2);" onclick="window.open('https://www.tiktok.com/@kunthea_xiaoyazi', '_blank')" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.25)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.15)';">
             <img src="/static/ABAicon.png" alt="ABA" style="width:32px; height:32px; border-radius:10px; flex-shrink:0;">
-            <span>Kunthea_xiaoyazi</span>
-            <span>@ TikTok</span>
-            <span>↗</span>
+            <span style="font-weight:700; color:#1a1a2e; font-size:1rem; letter-spacing:0.3px;">Kunthea_xiaoyazi</span>
+            <span style="color:#3b82f6; font-size:0.85rem; font-weight:500;">@ TikTok</span>
+            <span style="font-size:1.3rem; color:#3b82f6; margin-left:4px;">↗</span>
         </div>
     </div>
 </div>
