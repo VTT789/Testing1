@@ -9637,14 +9637,16 @@ function loadSettings() {
         } catch (e) { console.warn("Settings parse error:", e); }
     } else {
         document.getElementById("pinyinFont").value = "'Baguette Simplified'";
-        document.getElementById("pinyinColor").value = "#fbbf24";
+        const _iosPc2 = safeGetItem('vocabMaster_PinyinColor_iOS', null);
+document.getElementById("pinyinColor").value = _iosPc2 || "#fbbf24";
         document.getElementById("pinyinSizePx").value = "55";
         userSetPinyinFontSize = 55;
         document.getElementById("pinyinSpacing").value = "0";
         document.getElementById("bottomSizePx").value = "55";
         userSetBottomFontSize = 55;
         document.getElementById("mKmColor").value = "#ffffff";
-        document.getElementById("bottomCharColor").value = "#60a5fa";
+        const _iosBc2 = safeGetItem('vocabMaster_BottomCharColor_iOS', null);
+document.getElementById("bottomCharColor").value = _iosBc2 || "#60a5fa";
         document.getElementById("shadowSlider").value = "3";
         sidebarVisible = false;
         document.getElementById("rightSide").classList.add("hidden");
@@ -10730,13 +10732,11 @@ if (deltaX > 0) {
             const e = document.getElementById('dragDarkModeBtn');
             e && (e.innerHTML = document.body.classList.contains('night-mode') ? "☀️" : "🌙");
             const isNight = document.body.classList.contains('night-mode');
-            const color = isNight ? '#ffffff' : '#000000';
-            document.getElementById('mZhColor').value = color;
-            document.getElementById('mKmColor').value = color;
-            document.getElementById('sZhColor').value = color;
-            document.getElementById('sKmColor').value = color;
-            document.getElementById('pinyinColor').value = color;
-            document.getElementById('bottomCharColor').value = color;
+           const color = isNight ? '#ffffff' : '#000000';
+document.getElementById('mZhColor').value = color;
+document.getElementById('mKmColor').value = color;
+document.getElementById('sZhColor').value = color;
+document.getElementById('sKmColor').value = color;
             applyStyles();
             renderSidebarUI();
         }
