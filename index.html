@@ -9361,10 +9361,25 @@ if (rbBtn) {
         }
 
         function applyPinyinStyles() {
-            const e = document.getElementById("pinyinFont").value;
-            const t = document.getElementById("pinyinColor").value;
-            const n = document.getElementById("pinyinBold").classList.contains("active");
-            const o = parseFloat(document.getElementById("pinyinSpacing").value);
+    // ✅ ALWAYS read from dedicated storage first (survives refresh)
+    try {
+        const storedColor = sessionStorage.getItem("vocabMaster_pinyinColor") || localStorage.getItem("vocabMaster_pinyinColor");
+        if (storedColor) document.getElementById("pinyinColor").value = storedColor;
+        const storedFont = sessionStorage.getItem("vocabMaster_pinyinFont") || localStorage.getItem("vocabMaster_pinyinFont");
+        if (storedFont) document.getElementById("pinyinFont").value = storedFont;
+        const storedSize = sessionStorage.getItem("vocabMaster_pinyinSizePx") || localStorage.getItem("vocabMaster_pinyinSizePx");
+        if (storedSize) { document.getElementById("pinyinSizePx").value = storedSize; userSetPinyinFontSize = parseInt(storedSize); }
+        const storedSpacing = sessionStorage.getItem("vocabMaster_pinyinSpacing") || localStorage.getItem("vocabMaster_pinyinSpacing");
+        if (storedSpacing) document.getElementById("pinyinSpacing").value = storedSpacing;
+        const storedBold = sessionStorage.getItem("vocabMaster_pinyinBold") || localStorage.getItem("vocabMaster_pinyinBold");
+        if (storedBold === "1") document.getElementById("pinyinBold").classList.add("active");
+        else if (storedBold === "0") document.getElementById("pinyinBold").classList.remove("active");
+    } catch (err) {}
+
+    const e = document.getElementById("pinyinFont").value;
+    const t = document.getElementById("pinyinColor").value;
+    const n = document.getElementById("pinyinBold").classList.contains("active");
+    const o = parseFloat(document.getElementById("pinyinSpacing").value);
             const wordEl = document.getElementById("chineseWord");
             let len = 0;
             if (wordEl) {
@@ -9398,23 +9413,67 @@ if (rbBtn) {
             document.querySelectorAll(".chinese-word").forEach((el) => {
                 el.style.gap = `${scaledRowGap}px ${scaledGap}px`;
             });
-            document.getElementById("pinyinSizeVal").innerText = userSetPinyinFontSize + "px";
-            document.getElementById("pinyinSpacingVal").innerText = o + "px";
-            saveAllData();
-            forceShrink();
-        }
+               document.getElementById("pinyinSizeVal").innerText = userSetPinyinFontSize + "px";
+    document.getElementById("pinyinSpacingVal").innerText = o + "px";
+    
+    // ✅ Directly save (bypasses quota flag)
+    try {
+        sessionStorage.setItem("vocabMaster_pinyinColor", document.getElementById("pinyinColor").value);
+        sessionStorage.setItem("vocabMaster_pinyinFont", document.getElementById("pinyinFont").value);
+        sessionStorage.setItem("vocabMaster_pinyinSizePx", document.getElementById("pinyinSizePx").value);
+        sessionStorage.setItem("vocabMaster_pinyinSpacing", document.getElementById("pinyinSpacing").value);
+        sessionStorage.setItem("vocabMaster_pinyinBold", document.getElementById("pinyinBold").classList.contains("active") ? "1" : "0");
+        localStorage.setItem("vocabMaster_pinyinColor", document.getElementById("pinyinColor").value);
+        localStorage.setItem("vocabMaster_pinyinFont", document.getElementById("pinyinFont").value);
+        localStorage.setItem("vocabMaster_pinyinSizePx", document.getElementById("pinyinSizePx").value);
+        localStorage.setItem("vocabMaster_pinyinSpacing", document.getElementById("pinyinSpacing").value);
+        localStorage.setItem("vocabMaster_pinyinBold", document.getElementById("pinyinBold").classList.contains("active") ? "1" : "0");
+    } catch (e) {}
+
+    saveAllData();
+    forceShrink();
+}
+
 
         function applyBottomStyles() {
-            const e = document.getElementById("chineseWord");
-            if (!e) return;
-            const t = document.getElementById("bottomFont").value,
-                n = document.getElementById("bottomCharColor").value,
-                o = document.getElementById("bottomBold").classList.contains("active");
-            userSetBottomFontSize = parseInt(document.getElementById("bottomSizePx").value), e.querySelectorAll(
-                ".chinese-bottom").forEach((e => { e.style.fontFamily = t, e.style.color = n, e.style.fontWeight =
-                    o ? "bold" : "normal" })), document.getElementById("bottomSizeVal").innerText =
-                userSetBottomFontSize + "px", applyBottomAutoScale(), saveAllData(), forceShrink()
-        }
+    // ✅ ALWAYS read from dedicated storage first (survives refresh)
+    try {
+        const storedColor = sessionStorage.getItem("vocabMaster_bottomCharColor") || localStorage.getItem("vocabMaster_bottomCharColor");
+        if (storedColor) document.getElementById("bottomCharColor").value = storedColor;
+        const storedFont = sessionStorage.getItem("vocabMaster_bottomFont") || localStorage.getItem("vocabMaster_bottomFont");
+        if (storedFont) document.getElementById("bottomFont").value = storedFont;
+        const storedSize = sessionStorage.getItem("vocabMaster_bottomSizePx") || localStorage.getItem("vocabMaster_bottomSizePx");
+        if (storedSize) { document.getElementById("bottomSizePx").value = storedSize; userSetBottomFontSize = parseInt(storedSize); }
+        const storedBold = sessionStorage.getItem("vocabMaster_bottomBold") || localStorage.getItem("vocabMaster_bottomBold");
+        if (storedBold === "1") document.getElementById("bottomBold").classList.add("active");
+        else if (storedBold === "0") document.getElementById("bottomBold").classList.remove("active");
+    } catch (err) {}
+
+    const e = document.getElementById("chineseWord");
+    if (!e) return;
+    const t = document.getElementById("bottomFont").value,
+        n = document.getElementById("bottomCharColor").value,
+        o = document.getElementById("bottomBold").classList.contains("active");
+               userSetBottomFontSize = parseInt(document.getElementById("bottomSizePx").value), e.querySelectorAll(
+        ".chinese-bottom").forEach((e => { e.style.fontFamily = t, e.style.color = n, e.style.fontWeight =
+            o ? "bold" : "normal" })), document.getElementById("bottomSizeVal").innerText =
+        userSetBottomFontSize + "px", applyBottomAutoScale();
+
+    // ✅ Directly save (bypasses quota flag)
+    try {
+        sessionStorage.setItem("vocabMaster_bottomCharColor", document.getElementById("bottomCharColor").value);
+        sessionStorage.setItem("vocabMaster_bottomFont", document.getElementById("bottomFont").value);
+        sessionStorage.setItem("vocabMaster_bottomSizePx", document.getElementById("bottomSizePx").value);
+        sessionStorage.setItem("vocabMaster_bottomBold", document.getElementById("bottomBold").classList.contains("active") ? "1" : "0");
+        localStorage.setItem("vocabMaster_bottomCharColor", document.getElementById("bottomCharColor").value);
+        localStorage.setItem("vocabMaster_bottomFont", document.getElementById("bottomFont").value);
+        localStorage.setItem("vocabMaster_bottomSizePx", document.getElementById("bottomSizePx").value);
+        localStorage.setItem("vocabMaster_bottomBold", document.getElementById("bottomBold").classList.contains("active") ? "1" : "0");
+    } catch (e) {}
+
+    saveAllData();
+    forceShrink();
+}
 
         function updateKhmerDisplay(e) {
             const t = document.getElementById("khmerWord");
@@ -9476,6 +9535,34 @@ if (rbBtn) {
 // FIXED: saveAllData with proper IndexedDB fallback for iOS
 // ======================================================================
 async function saveAllData() {
+    // ✅ ALWAYS save pinyin & bottom colors directly (tiny keys, always fit)
+    // Do this BEFORE the quota check so it never gets skipped
+    try {
+        localStorage.setItem("vocabMaster_pinyinColor", document.getElementById("pinyinColor").value);
+        localStorage.setItem("vocabMaster_bottomCharColor", document.getElementById("bottomCharColor").value);
+        localStorage.setItem("vocabMaster_pinyinFont", document.getElementById("pinyinFont").value);
+        localStorage.setItem("vocabMaster_bottomFont", document.getElementById("bottomFont").value);
+        localStorage.setItem("vocabMaster_pinyinSizePx", document.getElementById("pinyinSizePx").value);
+        localStorage.setItem("vocabMaster_bottomSizePx", document.getElementById("bottomSizePx").value);
+        localStorage.setItem("vocabMaster_pinyinSpacing", document.getElementById("pinyinSpacing").value);
+        localStorage.setItem("vocabMaster_pinyinBold", document.getElementById("pinyinBold").classList.contains("active") ? "1" : "0");
+        localStorage.setItem("vocabMaster_bottomBold", document.getElementById("bottomBold").classList.contains("active") ? "1" : "0");
+    } catch (e) {
+        console.warn("Could not save pinyin/bottom colors:", e);
+    }
+    // Also mirror to sessionStorage (survives refresh, has separate quota)
+    try {
+        sessionStorage.setItem("vocabMaster_pinyinColor", document.getElementById("pinyinColor").value);
+        sessionStorage.setItem("vocabMaster_bottomCharColor", document.getElementById("bottomCharColor").value);
+        sessionStorage.setItem("vocabMaster_pinyinFont", document.getElementById("pinyinFont").value);
+        sessionStorage.setItem("vocabMaster_bottomFont", document.getElementById("bottomFont").value);
+        sessionStorage.setItem("vocabMaster_pinyinSizePx", document.getElementById("pinyinSizePx").value);
+        sessionStorage.setItem("vocabMaster_bottomSizePx", document.getElementById("bottomSizePx").value);
+        sessionStorage.setItem("vocabMaster_pinyinSpacing", document.getElementById("pinyinSpacing").value);
+        sessionStorage.setItem("vocabMaster_pinyinBold", document.getElementById("pinyinBold").classList.contains("active") ? "1" : "0");
+        sessionStorage.setItem("vocabMaster_bottomBold", document.getElementById("bottomBold").classList.contains("active") ? "1" : "0");
+    } catch (e) {}
+
     // If quota is exceeded, only save the absolute essentials
     if (storageQuotaExceeded) {
         // Try to save the most important data to IndexedDB
@@ -9849,14 +9936,20 @@ function loadSettings() {
     }
     // ✅ ALWAYS restore pinyin & bottom colors from their dedicated keys
     // (overrides defaults from the settings blob if they exist)
-    try {
+     try {
         let pc = localStorage.getItem("vocabMaster_pinyinColor");
         if (!pc) pc = sessionStorage.getItem("vocabMaster_pinyinColor");
-        if (pc) document.getElementById("pinyinColor").value = pc;
+        if (pc) {
+            document.getElementById("pinyinColor").value = pc;
+            document.querySelectorAll(".pinyin-top").forEach(el => el.style.color = pc);
+        }
 
         let bc = localStorage.getItem("vocabMaster_bottomCharColor");
         if (!bc) bc = sessionStorage.getItem("vocabMaster_bottomCharColor");
-        if (bc) document.getElementById("bottomCharColor").value = bc;
+        if (bc) {
+            document.getElementById("bottomCharColor").value = bc;
+            document.querySelectorAll(".chinese-bottom").forEach(el => el.style.color = bc);
+        }
 
         let pf = localStorage.getItem("vocabMaster_pinyinFont");
         if (!pf) pf = sessionStorage.getItem("vocabMaster_pinyinFont");
