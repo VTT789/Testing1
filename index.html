@@ -9582,7 +9582,11 @@ function loadSettings() {
             if (t.kmVoice) document.getElementById("kmVoiceSelect").value = t.kmVoice;
             if (void 0 !== t.zhRate) document.getElementById("zhRateSlider").value = t.zhRate;
             if (t.pinyinFont) document.getElementById("pinyinFont").value = t.pinyinFont;
-            if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#fbbf24";
+            if (safeGetItem('vocabMaster_PinyinColor_iOS', null)) {
+    document.getElementById("pinyinColor").value = safeGetItem('vocabMaster_PinyinColor_iOS', null);
+} else if (t.pinyinColor) {
+    document.getElementById("pinyinColor").value = t.pinyinColor || "#fbbf24";
+}
             if (void 0 !== t.pinyinBold) {
                 const e = document.getElementById("pinyinBold");
                 t.pinyinBold ? e.classList.add("active") : e.classList.remove("active");
@@ -9593,7 +9597,12 @@ function loadSettings() {
             }
             if (t.pinyinSpacing) document.getElementById("pinyinSpacing").value = t.pinyinSpacing;
             if (t.bottomFont) document.getElementById("bottomFont").value = t.bottomFont;
-            if (t.bottomCharColor) document.getElementById("bottomCharColor").value = t.bottomCharColor || "#60a5fa";
+            if (safeGetItem('vocabMaster_BottomCharColor_iOS', null)) {
+    document.getElementById("bottomCharColor").value = safeGetItem('vocabMaster_BottomCharColor_iOS', null);
+} else if (t.bottomCharColor) {
+    document.getElementById("bottomCharColor").value = t.bottomCharColor || "#60a5fa";
+}
+
             if (void 0 !== t.bottomBold) {
                 const e = document.getElementById("bottomBold");
                 t.bottomBold ? e.classList.add("active") : e.classList.remove("active");
@@ -11529,6 +11538,29 @@ document.addEventListener('visibilitychange', function() {
     }, 100);
 
     document.getElementById("insertDataBtn").onclick = () => { showLoadVocabularyModal(); };
+	    // ===== iOS COLOR PICKER FIX =====
+    ['pinyinColor', 'bottomCharColor'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const saveIt = function() {
+            const val = this.value;
+            if (!val) return;
+            if (id === 'pinyinColor') {
+                safeSetItem('vocabMaster_PinyinColor_iOS', val);
+            } else {
+                safeSetItem('vocabMaster_BottomCharColor_iOS', val);
+            }
+            try {
+                const s = JSON.parse(safeGetItem("vocabMaster_Settings", "{}")) || {};
+                if (id === 'pinyinColor') s.pinyinColor = val;
+                else s.bottomCharColor = val;
+                safeSetItem("vocabMaster_Settings", JSON.stringify(s));
+            } catch (e) {}
+        };
+        el.addEventListener('input', saveIt);
+        el.addEventListener('change', saveIt);
+        el.addEventListener('blur', saveIt);
+    });
 
     // ----- KEYBOARD SHORTCUTS -----
     document.addEventListener('keydown', function(e) {
