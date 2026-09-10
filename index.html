@@ -2946,7 +2946,10 @@ function safeSetItem(key, value) {
             e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
             (e.name === 'SecurityError' && e.message && e.message.includes('quota'))) {
             
-             storageQuotaExceeded = true;
+            // ✅ Free up space first
+            clearNonEssentialStorage();
+
+            storageQuotaExceeded = true;
             _quotaErrorCount++;
             console.warn('localStorage quota exceeded for key:', key);
 
@@ -2963,6 +2966,9 @@ function safeSetItem(key, value) {
                 }
             }
             return false;
+        }
+        console.warn('localStorage error:', e);
+        return false;
     }
 }
 
