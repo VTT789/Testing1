@@ -2933,44 +2933,69 @@ function clearNonEssentialStorage() {
         console.log('🧹 Cleared non-essential localStorage keys');
     } catch (e) {}
 }
+let _iosStorageDisabled = false;
+let _consecutiveQuotaFailures = 0;
+
 function safeSetItem(key, value) {
-    if (storageQuotaExceeded) {
-        if (key === 'vocabMaster_List_Compressed' || key === 'vocabMaster_List_StoredInIndexedDB') {
-            return false;
+    // If iOS storage is disabled (too many failures), only allow IndexedDB flag writes
+    if (_iosStorageDisabled) {
+        if (key === 'vocabMaster_List_StoredInIndexedDB') {
+            try { localStorage.setItem(key, value); } catch (e) {}
         }
         return false;
     }
-    
+
+    if (storageQuotaExceeded) {
+        return false;
+    }
+
     try {
         localStorage.setItem(key, value);
         storageQuotaExceeded = false;
         _quotaToastShown = false;
         _quotaErrorCount = 0;
+        _consecutiveQuotaFailures = 0;
         const warn = document.getElementById('cacheWarning');
         if (warn) warn.style.display = 'none';
         return true;
     } catch (e) {
-        if (e.name === 'QuotaExceededError' || e.code === 22 || 
+        const isQuotaError = (
+            e.name === 'QuotaExceededError' ||
+            e.code === 22 ||
             e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
-            (e.name === 'SecurityError' && e.message && e.message.includes('quota'))) {
-            
-             storageQuotaExceeded = true;
-            _quotaErrorCount++;
-            console.warn('localStorage quota exceeded for key:', key);
+            (e.name === 'SecurityError' && e.message && e.message.includes('quota'))
+        );
 
-            // ✅ Only warn for the critical vocab list key
-            if (key === 'vocabMaster_List_Compressed') {
+        if (isQuotaError) {
+            _consecutiveQuotaFailures++;
+
+            // On iOS, after 2 consecutive failures, disable localStorage entirely
+            // so the warning never appears again this session.
+            if (isIOS && _consecutiveQuotaFailures >= 2) {
+                _iosStorageDisabled = true;
+                console.warn('📱 iOS localStorage disabled for this session (quota too small)');
+                // Hide any warning that may have appeared
+                const warn = document.getElementById('cacheWarning');
+                if (warn) warn.style.display = 'none';
+                return false;
+            }
+
+            // Try to free space
+            clearNonEssentialStorage();
+            storageQuotaExceeded = true;
+            _quotaErrorCount++;
+
+            // ✅ NEVER show the warning on iOS at all
+            if (!isIOS && key === 'vocabMaster_List_Compressed') {
                 const warn = document.getElementById('cacheWarning');
                 if (warn) warn.style.display = 'block';
-
-                const now = Date.now();
-                if (!_quotaToastShown || (now - _lastQuotaCheck) > 10000) {
-                    _quotaToastShown = true;
-                    _lastQuotaCheck = now;
-                    showToast('⚠️ Storage full! Tap "Clear Cache" in Load Vocabulary modal.');
-                }
             }
+
             return false;
+        }
+
+        console.warn('localStorage error:', e);
+        return false;
     }
 }
 
@@ -9508,7 +9533,7 @@ async function saveAllData() {
     };
     
     // Try to save settings - if this fails, quota is full
-    const settingsSuccess = safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
+     const settingsSuccess = safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
     
     // ✅ iOS fallback: always also save to sessionStorage (separate quota)
     try {
@@ -9578,12 +9603,13 @@ async function saveAllData() {
 // FIXED: loadSettings with IndexedDB fallback
 // ======================================================================
 function loadSettings() {
-    let settingsStr = safeGetItem("vocabMaster_Settings", null);
+   let settingsStr = safeGetItem("vocabMaster_Settings", null);
     // ✅ iOS fallback: if localStorage is empty, try sessionStorage
     if (!settingsStr) {
         try { settingsStr = sessionStorage.getItem("vocabMaster_Settings"); } catch (e) {}
     }
     if (settingsStr) {
+        try {
             const t = JSON.parse(settingsStr);
             userSetChineseFontSize = t.mZhSize || 42;
             userSetKhmerFontSize = t.mKmSize || 42;
