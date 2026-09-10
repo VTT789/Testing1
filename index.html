@@ -3023,9 +3023,7 @@ function resetQuotaState() {
     if (warn) warn.style.display = 'none';
 }
 
-function safeRemoveItem(key) {
-    try { localStorage.removeItem(key); } catch (e) {}
-}
+
 
         function compressVocabList(list) {
             return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2, item.group || '']);
@@ -9693,7 +9691,7 @@ function loadSettings() {
         sidebarVisible = false;
         document.getElementById("rightSide").classList.add("hidden");
         document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
-        bottomCharVisible = true;
+         bottomCharVisible = true;
         document.body.classList.add("night-mode");
         const darkBtn = document.getElementById("dragDarkModeBtn");
         if (darkBtn) darkBtn.innerHTML = "☀️";
