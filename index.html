@@ -2580,6 +2580,14 @@ body.night-mode .resizer {
         body.night-mode .group-filter-area .group-label {
             color: #94a3b8;
         }
+		
+		   
+        /* Hide cache warning on iOS entirely */
+        @supports (-webkit-touch-callout: none) {
+            .cache-warning {
+                display: none !important;
+            }
+        }
     </style>
     <style>
         #floatingMenu {
@@ -2925,48 +2933,67 @@ function clearNonEssentialStorage() {
         console.log('🧹 Cleared non-essential localStorage keys');
     } catch (e) {}
 }
+let _iosStorageDisabled = false;
+let _consecutiveQuotaFailures = 0;
+
 function safeSetItem(key, value) {
-    if (storageQuotaExceeded) {
-        if (key === 'vocabMaster_List_Compressed' || key === 'vocabMaster_List_StoredInIndexedDB') {
-            return false;
+    // If iOS storage is disabled (too many failures), only allow IndexedDB flag writes
+    if (_iosStorageDisabled) {
+        if (key === 'vocabMaster_List_StoredInIndexedDB') {
+            try { localStorage.setItem(key, value); } catch (e) {}
         }
         return false;
     }
-    
+
+    if (storageQuotaExceeded) {
+        return false;
+    }
+
     try {
         localStorage.setItem(key, value);
         storageQuotaExceeded = false;
         _quotaToastShown = false;
         _quotaErrorCount = 0;
+        _consecutiveQuotaFailures = 0;
         const warn = document.getElementById('cacheWarning');
         if (warn) warn.style.display = 'none';
         return true;
     } catch (e) {
-        if (e.name === 'QuotaExceededError' || e.code === 22 || 
+        const isQuotaError = (
+            e.name === 'QuotaExceededError' ||
+            e.code === 22 ||
             e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
-            (e.name === 'SecurityError' && e.message && e.message.includes('quota'))) {
-            
-            // ✅ Free up space first
-            clearNonEssentialStorage();
+            (e.name === 'SecurityError' && e.message && e.message.includes('quota'))
+        );
 
+        if (isQuotaError) {
+            _consecutiveQuotaFailures++;
+
+            // On iOS, after 2 consecutive failures, disable localStorage entirely
+            // so the warning never appears again this session.
+            if (isIOS && _consecutiveQuotaFailures >= 2) {
+                _iosStorageDisabled = true;
+                console.warn('📱 iOS localStorage disabled for this session (quota too small)');
+                // Hide any warning that may have appeared
+                const warn = document.getElementById('cacheWarning');
+                if (warn) warn.style.display = 'none';
+                return false;
+            }
+
+            // Try to free space
+            clearNonEssentialStorage();
             storageQuotaExceeded = true;
             _quotaErrorCount++;
-            console.warn('localStorage quota exceeded for key:', key);
 
-            // ✅ Only warn for the critical vocab list key
-            if (key === 'vocabMaster_List_Compressed') {
+            // ✅ NEVER show the warning on iOS at all
+            if (!isIOS && key === 'vocabMaster_List_Compressed') {
                 const warn = document.getElementById('cacheWarning');
                 if (warn) warn.style.display = 'block';
-
-                const now = Date.now();
-                if (!_quotaToastShown || (now - _lastQuotaCheck) > 10000) {
-                    _quotaToastShown = true;
-                    _lastQuotaCheck = now;
-                    showToast('⚠️ Storage full! Tap "Clear Cache" in Load Vocabulary modal.');
-                }
             }
+
             return false;
         }
+
         console.warn('localStorage error:', e);
         return false;
     }
@@ -11072,7 +11099,15 @@ if (deltaX > 0) {
 	resetQuotaState()
     loadSettings();
     loadSheetHistory();
-
+if (isIOS) {
+    const warn = document.getElementById('cacheWarning');
+    if (warn) {
+        warn.style.display = 'none';
+        warn.style.visibility = 'hidden';
+        warn.style.height = '0';
+        warn.style.overflow = 'hidden';
+    }
+}
     // ---- FIX: reload sheet if vocab list is empty but sheet ID exists ----
     if (vocabList.length === 0 && currentSheetId) {
         console.log('🔄 Vocab list empty – reloading sheet...');
