@@ -9319,11 +9319,19 @@ if (rbBtn) {
             bottomCharVisible = !0;
 
         function updateChineseDisplay(e) {
-            const t = document.getElementById("chineseWord");
-            t && (t.innerHTML = getTripleHTML(e), t.setAttribute("data-plain", e), applyChineseMainStyle(),
-                applyPinyinStyles(), applyBottomStyles(), applyLayerTransforms(), applyTextVisibility(), forceShrink(),
-                applyBottomAutoScale())
-        }
+    // ✅ Force sync colors from storage BEFORE applying styles
+    try {
+        const pc = sessionStorage.getItem("vocabMaster_pinyinColor") || localStorage.getItem("vocabMaster_pinyinColor");
+        if (pc) document.getElementById("pinyinColor").value = pc;
+        const bc = sessionStorage.getItem("vocabMaster_bottomCharColor") || localStorage.getItem("vocabMaster_bottomCharColor");
+        if (bc) document.getElementById("bottomCharColor").value = bc;
+    } catch (err) {}
+
+    const t = document.getElementById("chineseWord");
+    t && (t.innerHTML = getTripleHTML(e), t.setAttribute("data-plain", e), applyChineseMainStyle(),
+        applyPinyinStyles(), applyBottomStyles(), applyLayerTransforms(), applyTextVisibility(), forceShrink(),
+        applyBottomAutoScale())
+}
 
         function applyTextVisibility() {
             const e = document.getElementById("chineseWord");
