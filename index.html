@@ -2580,14 +2580,6 @@ body.night-mode .resizer {
         body.night-mode .group-filter-area .group-label {
             color: #94a3b8;
         }
-		
-		   
-        /* Hide cache warning on iOS entirely */
-        @supports (-webkit-touch-callout: none) {
-            .cache-warning {
-                display: none !important;
-            }
-        }
     </style>
     <style>
         #floatingMenu {
@@ -2914,86 +2906,51 @@ let storageQuotaExceeded = false;
 let _quotaToastShown = false;
 let _lastQuotaCheck = 0;
 let _quotaErrorCount = 0;
-// ✅ NEW: Free up space by clearing non-essential keys when quota is hit
-function clearNonEssentialStorage() {
-    const essential = new Set([
-        'vocabMaster_List_Compressed',
-        'vocabMaster_List_StoredInIndexedDB',
-        'vocabMaster_SheetId',
-        'vocabMaster_ApiUrl',
-        'vocabMaster_Password',
-        'vocabMaster_Settings'
-    ]);
-    try {
-        Object.keys(localStorage).forEach(k => {
-            if (!essential.has(k)) {
-                try { localStorage.removeItem(k); } catch (e) {}
-            }
-        });
-        console.log('🧹 Cleared non-essential localStorage keys');
-    } catch (e) {}
-}
-let _iosStorageDisabled = false;
-let _consecutiveQuotaFailures = 0;
 
 function safeSetItem(key, value) {
-    // If iOS storage is disabled (too many failures), only allow IndexedDB flag writes
-    if (_iosStorageDisabled) {
-        if (key === 'vocabMaster_List_StoredInIndexedDB') {
-            try { localStorage.setItem(key, value); } catch (e) {}
-        }
-        return false;
-    }
-
+    // If quota is already exceeded, skip localStorage entirely
     if (storageQuotaExceeded) {
+        // Only try IndexedDB for critical data (vocab list)
+        if (key === 'vocabMaster_List_Compressed' || key === 'vocabMaster_List_StoredInIndexedDB') {
+            // Let the caller handle IndexedDB fallback
+            return false;
+        }
+        // For all other keys, just return false without showing toast
         return false;
     }
-
+    
     try {
         localStorage.setItem(key, value);
+        // If we successfully wrote, reset the quota state
         storageQuotaExceeded = false;
         _quotaToastShown = false;
         _quotaErrorCount = 0;
-        _consecutiveQuotaFailures = 0;
         const warn = document.getElementById('cacheWarning');
         if (warn) warn.style.display = 'none';
         return true;
     } catch (e) {
-        const isQuotaError = (
-            e.name === 'QuotaExceededError' ||
-            e.code === 22 ||
-            e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
-            (e.name === 'SecurityError' && e.message && e.message.includes('quota'))
-        );
-
-        if (isQuotaError) {
-            _consecutiveQuotaFailures++;
-
-            // On iOS, after 2 consecutive failures, disable localStorage entirely
-            // so the warning never appears again this session.
-            if (isIOS && _consecutiveQuotaFailures >= 2) {
-                _iosStorageDisabled = true;
-                console.warn('📱 iOS localStorage disabled for this session (quota too small)');
-                // Hide any warning that may have appeared
-                const warn = document.getElementById('cacheWarning');
-                if (warn) warn.style.display = 'none';
-                return false;
-            }
-
-            // Try to free space
-            clearNonEssentialStorage();
+        // Check if this is a quota error
+        if (e.name === 'QuotaExceededError' || e.code === 22 || 
+            e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || 
+            (e.name === 'SecurityError' && e.message && e.message.includes('quota'))) {
+            
             storageQuotaExceeded = true;
             _quotaErrorCount++;
-
-            // ✅ NEVER show the warning on iOS at all
-            if (!isIOS && key === 'vocabMaster_List_Compressed') {
-                const warn = document.getElementById('cacheWarning');
-                if (warn) warn.style.display = 'block';
+            console.warn('localStorage quota exceeded for key:', key);
+            
+            // Show the warning in the UI
+            const warn = document.getElementById('cacheWarning');
+            if (warn) warn.style.display = 'block';
+            
+            // Only show toast once every 10 seconds to avoid spam
+            const now = Date.now();
+            if (!_quotaToastShown || (now - _lastQuotaCheck) > 10000) {
+                _quotaToastShown = true;
+                _lastQuotaCheck = now;
+                showToast('⚠️ Storage full! Tap "Clear Cache" in Load Vocabulary modal.');
             }
-
             return false;
         }
-
         console.warn('localStorage error:', e);
         return false;
     }
@@ -3023,7 +2980,9 @@ function resetQuotaState() {
     if (warn) warn.style.display = 'none';
 }
 
-
+function safeRemoveItem(key) {
+    try { localStorage.removeItem(key); } catch (e) {}
+}
 
         function compressVocabList(list) {
             return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2, item.group || '']);
@@ -9319,19 +9278,11 @@ if (rbBtn) {
             bottomCharVisible = !0;
 
         function updateChineseDisplay(e) {
-    // ✅ Force sync colors from storage BEFORE applying styles
-    try {
-        const pc = sessionStorage.getItem("vocabMaster_pinyinColor") || localStorage.getItem("vocabMaster_pinyinColor");
-        if (pc) document.getElementById("pinyinColor").value = pc;
-        const bc = sessionStorage.getItem("vocabMaster_bottomCharColor") || localStorage.getItem("vocabMaster_bottomCharColor");
-        if (bc) document.getElementById("bottomCharColor").value = bc;
-    } catch (err) {}
-
-    const t = document.getElementById("chineseWord");
-    t && (t.innerHTML = getTripleHTML(e), t.setAttribute("data-plain", e), applyChineseMainStyle(),
-        applyPinyinStyles(), applyBottomStyles(), applyLayerTransforms(), applyTextVisibility(), forceShrink(),
-        applyBottomAutoScale())
-}
+            const t = document.getElementById("chineseWord");
+            t && (t.innerHTML = getTripleHTML(e), t.setAttribute("data-plain", e), applyChineseMainStyle(),
+                applyPinyinStyles(), applyBottomStyles(), applyLayerTransforms(), applyTextVisibility(), forceShrink(),
+                applyBottomAutoScale())
+        }
 
         function applyTextVisibility() {
             const e = document.getElementById("chineseWord");
@@ -9369,25 +9320,10 @@ if (rbBtn) {
         }
 
         function applyPinyinStyles() {
-    // ✅ ALWAYS read from dedicated storage first (survives refresh)
-    try {
-        const storedColor = sessionStorage.getItem("vocabMaster_pinyinColor") || localStorage.getItem("vocabMaster_pinyinColor");
-        if (storedColor) document.getElementById("pinyinColor").value = storedColor;
-        const storedFont = sessionStorage.getItem("vocabMaster_pinyinFont") || localStorage.getItem("vocabMaster_pinyinFont");
-        if (storedFont) document.getElementById("pinyinFont").value = storedFont;
-        const storedSize = sessionStorage.getItem("vocabMaster_pinyinSizePx") || localStorage.getItem("vocabMaster_pinyinSizePx");
-        if (storedSize) { document.getElementById("pinyinSizePx").value = storedSize; userSetPinyinFontSize = parseInt(storedSize); }
-        const storedSpacing = sessionStorage.getItem("vocabMaster_pinyinSpacing") || localStorage.getItem("vocabMaster_pinyinSpacing");
-        if (storedSpacing) document.getElementById("pinyinSpacing").value = storedSpacing;
-        const storedBold = sessionStorage.getItem("vocabMaster_pinyinBold") || localStorage.getItem("vocabMaster_pinyinBold");
-        if (storedBold === "1") document.getElementById("pinyinBold").classList.add("active");
-        else if (storedBold === "0") document.getElementById("pinyinBold").classList.remove("active");
-    } catch (err) {}
-
-    const e = document.getElementById("pinyinFont").value;
-    const t = document.getElementById("pinyinColor").value;
-    const n = document.getElementById("pinyinBold").classList.contains("active");
-    const o = parseFloat(document.getElementById("pinyinSpacing").value);
+            const e = document.getElementById("pinyinFont").value;
+            const t = document.getElementById("pinyinColor").value;
+            const n = document.getElementById("pinyinBold").classList.contains("active");
+            const o = parseFloat(document.getElementById("pinyinSpacing").value);
             const wordEl = document.getElementById("chineseWord");
             let len = 0;
             if (wordEl) {
@@ -9421,67 +9357,23 @@ if (rbBtn) {
             document.querySelectorAll(".chinese-word").forEach((el) => {
                 el.style.gap = `${scaledRowGap}px ${scaledGap}px`;
             });
-               document.getElementById("pinyinSizeVal").innerText = userSetPinyinFontSize + "px";
-    document.getElementById("pinyinSpacingVal").innerText = o + "px";
-    
-    // ✅ Directly save (bypasses quota flag)
-    try {
-        sessionStorage.setItem("vocabMaster_pinyinColor", document.getElementById("pinyinColor").value);
-        sessionStorage.setItem("vocabMaster_pinyinFont", document.getElementById("pinyinFont").value);
-        sessionStorage.setItem("vocabMaster_pinyinSizePx", document.getElementById("pinyinSizePx").value);
-        sessionStorage.setItem("vocabMaster_pinyinSpacing", document.getElementById("pinyinSpacing").value);
-        sessionStorage.setItem("vocabMaster_pinyinBold", document.getElementById("pinyinBold").classList.contains("active") ? "1" : "0");
-        localStorage.setItem("vocabMaster_pinyinColor", document.getElementById("pinyinColor").value);
-        localStorage.setItem("vocabMaster_pinyinFont", document.getElementById("pinyinFont").value);
-        localStorage.setItem("vocabMaster_pinyinSizePx", document.getElementById("pinyinSizePx").value);
-        localStorage.setItem("vocabMaster_pinyinSpacing", document.getElementById("pinyinSpacing").value);
-        localStorage.setItem("vocabMaster_pinyinBold", document.getElementById("pinyinBold").classList.contains("active") ? "1" : "0");
-    } catch (e) {}
-
-    saveAllData();
-    forceShrink();
-}
-
+            document.getElementById("pinyinSizeVal").innerText = userSetPinyinFontSize + "px";
+            document.getElementById("pinyinSpacingVal").innerText = o + "px";
+            saveAllData();
+            forceShrink();
+        }
 
         function applyBottomStyles() {
-    // ✅ ALWAYS read from dedicated storage first (survives refresh)
-    try {
-        const storedColor = sessionStorage.getItem("vocabMaster_bottomCharColor") || localStorage.getItem("vocabMaster_bottomCharColor");
-        if (storedColor) document.getElementById("bottomCharColor").value = storedColor;
-        const storedFont = sessionStorage.getItem("vocabMaster_bottomFont") || localStorage.getItem("vocabMaster_bottomFont");
-        if (storedFont) document.getElementById("bottomFont").value = storedFont;
-        const storedSize = sessionStorage.getItem("vocabMaster_bottomSizePx") || localStorage.getItem("vocabMaster_bottomSizePx");
-        if (storedSize) { document.getElementById("bottomSizePx").value = storedSize; userSetBottomFontSize = parseInt(storedSize); }
-        const storedBold = sessionStorage.getItem("vocabMaster_bottomBold") || localStorage.getItem("vocabMaster_bottomBold");
-        if (storedBold === "1") document.getElementById("bottomBold").classList.add("active");
-        else if (storedBold === "0") document.getElementById("bottomBold").classList.remove("active");
-    } catch (err) {}
-
-    const e = document.getElementById("chineseWord");
-    if (!e) return;
-    const t = document.getElementById("bottomFont").value,
-        n = document.getElementById("bottomCharColor").value,
-        o = document.getElementById("bottomBold").classList.contains("active");
-               userSetBottomFontSize = parseInt(document.getElementById("bottomSizePx").value), e.querySelectorAll(
-        ".chinese-bottom").forEach((e => { e.style.fontFamily = t, e.style.color = n, e.style.fontWeight =
-            o ? "bold" : "normal" })), document.getElementById("bottomSizeVal").innerText =
-        userSetBottomFontSize + "px", applyBottomAutoScale();
-
-    // ✅ Directly save (bypasses quota flag)
-    try {
-        sessionStorage.setItem("vocabMaster_bottomCharColor", document.getElementById("bottomCharColor").value);
-        sessionStorage.setItem("vocabMaster_bottomFont", document.getElementById("bottomFont").value);
-        sessionStorage.setItem("vocabMaster_bottomSizePx", document.getElementById("bottomSizePx").value);
-        sessionStorage.setItem("vocabMaster_bottomBold", document.getElementById("bottomBold").classList.contains("active") ? "1" : "0");
-        localStorage.setItem("vocabMaster_bottomCharColor", document.getElementById("bottomCharColor").value);
-        localStorage.setItem("vocabMaster_bottomFont", document.getElementById("bottomFont").value);
-        localStorage.setItem("vocabMaster_bottomSizePx", document.getElementById("bottomSizePx").value);
-        localStorage.setItem("vocabMaster_bottomBold", document.getElementById("bottomBold").classList.contains("active") ? "1" : "0");
-    } catch (e) {}
-
-    saveAllData();
-    forceShrink();
-}
+            const e = document.getElementById("chineseWord");
+            if (!e) return;
+            const t = document.getElementById("bottomFont").value,
+                n = document.getElementById("bottomCharColor").value,
+                o = document.getElementById("bottomBold").classList.contains("active");
+            userSetBottomFontSize = parseInt(document.getElementById("bottomSizePx").value), e.querySelectorAll(
+                ".chinese-bottom").forEach((e => { e.style.fontFamily = t, e.style.color = n, e.style.fontWeight =
+                    o ? "bold" : "normal" })), document.getElementById("bottomSizeVal").innerText =
+                userSetBottomFontSize + "px", applyBottomAutoScale(), saveAllData(), forceShrink()
+        }
 
         function updateKhmerDisplay(e) {
             const t = document.getElementById("khmerWord");
@@ -9543,34 +9435,6 @@ if (rbBtn) {
 // FIXED: saveAllData with proper IndexedDB fallback for iOS
 // ======================================================================
 async function saveAllData() {
-    // ✅ ALWAYS save pinyin & bottom colors directly (tiny keys, always fit)
-    // Do this BEFORE the quota check so it never gets skipped
-    try {
-        localStorage.setItem("vocabMaster_pinyinColor", document.getElementById("pinyinColor").value);
-        localStorage.setItem("vocabMaster_bottomCharColor", document.getElementById("bottomCharColor").value);
-        localStorage.setItem("vocabMaster_pinyinFont", document.getElementById("pinyinFont").value);
-        localStorage.setItem("vocabMaster_bottomFont", document.getElementById("bottomFont").value);
-        localStorage.setItem("vocabMaster_pinyinSizePx", document.getElementById("pinyinSizePx").value);
-        localStorage.setItem("vocabMaster_bottomSizePx", document.getElementById("bottomSizePx").value);
-        localStorage.setItem("vocabMaster_pinyinSpacing", document.getElementById("pinyinSpacing").value);
-        localStorage.setItem("vocabMaster_pinyinBold", document.getElementById("pinyinBold").classList.contains("active") ? "1" : "0");
-        localStorage.setItem("vocabMaster_bottomBold", document.getElementById("bottomBold").classList.contains("active") ? "1" : "0");
-    } catch (e) {
-        console.warn("Could not save pinyin/bottom colors:", e);
-    }
-    // Also mirror to sessionStorage (survives refresh, has separate quota)
-    try {
-        sessionStorage.setItem("vocabMaster_pinyinColor", document.getElementById("pinyinColor").value);
-        sessionStorage.setItem("vocabMaster_bottomCharColor", document.getElementById("bottomCharColor").value);
-        sessionStorage.setItem("vocabMaster_pinyinFont", document.getElementById("pinyinFont").value);
-        sessionStorage.setItem("vocabMaster_bottomFont", document.getElementById("bottomFont").value);
-        sessionStorage.setItem("vocabMaster_pinyinSizePx", document.getElementById("pinyinSizePx").value);
-        sessionStorage.setItem("vocabMaster_bottomSizePx", document.getElementById("bottomSizePx").value);
-        sessionStorage.setItem("vocabMaster_pinyinSpacing", document.getElementById("pinyinSpacing").value);
-        sessionStorage.setItem("vocabMaster_pinyinBold", document.getElementById("pinyinBold").classList.contains("active") ? "1" : "0");
-        sessionStorage.setItem("vocabMaster_bottomBold", document.getElementById("bottomBold").classList.contains("active") ? "1" : "0");
-    } catch (e) {}
-
     // If quota is exceeded, only save the absolute essentials
     if (storageQuotaExceeded) {
         // Try to save the most important data to IndexedDB
@@ -9626,36 +9490,7 @@ async function saveAllData() {
     };
     
     // Try to save settings - if this fails, quota is full
-    // Try to save settings - if this fails, quota is full
     const settingsSuccess = safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
-    
-    // ✅ iOS fallback: always also save to sessionStorage (separate quota)
-    try {
-        sessionStorage.setItem("vocabMaster_Settings", JSON.stringify(settings));
-    } catch (e) {}
-
-    // ✅ ALWAYS save pinyin & bottom colors to dedicated keys (never resets)
-    try {
-        localStorage.setItem("vocabMaster_pinyinColor", document.getElementById("pinyinColor").value);
-        localStorage.setItem("vocabMaster_bottomCharColor", document.getElementById("bottomCharColor").value);
-        localStorage.setItem("vocabMaster_pinyinFont", document.getElementById("pinyinFont").value);
-        localStorage.setItem("vocabMaster_bottomFont", document.getElementById("bottomFont").value);
-        localStorage.setItem("vocabMaster_pinyinSizePx", document.getElementById("pinyinSizePx").value);
-        localStorage.setItem("vocabMaster_bottomSizePx", document.getElementById("bottomSizePx").value);
-        localStorage.setItem("vocabMaster_pinyinSpacing", document.getElementById("pinyinSpacing").value);
-        localStorage.setItem("vocabMaster_pinyinBold", document.getElementById("pinyinBold").classList.contains("active") ? "1" : "0");
-        localStorage.setItem("vocabMaster_bottomBold", document.getElementById("bottomBold").classList.contains("active") ? "1" : "0");
-    } catch (e) {}
-    try {
-        sessionStorage.setItem("vocabMaster_pinyinColor", document.getElementById("pinyinColor").value);
-        sessionStorage.setItem("vocabMaster_bottomCharColor", document.getElementById("bottomCharColor").value);
-        sessionStorage.setItem("vocabMaster_pinyinFont", document.getElementById("pinyinFont").value);
-        sessionStorage.setItem("vocabMaster_bottomFont", document.getElementById("bottomFont").value);
-        sessionStorage.setItem("vocabMaster_pinyinSizePx", document.getElementById("pinyinSizePx").value);
-        sessionStorage.setItem("vocabMaster_bottomSizePx", document.getElementById("bottomSizePx").value);
-        sessionStorage.setItem("vocabMaster_pinyinSpacing", document.getElementById("pinyinSpacing").value);
-    } catch (e) {}
-
     if (!settingsSuccess) {
         // Quota is full, stop trying to save other keys
         return;
@@ -9719,11 +9554,7 @@ async function saveAllData() {
 // FIXED: loadSettings with IndexedDB fallback
 // ======================================================================
 function loadSettings() {
-   let settingsStr = safeGetItem("vocabMaster_Settings", null);
-    // ✅ iOS fallback: if localStorage is empty, try sessionStorage
-    if (!settingsStr) {
-        try { settingsStr = sessionStorage.getItem("vocabMaster_Settings"); } catch (e) {}
-    }
+    const settingsStr = safeGetItem("vocabMaster_Settings", null);
     if (settingsStr) {
         try {
             const t = JSON.parse(settingsStr);
@@ -9809,7 +9640,7 @@ function loadSettings() {
         sidebarVisible = false;
         document.getElementById("rightSide").classList.add("hidden");
         document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
-         bottomCharVisible = true;
+        bottomCharVisible = true;
         document.body.classList.add("night-mode");
         const darkBtn = document.getElementById("dragDarkModeBtn");
         if (darkBtn) darkBtn.innerHTML = "☀️";
@@ -9942,54 +9773,6 @@ function loadSettings() {
         const size = parseFloat(getComputedStyle(mainEl).fontSize);
         if (size && !isNaN(size)) baselineFontSizePx = size;
     }
-    // ✅ ALWAYS restore pinyin & bottom colors from their dedicated keys
-    // (overrides defaults from the settings blob if they exist)
-     try {
-        let pc = localStorage.getItem("vocabMaster_pinyinColor");
-        if (!pc) pc = sessionStorage.getItem("vocabMaster_pinyinColor");
-        if (pc) {
-            document.getElementById("pinyinColor").value = pc;
-            document.querySelectorAll(".pinyin-top").forEach(el => el.style.color = pc);
-        }
-
-        let bc = localStorage.getItem("vocabMaster_bottomCharColor");
-        if (!bc) bc = sessionStorage.getItem("vocabMaster_bottomCharColor");
-        if (bc) {
-            document.getElementById("bottomCharColor").value = bc;
-            document.querySelectorAll(".chinese-bottom").forEach(el => el.style.color = bc);
-        }
-
-        let pf = localStorage.getItem("vocabMaster_pinyinFont");
-        if (!pf) pf = sessionStorage.getItem("vocabMaster_pinyinFont");
-        if (pf) document.getElementById("pinyinFont").value = pf;
-
-        let bf = localStorage.getItem("vocabMaster_bottomFont");
-        if (!bf) bf = sessionStorage.getItem("vocabMaster_bottomFont");
-        if (bf) document.getElementById("bottomFont").value = bf;
-
-        let ps = localStorage.getItem("vocabMaster_pinyinSizePx");
-        if (!ps) ps = sessionStorage.getItem("vocabMaster_pinyinSizePx");
-        if (ps) { document.getElementById("pinyinSizePx").value = ps; userSetPinyinFontSize = parseInt(ps); }
-
-        let bs = localStorage.getItem("vocabMaster_bottomSizePx");
-        if (!bs) bs = sessionStorage.getItem("vocabMaster_bottomSizePx");
-        if (bs) { document.getElementById("bottomSizePx").value = bs; userSetBottomFontSize = parseInt(bs); }
-
-        let psp = localStorage.getItem("vocabMaster_pinyinSpacing");
-        if (!psp) psp = sessionStorage.getItem("vocabMaster_pinyinSpacing");
-        if (psp) document.getElementById("pinyinSpacing").value = psp;
-
-        let pb = localStorage.getItem("vocabMaster_pinyinBold");
-        if (pb === "1") document.getElementById("pinyinBold").classList.add("active");
-        else if (pb === "0") document.getElementById("pinyinBold").classList.remove("active");
-
-        let bb = localStorage.getItem("vocabMaster_bottomBold");
-        if (bb === "1") document.getElementById("bottomBold").classList.add("active");
-        else if (bb === "0") document.getElementById("bottomBold").classList.remove("active");
-    } catch (e) {
-        console.warn("Could not restore pinyin/bottom colors:", e);
-    }
-
     updateRecycleBinBadge();
     setTimeout(setupInsertSymbolLongPress, 200);
 }
@@ -11270,18 +11053,11 @@ if (deltaX > 0) {
         initEmojiDrag();
         loadEmojiPosition();
     }
-	resetQuotaState()
+
     loadSettings();
+    resetQuotaState(); // <-- ADD THIS LINE HERE
     loadSheetHistory();
-if (isIOS) {
-    const warn = document.getElementById('cacheWarning');
-    if (warn) {
-        warn.style.display = 'none';
-        warn.style.visibility = 'hidden';
-        warn.style.height = '0';
-        warn.style.overflow = 'hidden';
-    }
-}
+
     // ---- FIX: reload sheet if vocab list is empty but sheet ID exists ----
     if (vocabList.length === 0 && currentSheetId) {
         console.log('🔄 Vocab list empty – reloading sheet...');
