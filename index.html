@@ -3792,35 +3792,30 @@ window.clearAllCache = async function() {
         }
 
         // ---- BUILD GROUP MAP ----
-        function buildGroupMap() {
-            groupMap.clear();
-            vocabList.forEach((item, idx) => {
-                const g = item.group || 'Uncategorized';
-                if (!groupMap.has(g)) groupMap.set(g, []);
-                groupMap.get(g).push(idx);
-            });
-            // Sort groups alphabetically
-            const sortedKeys = Array.from(groupMap.keys()).sort();
-            const newMap = new Map();
-            sortedKeys.forEach(k => newMap.set(k, groupMap.get(k)));
-            groupMap = newMap;
-            // Save group map data for persistence
-            try {
-                const mapData = {};
-                for (let [k, v] of groupMap) {
-                    mapData[k] = v;
-                }
-                safeSetItem('groupMapData', JSON.stringify(mapData));
-            } catch (e) {}
+ function buildGroupMap() {
+    groupMap.clear();
+    vocabList.forEach((item, idx) => {
+        let g = (item.group || '').trim();
+        // Normalize: empty OR any case of "uncategorized" → 'Uncategorized'
+        if (!g || g.toLowerCase() === 'uncategorized') {
+            g = 'Uncategorized';
         }
+        if (!groupMap.has(g)) groupMap.set(g, []);
+        groupMap.get(g).push(idx);
+    });
+    // Sort keys
+    const sortedKeys = Array.from(groupMap.keys()).sort();
+    const newMap = new Map();
+    sortedKeys.forEach(k => newMap.set(k, groupMap.get(k)));
+    groupMap = newMap;
+    try {
+        const mapData = {};
+        for (let [k, v] of groupMap) mapData[k] = v;
+        safeSetItem('groupMapData', JSON.stringify(mapData));
+    } catch (e) {}
+}
 
-        // ---- APPLY FILTER ----
-        // ---- APPLY FILTER ----
-        // ---- APPLY FILTER ----
-        
 
-        // ---- REBUILD FILTERED SIDEBAR INDICES ----
-        // ---- REBUILD FILTERED SIDEBAR INDICES ----
         function rebuildFilteredSidebarIndices() {
             if (filteredList.length === 0) {
                 sidebarIndices = [];
@@ -4499,39 +4494,39 @@ async function deleteMultipleVocab(rows) {
 
   let firstCharCache = new Map();
 
-        // ---- NEW: dedupe helper ----
-        function dedupeIndices(arr) {
-            const seen = new Set();
-            const out = [];
-            for (const v of arr) {
-                if (!seen.has(v)) { seen.add(v); out.push(v); }
-            }
-            return out;
-        }
-        window.dedupeIndices = dedupeIndices;
+// ---- NEW: dedupe helper ----
+function dedupeIndices(arr) {
+    const seen = new Set();
+    const out = [];
+    for (const v of arr) {
+        if (!seen.has(v)) { seen.add(v); out.push(v); }
+    }
+    return out;
+}
+window.dedupeIndices = dedupeIndices;
 
-        function buildFirstCharCache() {
-            firstCharCache.clear();
-            for (let i = 0; i < vocabList.length; i++) {
-                const ch = vocabList[i].chinese;
-                if (!ch) continue;
-                const first = ch.charAt(0);
-                if (!firstCharCache.has(first)) firstCharCache.set(first, []);
-                firstCharCache.get(first).push(i);
-            }
-            for (let [k, arr] of firstCharCache.entries()) arr.sort((a, b) => a - b);
-        }
+function buildFirstCharCache() {
+    firstCharCache.clear();
+    for (let i = 0; i < vocabList.length; i++) {
+        const ch = vocabList[i].chinese;
+        if (!ch) continue;
+        const first = ch.charAt(0);
+        if (!firstCharCache.has(first)) firstCharCache.set(first, []);
+        firstCharCache.get(first).push(i);
+    }
+    for (let [k, arr] of firstCharCache.entries()) arr.sort((a, b) => a - b);
+}
 
-        function getRelatedIndices(currentIdx) {
-            const currentWord = vocabList[currentIdx];
-            if (!currentWord || !currentWord.chinese) return [currentIdx];
-            const firstChar = currentWord.chinese.charAt(0);
-            const all = firstCharCache.get(firstChar) || [];
-            // Cap to 19 others → 20 total. Big perf win on iOS.
-            const others = all.filter(i => i !== currentIdx).slice(0, 19);
-            return dedupeIndices([currentIdx, ...others]);
-        }
-        let lastRandomIndicesStr = "";
+function getRelatedIndices(currentIdx) {
+    const currentWord = vocabList[currentIdx];
+    if (!currentWord || !currentWord.chinese) return [currentIdx];
+    const firstChar = currentWord.chinese.charAt(0);
+    const all = firstCharCache.get(firstChar) || [];
+    // Cap to 19 others → 20 total for iOS speed
+    const others = all.filter(i => i !== currentIdx).slice(0, 19);
+    return dedupeIndices([currentIdx, ...others]);
+}
+let lastRandomIndicesStr = "";
         // ---- Event delegation for sidebar rows ----
         let _sidebarDelegationAttached = false;
         function attachSidebarDelegation() {
@@ -4581,29 +4576,26 @@ async function deleteMultipleVocab(rows) {
     if (!t) return;
     const newIndices = getRelatedIndices(e);
     const newIndicesStr = newIndices.join(",");
+
     if (newIndicesStr !== lastRandomIndicesStr) {
-        sidebarIndices = dedupeIndices(newIndices);
+        sidebarIndices = newIndices;
         lastRandomIndicesStr = newIndicesStr;
         sidebarFocusIdx = 0;
-        renderSidebarUI();
+        renderSidebarUI();  // renders + updates display internally
     } else {
         sidebarFocusIdx = 0;
         document.querySelectorAll(".vocab-item").forEach((el, idx) => {
             el.classList.toggle("active", idx === 0);
         });
         updateDisplay();
-        const word = vocabList[sidebarIndices[sidebarFocusIdx]];
-        if (word && !softDeletedIndices.has(sidebarIndices[sidebarFocusIdx])) {
-            speakAutoSequence(word.chinese, word.khmer);
-        }
         scrollToActiveSidebarItem();
     }
-    updateDisplay();
+
+    // Speak ONCE, only if not in recycle bin
     if (!softDeletedIndices.has(e)) {
         speakAutoSequence(t.chinese, t.khmer);
     }
 }
-
         function loadWordByMode(e, t = !0) {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), killAllSpeech(), !vocabList[e]) return;
             if (softDeletedIndices.has(e)) {
@@ -6731,24 +6723,17 @@ function showEditGroupModalOnTop(presetGroup) {
         t.appendChild(o);
     }
 
-  applySidebarStyles();
-    scrollToActiveSidebarItem();
-    updateRecycleBinBadge();
-    updateStatusBar();
-    attachSidebarDelegation();
-    
-    // Update the group filter select options (single source of truth)
-    updateFilterSelect();
-    // Set the correct value
-    const groupSelect = document.getElementById('groupFilterSelect');
-    if (groupSelect) {
-        groupSelect.value = groupFilter;
-        // Single event listener
-        groupSelect.onchange = function() {
-            setGroupFilter(this.value);
-        };
-    }
-}
+  		applySidebarStyles();
+		scrollToActiveSidebarItem();
+		updateRecycleBinBadge();
+
+		// ---- NEW: refresh group dropdown (deduped) ----
+		updateFilterSelect();
+		const grpSel = document.getElementById('groupFilterSelect');
+		if (grpSel) {
+			grpSel.onchange = function() { setGroupFilter(this.value); };
+		}
+	}
 
         function updatePaginationControlsInside(e) {
     if (!e) return;
@@ -7048,21 +7033,61 @@ function showEditGroupModalOnTop(presetGroup) {
     }
 }
 
-        // Patch renderNormalSidebar and renderSidebarUI to sync after rendering
-        const origRenderNormalSidebar = renderNormalSidebar;
-        renderNormalSidebar = function() {
-            origRenderNormalSidebar();
-            setTimeout(syncPageInput, 50);
-        };
+// ---- NEW: single source of truth for group dropdown ----
+function updateFilterSelect() {
+    const select = document.getElementById('groupFilterSelect');
+    if (!select) return;
 
-        const origRenderSidebarUI = renderSidebarUI;
-        renderSidebarUI = function(e) {
-            origRenderSidebarUI(e);
-            setTimeout(syncPageInput, 50);
-        };
+    const currentVal = select.value;
 
-        // ---- DELETE FUNCTIONS (now using soft delete) ----
-        // These are kept for compatibility but now use soft delete
+    // ✅ CLEAR first — this is the fix for duplicate options
+    select.innerHTML = `<option value="__ALL__">📂 All</option>`;
+
+    // ✅ Normalize groupMap keys (Uncategorized / uncategorized / empty)
+    const normalized = new Map();
+    for (const [k, v] of groupMap.entries()) {
+        const key = (k && k.trim()) ? k.trim() : 'Uncategorized';
+        if (!normalized.has(key)) normalized.set(key, []);
+        normalized.get(key).push(...v);
+    }
+    groupMap = normalized;
+
+    const keys = Array.from(groupMap.keys()).sort();
+    keys.forEach(g => {
+        const count = groupMap.get(g).length;
+        const opt = document.createElement('option');
+        opt.value = g;
+        opt.textContent = g === 'Uncategorized'
+            ? `⚪ No Group (${count})`
+            : `${g} (${count})`;
+        select.appendChild(opt);
+    });
+
+    // Restore selection
+    if (currentVal && (currentVal === '__ALL__' || groupMap.has(currentVal))) {
+        select.value = currentVal;
+    } else {
+        select.value = '__ALL__';
+    }
+}
+
+// Patch renderNormalSidebar to sync after rendering
+const origRenderNormalSidebar = renderNormalSidebar;
+renderNormalSidebar = function() {
+    origRenderNormalSidebar();
+    setTimeout(syncPageInput, 50);
+};
+
+// ---- Debounced renderSidebarUI (iOS performance fix) ----
+let _sidebarRenderTimer = null;
+const origRenderSidebarUI = renderSidebarUI;
+renderSidebarUI = function(e) {
+    if (_sidebarRenderTimer) clearTimeout(_sidebarRenderTimer);
+    _sidebarRenderTimer = setTimeout(() => {
+        origRenderSidebarUI(e);
+        syncPageInput();
+    }, 16); // ~1 frame
+};
 
         function refreshAddModalSearch() {
             const addChineseInput = document.getElementById('addChineseInput');
