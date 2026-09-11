@@ -2985,18 +2985,25 @@ function safeRemoveItem(key) {
 }
 
         function compressVocabList(list) {
-            return list.map(item => [item.khmer || '', item.chinese || '', item.sheetRow || 2, item.group || '']);
-        }
+    return list.map(item => [
+        item.khmer || '',
+        item.chinese || '',
+        item.sheetRow || 2,
+        // Store '' instead of 'Uncategorized' to save space
+        (item.group === 'Uncategorized' ? '' : (item.group || ''))
+    ]);
+}
 
-        function decompressVocabList(compressed) {
-            if (!Array.isArray(compressed)) return [];
-            return compressed.map(arr => ({
-                khmer: arr[0] || '',
-                chinese: arr[1] || '',
-                sheetRow: arr[2] || 2,
-                group: arr[3] || ''
-            }));
-        }
+function decompressVocabList(compressed) {
+    if (!Array.isArray(compressed)) return [];
+    return compressed.map(arr => ({
+        khmer: arr[0] || '',
+        chinese: arr[1] || '',
+        sheetRow: arr[2] || 2,
+        // '' will be treated as 'Uncategorized' by buildGroupMap()
+        group: arr[3] || ''
+    }));
+}
 
         // ======================== INDEXEDDB STORAGE =========================
         // --- NEW: IndexedDB helper functions for large vocab lists ---
@@ -3792,27 +3799,20 @@ window.clearAllCache = async function() {
         }
 
         // ---- BUILD GROUP MAP ----
-        function buildGroupMap() {
-            groupMap.clear();
-            vocabList.forEach((item, idx) => {
-                const g = item.group || 'Uncategorized';
-                if (!groupMap.has(g)) groupMap.set(g, []);
-                groupMap.get(g).push(idx);
-            });
-            // Sort groups alphabetically
-            const sortedKeys = Array.from(groupMap.keys()).sort();
-            const newMap = new Map();
-            sortedKeys.forEach(k => newMap.set(k, groupMap.get(k)));
-            groupMap = newMap;
-            // Save group map data for persistence
-            try {
-                const mapData = {};
-                for (let [k, v] of groupMap) {
-                    mapData[k] = v;
-                }
-                safeSetItem('groupMapData', JSON.stringify(mapData));
-            } catch (e) {}
-        }
+       function buildGroupMap() {
+    groupMap.clear();
+    vocabList.forEach((item, idx) => {
+        const g = item.group || 'Uncategorized';
+        if (!groupMap.has(g)) groupMap.set(g, []);
+        groupMap.get(g).push(idx);
+    });
+    // Sort groups alphabetically
+    const sortedKeys = Array.from(groupMap.keys()).sort();
+    const newMap = new Map();
+    sortedKeys.forEach(k => newMap.set(k, groupMap.get(k)));
+    groupMap = newMap;
+    // ✅ No longer saved to localStorage — it's rebuilt from vocabList on every load.
+}
 
         // ---- APPLY FILTER ----
         // ---- APPLY FILTER ----
@@ -9502,7 +9502,7 @@ if (rbBtn) {
 // FIXED: saveAllData with proper IndexedDB fallback for iOS
 // ======================================================================
 async function saveAllData() {
-    // 1. ALWAYS save settings (tiny, ~1KB) — even if quota is exceeded
+    // ===== 1. ALWAYS save settings (tiny, ~1KB) — even if vocab list is big =====
     const settings = {
         mZhSize: userSetChineseFontSize,
         mKmSize: userSetKhmerFontSize,
@@ -9541,44 +9541,36 @@ async function saveAllData() {
     };
     safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
 
-    // 2. ALWAYS save soft-deleted + group map (also small)
+    // ===== 2. ALWAYS save small stuff =====
     safeSetItem("vocabMaster_SoftDeleted", JSON.stringify(Array.from(softDeletedIndices)));
+
     const softDataObj = {};
     for (let [k, v] of softDeletedData) softDataObj[k] = v;
     safeSetItem("vocabMaster_SoftData", JSON.stringify(softDataObj));
 
-    const mapData = {};
-    for (let [k, v] of groupMap) mapData[k] = v;
-    safeSetItem('groupMapData', JSON.stringify(mapData));
     safeSetItem('groupFilter', groupFilter);
+    // ✅ groupMapData is NOT saved anymore (redundant — rebuilt from vocabList)
 
-    // 3. Only the BIG payload (vocab list) is skipped when quota is exceeded
+    // ===== 3. Save big vocab list — localStorage first, IndexedDB fallback =====
     if (vocabList.length > 0) {
-        if (storageQuotaExceeded) {
-            // Try IndexedDB only
+        const compressed = compressVocabList(vocabList);
+        const jsonStr = JSON.stringify(compressed);
+        const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
+
+        if (!success) {
             try {
-                const compressed = compressVocabList(vocabList);
                 const stored = await storeVocabListInIndexedDB(compressed);
                 if (stored) {
                     try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
+                    try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+                    console.log('📦 Stored vocabulary list in IndexedDB');
                 }
-            } catch (e) {
-                console.warn('IndexedDB save failed:', e);
+            } catch (idbError) {
+                console.warn('IndexedDB store error:', idbError);
             }
         } else {
-            const compressed = compressVocabList(vocabList);
-            const jsonStr = JSON.stringify(compressed);
-            const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
-            if (!success) {
-                try {
-                    const stored = await storeVocabListInIndexedDB(compressed);
-                    if (stored) {
-                        try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
-                    }
-                } catch (idbError) {
-                    console.warn('IndexedDB store error:', idbError);
-                }
-            }
+            try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
+            try { await clearVocabListFromIndexedDB(); } catch (e) {}
         }
     } else {
         try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
@@ -9711,18 +9703,8 @@ function loadSettings() {
     } catch (e) { console.warn("Soft-data parse error:", e); }
 
     // ---- Load group map data ----
-    try {
-        const mapDataStr = safeGetItem('groupMapData', '{}');
-        const mapData = JSON.parse(mapDataStr);
-        if (typeof mapData === 'object') {
-            groupMap.clear();
-            for (let [k, v] of Object.entries(mapData)) {
-                if (Array.isArray(v)) {
-                    groupMap.set(k, v);
-                }
-            }
-        }
-    } catch (e) { console.warn("Group map parse error:", e); }
+    // ---- Group map is rebuilt by buildGroupMap() after vocabList is loaded. ----
+    // No need to restore from localStorage (it was redundant + bloated iOS).
 
     // ===== RESTORE SHEET ID, API URL, AND PASSWORD =====
     const sheetId = safeGetItem("vocabMaster_SheetId", "");
@@ -11079,6 +11061,13 @@ if (deltaX > 0) {
         </div>
     `;
     document.body.appendChild(loadingOverlay);
+
+    try {
+        if (localStorage.getItem('groupMapData')) {
+            localStorage.removeItem('groupMapData');
+            console.log('🧹 Removed old groupMapData (redundant)');
+        }
+    } catch (e) {}
 
     initCopyPopup();
     emojiContainer = document.getElementById("emojiContainer");
