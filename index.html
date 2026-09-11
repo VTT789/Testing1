@@ -9502,59 +9502,89 @@ if (rbBtn) {
 // FIXED: saveAllData with proper IndexedDB fallback for iOS
 // ======================================================================
 async function saveAllData() {
-    // Settings are SMALL - always save them regardless of quota
+    // 1. ALWAYS save settings (tiny, ~1KB) — even if quota is exceeded
     const settings = {
         mZhSize: userSetChineseFontSize,
         mKmSize: userSetKhmerFontSize,
         mZhColor: document.getElementById("mZhColor").value,
-        // ... all your settings
+        mKmColor: document.getElementById("mKmColor").value,
+        zhReps: document.getElementById("zhReps").value,
+        kmReps: document.getElementById("kmReps").value,
+        autoDelay: document.getElementById("autoDelay").value,
+        sidebarVisible: sidebarVisible,
+        sZhFont: document.getElementById("sZhFont").value,
+        sKmFont: document.getElementById("sKmFont").value,
+        sZhSize: document.getElementById("sZhSize").value,
+        sKmSize: document.getElementById("sKmSize").value,
+        sZhColor: document.getElementById("sZhColor").value,
+        sKmColor: document.getElementById("sKmColor").value,
+        vocabSpacing: document.getElementById("sVocabSpacing").value,
+        zhVoice: document.getElementById("zhVoiceSelect").value,
+        kmVoice: document.getElementById("kmVoiceSelect").value,
+        zhRate: document.getElementById("zhRateSlider").value,
+        pinyinFont: document.getElementById("pinyinFont").value,
+        pinyinColor: document.getElementById("pinyinColor").value,
+        pinyinBold: document.getElementById("pinyinBold").classList.contains("active"),
+        pinyinSizePx: document.getElementById("pinyinSizePx").value,
+        pinyinSpacing: document.getElementById("pinyinSpacing").value,
+        bottomFont: document.getElementById("bottomFont").value,
+        bottomCharColor: document.getElementById("bottomCharColor").value,
+        bottomBold: document.getElementById("bottomBold").classList.contains("active"),
+        bottomSizePx: userSetBottomFontSize,
+        topPinyinVisible: topPinyinVisible,
+        bottomCharVisible: bottomCharVisible,
+        appMode: appMode,
+        normalCurrentIdx: normalCurrentIdx,
+        normalCurrentPage: normalCurrentPage,
+        shadow: document.getElementById("shadowSlider").value,
+        groupFilter: groupFilter
     };
-    
-    // Try to save settings - if this fails, quota is truly full
-    const settingsSuccess = safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
-    if (!settingsSuccess) {
-        // Only skip the large vocab list save if quota is full
-        console.warn('Could not save settings - quota full');
-    }
+    safeSetItem("vocabMaster_Settings", JSON.stringify(settings));
 
-    // Save soft-deleted (small)
-    const softDeletedArray = Array.from(softDeletedIndices);
-    safeSetItem("vocabMaster_SoftDeleted", JSON.stringify(softDeletedArray));
-    
+    // 2. ALWAYS save soft-deleted + group map (also small)
+    safeSetItem("vocabMaster_SoftDeleted", JSON.stringify(Array.from(softDeletedIndices)));
     const softDataObj = {};
-    for (let [k, v] of softDeletedData) {
-        softDataObj[k] = v;
-    }
+    for (let [k, v] of softDeletedData) softDataObj[k] = v;
     safeSetItem("vocabMaster_SoftData", JSON.stringify(softDataObj));
 
-    // Only the LARGE vocab list should be skipped when quota is exceeded
-    if (vocabList.length > 0 && !storageQuotaExceeded) {
-        const compressed = compressVocabList(vocabList);
-        const jsonStr = JSON.stringify(compressed);
-        const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
-        
-        if (!success) {
-            // Fallback to IndexedDB
+    const mapData = {};
+    for (let [k, v] of groupMap) mapData[k] = v;
+    safeSetItem('groupMapData', JSON.stringify(mapData));
+    safeSetItem('groupFilter', groupFilter);
+
+    // 3. Only the BIG payload (vocab list) is skipped when quota is exceeded
+    if (vocabList.length > 0) {
+        if (storageQuotaExceeded) {
+            // Try IndexedDB only
             try {
+                const compressed = compressVocabList(vocabList);
                 const stored = await storeVocabListInIndexedDB(compressed);
                 if (stored) {
                     try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
                 }
-            } catch (idbError) {
-                console.warn('IndexedDB store error:', idbError);
+            } catch (e) {
+                console.warn('IndexedDB save failed:', e);
+            }
+        } else {
+            const compressed = compressVocabList(vocabList);
+            const jsonStr = JSON.stringify(compressed);
+            const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
+            if (!success) {
+                try {
+                    const stored = await storeVocabListInIndexedDB(compressed);
+                    if (stored) {
+                        try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
+                    }
+                } catch (idbError) {
+                    console.warn('IndexedDB store error:', idbError);
+                }
             }
         }
+    } else {
+        try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+        try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
+        try { await clearVocabListFromIndexedDB(); } catch (e) {}
     }
-
-    // Save group map (small)
-    try {
-        const mapData = {};
-        for (let [k, v] of groupMap) {
-            mapData[k] = v;
-        }
-        safeSetItem('groupMapData', JSON.stringify(mapData));
-    } catch (e) {}
-    safeSetItem('groupFilter', groupFilter);
 }
 
        // ======================================================================
