@@ -5209,6 +5209,41 @@ async function deleteMultipleVocab(rows) {
             }
             return -1;
         }
+		function keepCurrentWordAfterDelete() {
+    if (vocabList.length === 0) {
+        updateChineseDisplay("");
+        document.getElementById("khmerWord").innerText = "";
+        return;
+    }
+    let keepIdx = -1;
+    if (appMode === 'sequential' && normalCurrentIdx >= 0 && normalCurrentIdx < vocabList.length && !softDeletedIndices.has(normalCurrentIdx)) {
+        keepIdx = normalCurrentIdx;
+    }
+    if (keepIdx === -1 && sidebarIndices.length > 0 && sidebarFocusIdx < sidebarIndices.length) {
+        const curIdx = sidebarIndices[sidebarFocusIdx];
+        if (curIdx !== undefined && curIdx >= 0 && curIdx < vocabList.length && !softDeletedIndices.has(curIdx)) {
+            keepIdx = curIdx;
+        }
+    }
+    if (keepIdx === -1) {
+        const oldIdx = (appMode === 'sequential') ? normalCurrentIdx : (sidebarIndices[sidebarFocusIdx] ?? 0);
+        for (let offset = 0; offset < vocabList.length; offset++) {
+            const forward = oldIdx + offset;
+            const backward = oldIdx - offset;
+            if (forward < vocabList.length && !softDeletedIndices.has(forward)) { keepIdx = forward; break; }
+            if (backward >= 0 && !softDeletedIndices.has(backward)) { keepIdx = backward; break; }
+        }
+    }
+    if (keepIdx !== -1) {
+        if (appMode === 'sequential') {
+            normalCurrentIdx = keepIdx;
+        } else {
+            history = [keepIdx];
+            historyIndex = 0;
+        }
+        loadWordByMode(keepIdx, true);
+    }
+}
 
         function restoreSoftDeleted(idx) {
             if (!softDeletedIndices.has(idx)) {
@@ -5470,13 +5505,7 @@ async function permanentlyDeleteAllSoftDeletedAndClose() {
         }, 10);
     }
     
-    if (vocabList.length === 0) {
-        updateChineseDisplay("");
-        document.getElementById("khmerWord").innerText = "";
-    } else {
-        const nextIdx = findNextAvailableIndex(0);
-        if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-    }
+    keepCurrentWordAfterDelete();
     
     saveAllData();
     
@@ -5647,13 +5676,7 @@ async function permanentlyDeleteAllSoftDeletedAndClose() {
         }, 10);
     }
     
-    if (vocabList.length === 0) {
-        updateChineseDisplay("");
-        document.getElementById("khmerWord").innerText = "";
-    } else {
-        const nextIdx = findNextAvailableIndex(0);
-        if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-    }
+    keepCurrentWordAfterDelete();
     
     saveAllData();
     
@@ -7717,13 +7740,7 @@ holdTimer = setTimeout(async () => {
             }, 10);
         }
         
-        if (vocabList.length === 0) {
-            updateChineseDisplay("");
-            document.getElementById("khmerWord").innerText = "";
-        } else {
-            const nextIdx = findNextAvailableIndex(0);
-            if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-        }
+        keepCurrentWordAfterDelete();
         
         saveAllData();
         
@@ -8223,13 +8240,7 @@ if (rbAddBtn) {
                     }, 10);
                 }
                 
-                if (vocabList.length === 0) {
-                    updateChineseDisplay("");
-                    document.getElementById("khmerWord").innerText = "";
-                } else {
-                    const nextIdx = findNextAvailableIndex(0);
-                    if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-                }
+                keepCurrentWordAfterDelete();
                 
                 saveAllData();
                 
@@ -8992,13 +9003,7 @@ if (rbBtn) {
                     }, 10);
                 }
                 
-                if (vocabList.length === 0) {
-                    updateChineseDisplay("");
-                    document.getElementById("khmerWord").innerText = "";
-                } else {
-                    const nextIdx = findNextAvailableIndex(0);
-                    if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-                }
+                keepCurrentWordAfterDelete();
                 
                 saveAllData();
                 
@@ -11405,13 +11410,7 @@ if (rbBtn) {
                     window.editModalPerformSearch(editInput.value);
                 }
                 
-                if (vocabList.length === 0) {
-                    updateChineseDisplay("");
-                    document.getElementById("khmerWord").innerText = "";
-                } else {
-                    const nextIdx = findNextAvailableIndex(0);
-                    if (nextIdx !== -1) loadWordByMode(nextIdx, true);
-                }
+                keepCurrentWordAfterDelete();
                 
                 saveAllData();
                 
