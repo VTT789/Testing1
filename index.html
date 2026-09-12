@@ -760,27 +760,32 @@ body.night-mode .resizer {
             color: #60a5fa
         }
         .khmer-text {
-            position: absolute;
-            cursor: grab;
-            padding: 12px 20px;
-            font-size: 32px;
-            font-weight: 500;
-            color: #fff;
-            white-space: nowrap;
-            font-family: KHLazySmooth, 'Segoe UI', system-ui;
-            transition: none;
-            z-index: 10;
-            background: 0 0;
-            backdrop-filter: none;
-            border: none;
-            box-shadow: none;
-            text-shadow: 0 0 0 transparent;
-            will-change: left, top;
-            touch-action: pan-y pinch-zoom;
-            max-width: 90vw;
-            overflow-x: visible;
-            overflow-y: visible
-        }
+    position: absolute;
+    cursor: grab;
+    padding: 12px 20px;
+    font-size: 32px;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+    font-family: KHLazySmooth, 'Segoe UI', system-ui;
+    transition: none;
+    z-index: 10;
+    background: 0 0;
+    backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    text-shadow: 0 0 0 transparent;
+    will-change: left, top;
+    touch-action: pan-y pinch-zoom;
+    max-width: 90vw;
+    overflow-x: visible;
+    overflow-y: visible;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+}
         .khmer-text:active {
             cursor: grabbing
         }
@@ -10225,48 +10230,79 @@ function loadSettings() {
             let khmerLongPressTriggered = false;
 
             const newOnKhmerPointerDown = function(e) {
-                if (e.type === 'mousedown') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                } else if (e.type === 'touchstart') {}
-                let timer = null;
-                let moved = false;
-                const onMove = (ev) => {
-                    moved = true;
-                    if (timer) clearTimeout(timer);
-                };
-                const onEnd = () => {
-                    if (timer) clearTimeout(timer);
-                    setTimeout(() => {
-                        khmerLongPressTriggered = false;
-                    }, 150);
-                    window.removeEventListener("mousemove", onMove);
-                    window.removeEventListener("touchmove", onMove);
-                    window.removeEventListener("mouseup", onEnd);
-                    window.removeEventListener("touchend", onEnd);
-                };
-                timer = setTimeout(async () => {
-                    if (!moved && !copyLocked) {
-                        const text = khmerElement.innerText;
-                        if (text) {
-                            khmerLongPressTriggered = true;
-                            if (isIOS) {
-                                showCopyPopupWithButton(text, "Khmer");
-                            } else {
-                                await copyTextDirectly(text, "Khmer");
-                            }
-                        }
-                    }
-                    onEnd();
-                }, 500);
-                if (e.type === 'touchstart') {
-                    window.addEventListener("touchmove", onMove);
-                    window.addEventListener("touchend", onEnd);
-                } else {
-                    window.addEventListener("mousemove", onMove);
-                    window.addEventListener("mouseup", onEnd);
+    // Prevent default to stop text selection on long press
+    if (e.type === 'mousedown') {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    let timer = null;
+    let moved = false;
+    let longPressTriggered = false;
+    
+    // Clear any existing text selection
+    if (window.getSelection) {
+        const sel = window.getSelection();
+        if (sel) sel.removeAllRanges();
+    }
+    
+    const onMove = (ev) => {
+        moved = true;
+        if (timer) clearTimeout(timer);
+    };
+    const onEnd = (ev) => {
+        if (timer) clearTimeout(timer);
+        // Prevent any default text selection behavior
+        if (ev && ev.preventDefault && longPressTriggered) {
+            ev.preventDefault();
+        }
+        setTimeout(() => {
+            khmerLongPressTriggered = false;
+            longPressTriggered = false;
+        }, 150);
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("touchmove", onMove);
+        window.removeEventListener("mouseup", onEnd);
+        window.removeEventListener("touchend", onEnd);
+        window.removeEventListener("contextmenu", preventContextMenu);
+    };
+    
+    const preventContextMenu = (ev) => {
+        ev.preventDefault();
+        return false;
+    };
+    
+    // Add contextmenu prevention for mobile long-press
+    window.addEventListener("contextmenu", preventContextMenu);
+    
+    timer = setTimeout(async () => {
+        if (!moved && !copyLocked) {
+            const text = khmerElement.innerText;
+            if (text) {
+                khmerLongPressTriggered = true;
+                longPressTriggered = true;
+                // Clear any text selection that may have occurred
+                if (window.getSelection) {
+                    const sel = window.getSelection();
+                    if (sel) sel.removeAllRanges();
                 }
-            };
+                if (isIOS) {
+                    showCopyPopupWithButton(text, "Khmer");
+                } else {
+                    await copyTextDirectly(text, "Khmer");
+                }
+            }
+        }
+        onEnd();
+    }, 500);
+    
+    if (e.type === 'touchstart') {
+        window.addEventListener("touchmove", onMove);
+        window.addEventListener("touchend", onEnd);
+    } else {
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onEnd);
+    }
+};
 
             khmerElement.style.position = "absolute";
             khmerElement.style.left = khmerX + "%";
@@ -10562,7 +10598,6 @@ function loadSettings() {
             target.closest('.emoji-container');
     };
 
-    // capture: true ensures this fires even if a child stops propagation
     area.addEventListener("touchstart", function(e) {
         if (isDraggableElement(e.target)) {
             startY = 0; startX = 0; moved = false;
@@ -10583,11 +10618,26 @@ function loadSettings() {
         if (isDraggableElement(e.target)) {
             return;
         }
-        if (!startY) return;
+        if (!startX && !startY) return;
         const touch = e.touches[0];
         const deltaY = touch.clientY - startY;
         const deltaX = touch.clientX - startX;
-        if (Math.abs(deltaY) > 30 && !moved) {
+        
+        // Horizontal swipe (left/right) → move sidebar focus
+        if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
+            moved = true;
+            isSwiping = true;
+            if (deltaX > 0) {
+                // Swipe right → move sidebar focus forward
+                moveSidebarFocus(1);
+            } else {
+                // Swipe left → move sidebar focus back
+                moveSidebarFocus(-1);
+            }
+            e.preventDefault();
+        }
+        // Vertical swipe (up/down) → next/prev word (keep original behavior)
+        else if (Math.abs(deltaY) > 30 && !moved) {
             moved = true;
             isSwiping = true;
             if (deltaY > 0) {
@@ -10598,18 +10648,6 @@ function loadSettings() {
                 else goPrevNormal();
             }
             e.preventDefault();
-        } else if (Math.abs(deltaX) > 30 && !moved && Math.abs(deltaX) > Math.abs(deltaY)) {
-            moved = true;
-            isSwiping = true;
-if (deltaX > 0) {
-    // Swipe right → next
-    if (appMode === "random") historyNext();
-    else goNextNormal();
-} else {
-    // Swipe left → previous
-    if (appMode === "random") historyPrev();
-    else goPrevNormal();
-}           e.preventDefault();
         }
     }, { passive: false });
 
