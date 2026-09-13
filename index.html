@@ -11296,13 +11296,9 @@ requestWakeLock();
     }
 
     // Recycle Bin button handler - Updated with silent background delete
+    // Recycle Bin button handler - Updated with silent background delete
 const rbBtn = document.getElementById('recycleBinBtn');
 if (rbBtn) {
-    rbBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        showRecycleBinModal(false);
-    });
-    
     // Long press on recycle bin button: delete all immediately
     let holdTimer = null;
     let isLongPress = false;
