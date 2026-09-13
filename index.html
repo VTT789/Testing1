@@ -9244,13 +9244,56 @@ if (rbBtn) {
         function speakKhmerEdge(e) { if (!e) return;
             enqueueSpeech(e, document.getElementById("kmVoiceSelect").value, null) }
 
-        function speakChineseFromMain() { const e = document.getElementById("chineseWord"),
-                t = e && e.getAttribute("data-plain") || "";
-            t && (killAllSpeech(), speakChineseEdge(t)) }
+      function speakChineseFromMain() {
+    const e = document.getElementById("chineseWord");
+    const t = (e && e.getAttribute("data-plain")) || "";
+    if (!t) return;
 
-        function speakKhmerFromMain() { const e = document.getElementById("khmerWord"),
-                t = e ? e.innerText : "";
-            t && (killAllSpeech(), speakKhmerEdge(t)) }
+    killAllSpeech();
+
+    const reps = Math.max(1, parseInt(document.getElementById("zhReps").value) || 1);
+    const voice = document.getElementById("zhVoiceSelect").value;
+    const rateSlider = document.getElementById("zhRateSlider");
+    let rate = rateSlider ? parseInt(rateSlider.value) : 0;
+    let rateStr = rate === 0 ? "0%" : (rate > 0 ? "+" + rate + "%" : rate + "%");
+
+    (async () => {
+        for (let i = 0; i < reps; i++) {
+            try {
+                await callEdgeTTS(t, voice, rateStr);
+            } catch (err) {
+                console.warn("ZH TTS error:", err);
+            }
+            if (i < reps - 1) {
+                await new Promise(r => setTimeout(r, 50));
+            }
+        }
+    })();
+}
+
+       function speakKhmerFromMain() {
+    const e = document.getElementById("khmerWord");
+    const t = e ? e.innerText : "";
+    if (!t) return;
+
+    killAllSpeech();
+
+    const reps = Math.max(1, parseInt(document.getElementById("kmReps").value) || 1);
+    const voice = document.getElementById("kmVoiceSelect").value;
+
+    (async () => {
+        for (let i = 0; i < reps; i++) {
+            try {
+                await callEdgeTTS(t, voice, null);
+            } catch (err) {
+                console.warn("KM TTS error:", err);
+            }
+            if (i < reps - 1) {
+                await new Promise(r => setTimeout(r, 50));
+            }
+        }
+    })();
+}
 
         let speechOrder = 'zh_first';
 
