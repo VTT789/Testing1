@@ -4697,16 +4697,10 @@ async function deleteMultipleVocab(rows) {
             showToast("⚠️ No words available in this group!");
             return;
         }
-        const newIdx = available[Math.floor(Math.random() * available.length)];
+                const newIdx = available[Math.floor(Math.random() * available.length)];
         if (newIdx !== -1) {
             loadWordByMode(newIdx, !0);
-            // If auto is active, reschedule after the word loads and speech completes
-            if (autoActive) {
-                // Wait a bit longer for speech to start, then schedule next
-                setTimeout(() => {
-                    if (autoActive) startAutoCycle();
-                }, 500);
-            }
+            // ❌ REMOVED duplicate startAutoCycle — speakAutoSequence() will schedule it after speech finishes
         }
     }
 }
@@ -4831,18 +4825,15 @@ async function deleteMultipleVocab(rows) {
       function toggleAuto() {
     autoActive = !autoActive;
     const e = document.getElementById("autoBtn");
-    if (autoActive) {
+     if (autoActive) {
         e.classList.remove("off");
         e.classList.add("active");
         e.innerText = "AUTO: ON";
         // Kill any existing speech
         killAllSpeech();
-        // Start the cycle immediately
+        // Start the cycle once — speakAutoSequence() will schedule the next cycle after speech ends
         setTimeout(() => {
-            if (autoActive) {
-                pickRandom();
-                // The next cycle will be scheduled by startAutoCycle
-            }
+            if (autoActive) pickRandom();
         }, 100);
     } else {
         e.classList.remove("active");
@@ -4858,25 +4849,19 @@ async function deleteMultipleVocab(rows) {
 }
 
         function startAutoCycle() {
-           if (autoTimer) {
+    if (autoTimer) {
         clearTimeout(autoTimer);
         autoTimer = null;
     }
-    if (autoActive) {
-        const delay = 1000 * parseInt(document.getElementById("autoDelay").value);
-        // Use a more robust approach for mobile
-        autoTimer = setTimeout(() => {
-            if (autoActive) {
-                pickRandom();
-                // Schedule the next cycle immediately after pickRandom completes
-                // But use a small delay to ensure speech completes
-                setTimeout(() => {
-                    if (autoActive) startAutoCycle();
-                }, 200);
-            }
-            autoTimer = null;
-        }, delay);
-    }
+    if (!autoActive) return;
+    const delay = 1000 * parseInt(document.getElementById("autoDelay").value);
+    autoTimer = setTimeout(() => {
+        autoTimer = null;
+        if (!autoActive) return;
+        pickRandom();
+        // ❌ No nested setTimeout here — speakAutoSequence() will call startAutoCycle()
+        //    again after BOTH Chinese and Khmer speech finish.
+    }, delay);
 }
 
         function toggleSidebar() {
@@ -11291,6 +11276,7 @@ requestWakeLock();
             e.preventDefault();
             e.stopPropagation();
             const overlay = document.getElementById("qrPopupOverlay");
+            if (overlay) overlay.style.display = "flex";
             if (overlay) overlay.style.display = "flex";
         }, { passive: false });
     }
