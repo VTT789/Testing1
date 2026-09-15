@@ -11780,12 +11780,27 @@ document.addEventListener('visibilitychange', function() {
         if (c !== lastRenderedSidebar) render();
     }, 500);
 
-    // Fallback refresh
-    setInterval(() => refresh(false), 1000);
+     // Fallback refresh — 1 s while visible, 0 while hidden
+    let fallbackTimer = null;
+
+    function startFallback() {
+        if (fallbackTimer) clearInterval(fallbackTimer);
+        fallbackTimer = setInterval(() => refresh(false), 1000);
+    }
+    function stopFallback() {
+        if (fallbackTimer) { clearInterval(fallbackTimer); fallbackTimer = null; }
+    }
+
+    startFallback();
+
     document.addEventListener('visibilitychange', function () {
-        if (!document.hidden) refresh(true);
+        if (document.hidden) {
+            stopFallback();
+        } else {
+            refresh(true);
+            startFallback();
+        }
     });
-})();
 </script>
 </body>
 </html>
