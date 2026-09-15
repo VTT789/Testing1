@@ -4221,7 +4221,7 @@ window.clearAllCache = async function() {
         }
 
 
-// ===== DELETE MULTIPLE VOCAB - FIXED =====
+// ===== DELETE MULTIPLE VOCAB - FIXED (adds one-by-one fallback) =====
 async function deleteMultipleVocab(rows) {
     if (!editUnlocked) {
         return new Promise((resolve, reject) => {
@@ -4237,17 +4237,65 @@ async function deleteMultipleVocab(rows) {
         showToast("❌ No rows to delete");
         throw new Error('No rows to delete');
     }
-    
-    // Convert to 0-based indices for the API
-    const zeroBasedRows = rows.map(row => row - 1);
-    
-    console.log('📤 Deleting rows (1-based):', rows);
+
+    // Keep only valid positive integers, dedupe, sort DESCENDING
+    // (bottom-up so row indices never shift under the API)
+    const uniqueRows = [...new Set(
+        rows.filter(r => Number.isFinite(r) && r > 0).map(r => Math.floor(r))
+    )].sort((a, b) => b - a);
+
+    if (uniqueRows.length === 0) {
+        showToast("❌ No valid rows to delete");
+        throw new Error('No valid rows to delete');
+    }
+
+    const zeroBasedRows = uniqueRows.map(row => row - 1);
+
+    console.log('📤 Deleting rows (1-based, sorted):', uniqueRows);
     console.log('📤 Deleting rows (0-based):', zeroBasedRows);
-    
-    return await callApi({ 
-        action: "deleteMultiple", 
-        rows: zeroBasedRows 
-    }, "DELETE MULTIPLE");
+
+    // ---------- 1) Try batch delete ----------
+    try {
+        const result = await callApi({
+            action: "deleteMultiple",
+            rows: zeroBasedRows
+        }, "DELETE MULTIPLE");
+
+        // callApi returns `false` (not throws) when guards fail
+        if (result === false) {
+            throw new Error('Batch delete rejected (check API URL / sheet ID)');
+        }
+        return result;
+
+    } catch (batchErr) {
+        // ---------- 2) Fallback: delete rows one at a time ----------
+        console.warn('⚠️ Batch delete failed, falling back to single deletes:', batchErr);
+
+        let successCount = 0;
+        let lastError = batchErr;
+
+        for (const row of uniqueRows) {
+            try {
+                const ok = await deleteVocabByRow(row);
+                if (ok === false) {
+                    lastError = new Error(`Row ${row} was rejected`);
+                } else {
+                    successCount++;
+                }
+            } catch (singleErr) {
+                lastError = singleErr;
+                console.warn('⚠️ Single delete failed for row', row, singleErr);
+            }
+        }
+
+        // If literally nothing succeeded, re-throw so the caller can surface it
+        if (successCount === 0) {
+            throw lastError;
+        }
+
+        console.log(`✅ Fallback deleted ${successCount}/${uniqueRows.length} rows`);
+        return true;
+    }
 }
 // ===== END OF ADDED FUNCTION =====
         function scrollToSidebarItem() { setTimeout((() => { const e = document.querySelector(".vocab-item.active");
