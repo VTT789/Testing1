@@ -11674,7 +11674,7 @@ document.addEventListener('visibilitychange', function() {
     let lastFetch = 0;
     let cachedApi = null;
     let lastRenderedSidebar = -1;
-    const MIN_INTERVAL = 0;
+    const MIN_INTERVAL = 800;
 
     // ---- sidebar vocab count (from your existing vocabList) ----
     function getSidebarCount() {
@@ -11741,19 +11741,19 @@ document.addEventListener('visibilitychange', function() {
 
     // ---- Wrap functions so the counter refreshes on every relevant action ----
     function wrapAfterLoad(name, forceApi) {
-        const orig = window[name];
-        if (typeof orig !== 'function') return;
-        window[name] = function () {
-            const result = orig.apply(this, arguments);
-            // If async, refresh again when the promise settles
-            if (result && typeof result.then === 'function') {
-                const after = () => setTimeout(() => refresh(forceApi), 100);
-                result.then(after).catch(after);
-            }
+    const orig = window[name];
+    if (typeof orig !== 'function') return;
+    window[name] = function () {
+        const result = orig.apply(this, arguments);
+        if (result && typeof result.then === 'function') {
+            result.then(() => setTimeout(() => refresh(forceApi), 100))
+                  .catch(() => setTimeout(() => refresh(forceApi), 100));
+        } else {
             setTimeout(() => refresh(forceApi), 50);
-            return result;
-        };
-    }
+        }
+        return result;
+    };
+}
 
     // Navigation — sidebar only, no need to hit the API
     wrapAfterLoad('pickRandom', false);
@@ -11766,13 +11766,13 @@ document.addEventListener('visibilitychange', function() {
     wrapAfterLoad('toggleAppMode', false);
     wrapAfterLoad('setGroupFilter', false);
 
-    // Mutations that change the sheet → force API refresh
-    wrapAfterLoad('addVocabToSheet', true);
-    wrapAfterLoad('softDeleteVocab', true);
-    wrapAfterLoad('restoreSoftDeleted', true);
-    wrapAfterLoad('permanentlyDeleteSoftDeleted', true);
-    wrapAfterLoad('permanentlyDeleteAllSoftDeletedAndClose', true);
-    wrapAfterLoad('restoreAllSoftDeletedAndClose', true);
+   // AFTER — don't force an extra API call; the 1s fallback picks it up
+wrapAfterLoad('addVocabToSheet', false);
+wrapAfterLoad('softDeleteVocab', false);
+wrapAfterLoad('restoreSoftDeleted', false);
+wrapAfterLoad('permanentlyDeleteSoftDeleted', false);
+wrapAfterLoad('permanentlyDeleteAllSoftDeletedAndClose', false);
+wrapAfterLoad('restoreAllSoftDeletedAndClose', false);
 
     // Fast sidebar watcher — catches any mutation we didn't wrap
     setInterval(() => {
