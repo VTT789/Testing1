@@ -8855,24 +8855,58 @@ if (rbAddBtn) {
         "update vocabulary");
 
     const deleteAction = () => {
-        const idx = window.currentEdit.idx;
-        const row = window.currentEdit.row;
-        softDeleteVocab(idx, row);
-        a.remove();
-        renderSidebarUI();
-        refreshAddModalSearch();
+    const idx = window.currentEdit?.idx;
+    const row = window.currentEdit?.row;
 
-        const editInput = document.getElementById('editChineseInput');
-        if (editInput && window.editModalPerformSearch) {
-            window.editModalPerformSearch(editInput.value);
-        }
-        const addInput = document.getElementById('addChineseInput');
-        if (addInput && window.addModalPerformSearch) {
-            window.addModalPerformSearch(addInput.value);
-        }
-    };
-    document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction,
-        "delete vocabulary");
+    // ---- Guard: invalid index ----
+    if (idx === undefined || idx < 0 || idx >= vocabList.length) {
+        showToast("❌ Invalid vocabulary");
+        a.remove();
+        return;
+    }
+
+    // ---- Guard: already in recycle bin ----
+    if (softDeletedIndices.has(idx)) {
+        showToast("⚠️ Already in recycle bin");
+        a.remove();
+        return;
+    }
+
+    // ---- Snapshot the word name for the toast (before delete) ----
+    const w = vocabList[idx];
+    const label = (w && (w.chinese || w.khmer)) || '';
+
+    // ---- Perform the soft delete ----
+    softDeleteVocab(idx, row);   // this already calls renderSidebarUI + saveAllData internally
+
+    // ---- Close the edit modal ----
+    a.remove();
+
+    // ---- Ensure sidebar reflects the change (safe: idempotent) ----
+    updateRecycleBinBadge();
+
+    // ---- Refresh the bottom-right counter immediately ----
+    if (typeof window.refreshMmsCounter === 'function') {
+        try { window.refreshMmsCounter(true); } catch (e) {}
+    }
+
+    // ---- Also refresh modal search results if those modals are still open ----
+    const editInput = document.getElementById('editChineseInput');
+    if (editInput && window.editModalPerformSearch) {
+        window.editModalPerformSearch(editInput.value);
+    }
+    const addInput = document.getElementById('addChineseInput');
+    if (addInput && window.addModalPerformSearch) {
+        window.addModalPerformSearch(addInput.value);
+    }
+
+    // ---- Show a clear confirmation ----
+    if (label) showToast(`🗑️ Moved to recycle bin: ${label}`);
+};
+
+document.getElementById("deleteRowBtn").onclick = () => {
+    showPasswordProtectionModal(deleteAction, "delete vocabulary");
+};
     document.getElementById("closeEditModalBtn").onclick = () => a.remove();
 
     const addIcon = document.getElementById("addIconInsideEdit");
