@@ -5369,6 +5369,8 @@ async function permanentlyDeleteSoftDeleted(idx) {
 }
      // Replace the permanentlyDeleteAllSoftDeletedAndClose function with this:
 
+     // Replace the permanentlyDeleteAllSoftDeletedAndClose function with this:
+
 async function permanentlyDeleteAllSoftDeletedAndClose() {
     const count = softDeletedIndices.size;
     if (count === 0) {
@@ -5455,21 +5457,6 @@ async function permanentlyDeleteAllSoftDeletedAndClose() {
         softDeletedIndices.add(k);
     }
     
-    // ===== CLEAR CACHED DATA IMMEDIATELY =====
-    // This ensures that if the user reloads, they get fresh data from the sheet
-    try {
-        // Clear the cached vocab list from localStorage
-        localStorage.removeItem("vocabMaster_List_Compressed");
-        localStorage.removeItem("vocabMaster_List_StoredInIndexedDB");
-        
-        // Clear from IndexedDB as well
-        await clearVocabListFromIndexedDB();
-        
-        console.log("🗑️ Cache cleared, reload will fetch fresh data");
-    } catch (e) {
-        console.warn("Could not clear cache:", e);
-    }
-    
     // ===== IMMEDIATE UI REFRESH (same as long-press behavior) =====
     renderSidebarUI();
     updateRecycleBinBadge();
@@ -5523,7 +5510,6 @@ async function permanentlyDeleteAllSoftDeletedAndClose() {
         console.error("Background delete API error:", err);
     }
 }
-
         // ---- Batch actions (kept for recycle bin modal) ----
         async function restoreAllSoftDeletedAndClose() {
             const count = softDeletedIndices.size;
