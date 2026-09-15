@@ -11184,6 +11184,7 @@ document.addEventListener('visibilitychange', function() {
 
 
 <!-- Bottom-right counter: API count / Sidebar count -->
+<!-- Bottom-right counter: API count / Sidebar count -->
 <div id="bottomRightCounter" style="
     position: fixed;
     bottom: 12px;
@@ -11196,7 +11197,12 @@ document.addEventListener('visibilitychange', function() {
     font: 700 13px Inter, system-ui, sans-serif;
     backdrop-filter: blur(6px);
     border: 1px solid rgba(255,255,255,0.12);
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    transition: all 0.2s ease;
     letter-spacing: 0.5px;
 ">
     <span id="mmsCounter">— / —</span>
@@ -11210,7 +11216,7 @@ document.addEventListener('visibilitychange', function() {
     let lastRenderedSidebar = -1;
     let lastReloadTime = 0;
     let isReloading = false;
-    const MIN_INTERVAL = 30000;         // 30s between API calls
+    const MIN_INTERVAL = 10000;         // 30s between API calls
     const RELOAD_COOLDOWN = 60000;      // 60s between auto-reloads
 
     // ---- Sidebar count (excluding soft-deleted) ----
@@ -11368,7 +11374,7 @@ document.addEventListener('visibilitychange', function() {
     let fallbackTimer = null;
     function startFallback() {
         if (fallbackTimer) clearInterval(fallbackTimer);
-        fallbackTimer = setInterval(() => refresh(false), 30000);
+        fallbackTimer = setInterval(() => refresh(false), 10000);
     }
     function stopFallback() {
         if (fallbackTimer) { clearInterval(fallbackTimer); fallbackTimer = null; }
@@ -11384,6 +11390,152 @@ document.addEventListener('visibilitychange', function() {
         }
     });
 })();
+
+    // ═══════════════════════════════════════════════════════════════
+    //  LONG-PRESS HANDLER — Hold counter 3s to reload sheet
+    // ═══════════════════════════════════════════════════════════════
+    (function setupCounterLongPress() {
+        const counterEl = document.getElementById('bottomRightCounter');
+        if (!counterEl) {
+            console.warn('⚠️ Counter element not found');
+            return;
+        }
+
+        let holdTimer = null;
+        let holdStartTime = 0;
+        let isHolding = false;
+        let isCompleted = false;
+        const HOLD_DURATION = 3000;   // 3 seconds
+
+        // Visual feedback during hold
+        const updateHoldProgress = () => {
+            if (!isHolding) return;
+            const elapsed = Date.now() - holdStartTime;
+            const progress = Math.min(elapsed / HOLD_DURATION, 1);
+            
+            // Update border to show progress
+            counterEl.style.borderColor = `rgba(59, 130, 246, ${progress})`;
+            counterEl.style.background = `rgba(37, 99, 235, ${progress * 0.6})`;
+            
+            if (elapsed < HOLD_DURATION) {
+                requestAnimationFrame(updateHoldProgress);
+            }
+        };
+
+        const resetVisuals = () => {
+            counterEl.style.borderColor = 'rgba(255,255,255,0.12)';
+            counterEl.style.background = 'rgba(0,0,0,0.55)';
+        };
+
+        const startHold = (ev) => {
+            // Prevent default to avoid text selection
+            if (ev && ev.preventDefault) ev.preventDefault();
+            
+            isHolding = true;
+            isCompleted = false;
+            holdStartTime = Date.now();
+
+            // Start visual progress
+            requestAnimationFrame(updateHoldProgress);
+
+            // Clear existing timer
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+
+            // Show initial toast feedback
+            if (typeof showToast === 'function') {
+                showToast('⏳ Hold 3s to reload...');
+            }
+
+            // Set the 3-second timer
+            holdTimer = setTimeout(async () => {
+                if (!isHolding) return;
+                isCompleted = true;
+                isHolding = false;
+
+                // Visual completion flash
+                counterEl.style.borderColor = 'rgba(34, 197, 94, 1)';
+                counterEl.style.background = 'rgba(34, 197, 94, 0.6)';
+
+                console.log('🔄 Long-press complete — forcing sheet reload');
+
+                if (typeof showToast === 'function') {
+                    showToast('🔄 Reloading sheet...');
+                }
+
+                try {
+                    // ⚡ FORCE reload (bypass local cache)
+                    if (typeof loadSheetData === 'function') {
+                        // Clear local cache to force fresh fetch
+                        try {
+                            const cacheKey = 'fastVocabCache_' + currentSheetId;
+                            const cacheTimeKey = 'fastVocabCacheTime_' + currentSheetId;
+                            localStorage.removeItem(cacheKey);
+                            localStorage.removeItem(cacheTimeKey);
+                            console.log('🗑️ Local cache cleared for fresh reload');
+                        } catch (e) {
+                            console.warn('Could not clear cache:', e);
+                        }
+
+                        await loadSheetData(true);
+
+                        // Refresh the counter after reload
+                        if (typeof window.refreshMmsCounter === 'function') {
+                            setTimeout(() => window.refreshMmsCounter(true), 500);
+                        }
+
+                        if (typeof showToast === 'function') {
+                            showToast('✅ Sheet reloaded');
+                        }
+                    } else {
+                        console.warn('⚠️ loadSheetData not available');
+                    }
+                } catch (err) {
+                    console.error('❌ Reload failed:', err);
+                    if (typeof showToast === 'function') {
+                        showToast('❌ Reload failed: ' + (err.message || 'Unknown error'));
+                    }
+                } finally {
+                    // Reset visuals after short delay
+                    setTimeout(resetVisuals, 800);
+                    holdTimer = null;
+                }
+            }, HOLD_DURATION);
+        };
+
+        const cancelHold = () => {
+            isHolding = false;
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            // If not completed, just reset visuals silently
+            if (!isCompleted) {
+                resetVisuals();
+            }
+            setTimeout(() => {
+                isCompleted = false;
+            }, 300);
+        };
+
+        // Mouse events
+        counterEl.addEventListener('mousedown', startHold);
+        counterEl.addEventListener('mouseup', cancelHold);
+        counterEl.addEventListener('mouseleave', cancelHold);
+
+        // Touch events
+        counterEl.addEventListener('touchstart', startHold, { passive: false });
+        counterEl.addEventListener('touchend', cancelHold);
+        counterEl.addEventListener('touchcancel', cancelHold);
+
+        // Prevent text selection on long-press
+        counterEl.addEventListener('contextmenu', (e) => e.preventDefault());
+        counterEl.addEventListener('selectstart', (e) => e.preventDefault());
+
+        console.log('✅ Counter long-press handler installed (3s to reload)');
+    })();
 </script>
 </body>
 </html>
