@@ -5590,135 +5590,113 @@ async function permanentlyDeleteAllSoftDeletedAndClose() {
     }
     if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
 
-    // Get all soft-deleted indices and their sheet rows
-    const indices = Array.from(softDeletedIndices).sort((a, b) => b - a);
-    
-    // Collect all sheet rows to delete
-    const rowsToDelete = [];
-    const validIndices = [];
-    
-    for (const idx of indices) {
-        if (!softDeletedIndices.has(idx)) continue;
+    // ---- 1. Collect { idx, row } for every soft-deleted item ----
+    const items = [];
+    for (const idx of softDeletedIndices) {
         const item = vocabList[idx];
         if (item && item.sheetRow) {
-            rowsToDelete.push(item.sheetRow);
-            validIndices.push(idx);
+            items.push({ idx, row: item.sheetRow });
         }
     }
-    
-    if (rowsToDelete.length === 0) {
-        showToast("No valid rows to delete");
+    if (items.length === 0) {
+        showToast("No valid items to delete");
         return;
     }
-    
-    // ===== IMMEDIATE UI UPDATE (no waiting for API) =====
-    
-    // Remove from local data
-    let deletedCount = 0;
-    
-    // Sort indices descending for safe removal
-    const sortedIndices = validIndices.sort((a, b) => b - a);
-    
-    for (const idx of sortedIndices) {
-        if (softDeletedIndices.has(idx)) {
-            // Remove from vocabList
-            vocabList.splice(idx, 1);
-            softDeletedIndices.delete(idx);
-            softDeletedData.delete(idx);
-            deletedCount++;
+
+    // ---- 2. Sort DESCENDING so deletes happen bottom-up ----
+    items.sort((a, b) => b.row - a.row);
+
+    // ---- 3. Delete on the SHEET FIRST (awaited, one-by-one) ----
+    showToast(`🗑️ Deleting ${items.length} row(s) from sheet...`);
+
+    const realShowToast = showToast;
+    // Suppress the per-row "✅ DELETE successful" spam during the loop
+    window.showToast = (msg) => {
+        if (!/✅|successful/i.test(msg)) realShowToast(msg);
+    };
+
+    const succeeded = [];
+    const failed = [];
+
+    try {
+        for (const it of items) {
+            try {
+                const ok = await deleteVocabByRow(it.row);
+                if (ok === false) {
+                    failed.push(it);
+                } else {
+                    succeeded.push(it);
+                }
+            } catch (err) {
+                failed.push(it);
+                console.error('❌ Failed to delete row', it.row, err);
+            }
         }
+    } finally {
+        window.showToast = realShowToast;
     }
-    
-    // Update sheetRow values for remaining items
+
+    // ---- 4. Only NOW update local state (for rows that actually deleted) ----
+    const successIndices = succeeded.map(it => it.idx).sort((a, b) => b - a);
+    const successRows    = succeeded.map(it => it.row);
+
+    for (const idx of successIndices) {
+        vocabList.splice(idx, 1);
+        softDeletedIndices.delete(idx);
+        softDeletedData.delete(idx);
+    }
+
+    // Shift remaining sheetRow values down for every row we removed above them
     for (let i = 0; i < vocabList.length; i++) {
-        const row = vocabList[i].sheetRow;
-        let shiftCount = 0;
-        for (const delRow of rowsToDelete) {
-            if (delRow < row) shiftCount++;
+        let shift = 0;
+        for (const r of successRows) if (r < vocabList[i].sheetRow) shift++;
+        vocabList[i].sheetRow -= shift;
+    }
+
+    // Fix softDeletedData rows + keys
+    {
+        const newData = new Map();
+        for (const [k, v] of softDeletedData) {
+            let shift = 0;
+            for (const r of successRows) if (r < v.sheetRow) shift++;
+            const newKey = k - successIndices.filter(si => si < k).length;
+            v.sheetRow -= shift;
+            newData.set(newKey, v);
         }
-        if (shiftCount > 0) {
-            vocabList[i].sheetRow = row - shiftCount;
+        softDeletedData.clear();
+        for (const [k, v] of newData) softDeletedData.set(k, v);
+    }
+
+    // Fix softDeletedIndices keys
+    {
+        const newSet = new Set();
+        for (const k of softDeletedIndices) {
+            newSet.add(k - successIndices.filter(si => si < k).length);
         }
+        softDeletedIndices.clear();
+        for (const k of newSet) softDeletedIndices.add(k);
     }
-    
-    // Update softDeletedData
-    const newSoftData = new Map();
-    for (let [k, v] of softDeletedData) {
-        let shiftCount = 0;
-        for (const delRow of rowsToDelete) {
-            if (delRow < v.sheetRow) shiftCount++;
-        }
-        const newKey = k - validIndices.filter(idx => idx < k).length;
-        v.sheetRow = v.sheetRow - shiftCount;
-        newSoftData.set(newKey, v);
-    }
-    softDeletedData.clear();
-    for (let [k, v] of newSoftData) {
-        softDeletedData.set(k, v);
-    }
-    
-    // Update softDeletedIndices
-    const newSoftIndices = new Set();
-    for (let k of softDeletedIndices) {
-        const shift = validIndices.filter(idx => idx < k).length;
-        newSoftIndices.add(k - shift);
-    }
-    softDeletedIndices.clear();
-    for (let k of newSoftIndices) {
-        softDeletedIndices.add(k);
-    }
-    
-    // ===== IMMEDIATE UI REFRESH (same as long-press behavior) =====
+
+    // ---- 5. Refresh UI + close modals ----
     renderSidebarUI();
     updateRecycleBinBadge();
-    
-    // Update vocabSearchResults IMMEDIATELY (Add modal)
-    const addInput = document.getElementById('addChineseInput');
-    if (addInput && window.addModalPerformSearch) {
-        setTimeout(() => {
-            window.addModalPerformSearch(addInput.value);
-        }, 10);
-    }
-    
-    // Update Edit modal search results
-    const editInput = document.getElementById('editChineseInput');
-    if (editInput && window.editModalPerformSearch) {
-        setTimeout(() => {
-            window.editModalPerformSearch(editInput.value);
-        }, 10);
-    }
-    
-    keepCurrentWordAfterDelete();
-    
+    if (typeof keepCurrentWordAfterDelete === 'function') keepCurrentWordAfterDelete();
     saveAllData();
-    
-    // Close the recycle bin modal immediately (like long-press behavior)
+
     const rbModal = document.querySelector('.modal-overlay[data-is-recycle-bin="true"]');
-    if (rbModal) rbModal.remove();
-    updateRecycleBinCountInModals();
-    
-    // Show success message ONLY ONCE (like long-press behavior)
-    showToast(`✅ Successfully deleted ${deletedCount} items from sheet`);
-    
-    // ===== SEND API REQUEST IN BACKGROUND (completely silent) =====
-    const originalShowToast = showToast;
-    try {
-        // Suppress all toast messages from API
-        window.showToast = function(msg) {
-            if (msg.includes('failed') || msg.includes('error') || msg.includes('Error')) {
-                originalShowToast(msg);
-            }
-        };
-        
-        await deleteMultipleVocab(rowsToDelete);
-        window.showToast = originalShowToast;
-        console.log(`✅ Background delete completed for ${rowsToDelete.length} rows`);
-    } catch (err) {
-        window.showToast = originalShowToast;
-        if (err.message && !err.message.includes('success')) {
-            showToast(`⚠️ Background sync failed: ${err.message}`);
-        }
-        console.error("Background delete API error:", err);
+    if (rbModal) {
+        const parent = rbModal._parentModal;
+        rbModal.remove();
+        if (parent && parent.parentNode) parent.remove();
+    }
+
+    // ---- 6. Report ----
+    if (failed.length === 0) {
+        showToast(`✅ Deleted ${succeeded.length} item(s) from sheet`);
+    } else if (succeeded.length > 0) {
+        showToast(`⚠️ ${succeeded.length} deleted, ${failed.length} failed (rows: ${failed.map(f => f.row).join(',')})`);
+    } else {
+        showToast(`❌ Delete failed for all ${failed.length} item(s). Check console.`);
     }
 }
 
