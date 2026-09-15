@@ -3984,17 +3984,81 @@ window.clearAllCache = async function() {
             showToast(group === '__ALL__' ? '📂 Showing all groups' : `📂 Filter: ${group}`);
         }
 
-        // ---- CREATE GROUP FILTER UI IN SIDEBAR ----
-        // ---- CREATE GROUP FILTER UI IN SIDEBAR - FIXED ----
         
 
         // ---- MODIFIED loadSheetData with GROUP column ----
-        async function loadSheetData(forceReload = false) {
-            if (!forceReload) return;
-            if (!currentSheetId) return void showToast("❌ Please enter a Google Sheet URL");
-            const e = `https://opensheet.elk.sh/${currentSheetId}/Sheet1`;
+       async function loadSheetData(forceReload = false) {
+    if (!forceReload) return;
+    if (!currentSheetId) return void showToast("❌ Please enter a Google Sheet URL");
+    
+    // ⚡ CHECK CACHE FIRST (5-minute cache)
+    const cacheKey = 'fastVocabCache_' + currentSheetId;
+    const cacheTimeKey = 'fastVocabCacheTime_' + currentSheetId;
+    const cachedTime = parseInt(safeGetItem(cacheTimeKey, '0')) || 0;
+    const now = Date.now();
+    
+    if (now - cachedTime < 300000) {   // 5 minutes
+        const cachedData = safeGetItem(cacheKey, null);
+        if (cachedData) {
             try {
-                const t = await fetch(e);
+                const cached = JSON.parse(cachedData);
+                if (Array.isArray(cached) && cached.length > 0) {
+                    console.log('⚡ Loaded from local cache:', cached.length, 'words');
+                    
+                    vocabList = decompressVocabList(cached);
+                    vocabularyData = vocabList;
+                    editUnlocked = true;
+                    updateEditButtonsState();
+                    
+                    // Build caches
+                    buildFirstCharCache();
+                    buildGroupMap();
+                    
+                    // Load saved filter
+                    const savedFilter = safeGetItem('groupFilter', '__ALL__');
+                    if (savedFilter && groupMap.has(savedFilter)) {
+                        groupFilter = savedFilter;
+                    } else {
+                        groupFilter = '__ALL__';
+                    }
+                    applyGroupFilter();
+                    
+                    // Initialize display
+                    if (filteredList.length > 0) {
+                        if (appMode === 'random') {
+                            const idx = filteredList[Math.floor(Math.random() * filteredList.length)];
+                            if (idx !== undefined) {
+                                history = [idx];
+                                historyIndex = 0;
+                                renderRandomSidebar(idx);
+                            }
+                        } else {
+                            normalCurrentIdx = 0;
+                            normalCurrentPage = 0;
+                            renderNormalSidebar();
+                        }
+                    } else {
+                        renderSidebarUI();
+                        updateChineseDisplay("");
+                        document.getElementById("khmerWord").innerText = "";
+                    }
+                    
+                    updateRecycleBinBadge();
+                    updateStatusBar();
+                    showToast(`⚡ Loaded ${vocabList.length} words from cache`);
+                    return;   // ⚡ DONE — skip the slow fetch
+                }
+            } catch (cacheErr) {
+                console.warn('Cache read error:', cacheErr);
+            }
+        }
+    }
+    
+    // ⚡ CACHE MISS — do the slow fetch
+    console.log('🌐 Cache miss — fetching from sheet...');
+    const e = `https://opensheet.elk.sh/${currentSheetId}/Sheet1`;
+    try {
+        const t = await fetch(e);
                 if (!t.ok) throw new Error(`HTTP ${t.status}`);
                 const n = await t.json();
                 if (!Array.isArray(n) || 0 === n.length) throw new Error("No data found in sheet");
@@ -4124,15 +4188,121 @@ window.clearAllCache = async function() {
                 // Create group filter UI
                 createGroupFilterUI();
 
-                updateRecycleBinBadge();
+                                updateRecycleBinBadge();
                 updateStatusBar();
                 showToast(`✅ Loaded ${vocabList.length} words in ${groupMap.size} groups`);
+                
+                // ⚡ SAVE TO CACHE
+                try {
+                    safeSetItem(cacheKey, JSON.stringify(compressVocabList(vocabList)));
+                    safeSetItem(cacheTimeKey, String(now));
+                    console.log('💾 Saved to cache');
+                } catch (cacheSaveErr) {
+                    console.warn('Cache save error:', cacheSaveErr);
+                }
 
             } catch (e) {
                 console.error("Error loading sheet:", e);
                 showToast(`❌ Error: ${e.message}`);
             }
         }
+		
+		
+		// ═══════════════════════════════════════════════════════════════════
+//  WRAPPER: Preserves current word position across reloads
+// ═══════════════════════════════════════════════════════════════════
+const _origLoadSheetData = loadSheetData;
+loadSheetData = async function (forceReload) {
+    // ⚠️ STEP 1: Save current position BEFORE reload
+    let savedKhmer = null;
+    let savedChinese = null;
+    let savedSheetRow = null;
+    let savedAppMode = null;
+    let savedIdx = null;
+
+    try {
+        if (sidebarIndices && sidebarIndices.length > 0 && sidebarFocusIdx >= 0
+            && sidebarFocusIdx < sidebarIndices.length) {
+            savedIdx = sidebarIndices[sidebarFocusIdx];
+            const currentWord = vocabList[savedIdx];
+            if (currentWord) {
+                savedKhmer = currentWord.khmer || '';
+                savedChinese = currentWord.chinese || '';
+                savedSheetRow = currentWord.sheetRow || null;
+                savedAppMode = appMode;
+                console.log('📍 Saved position before reload:', {
+                    khmer: savedKhmer,
+                    chinese: savedChinese,
+                    sheetRow: savedSheetRow
+                });
+            }
+        }
+    } catch (e) {
+        console.warn('Could not save position:', e);
+    }
+
+    // ⚠️ STEP 2: Run the original load
+    const result = await _origLoadSheetData(forceReload);
+
+    // ⚠️ STEP 3: Restore position AFTER reload
+    if (savedKhmer || savedChinese) {
+        try {
+            // Try to find the same word in the new vocabList
+            let newIdx = -1;
+
+            // Priority 1: Match by Khmer + Chinese
+            if (savedKhmer && savedChinese) {
+                newIdx = vocabList.findIndex(w =>
+                    (w.khmer || '') === savedKhmer &&
+                    (w.chinese || '') === savedChinese
+                );
+            }
+
+            // Priority 2: Match by Khmer alone
+            if (newIdx === -1 && savedKhmer) {
+                newIdx = vocabList.findIndex(w => (w.khmer || '') === savedKhmer);
+            }
+
+            // Priority 3: Match by Chinese alone
+            if (newIdx === -1 && savedChinese) {
+                newIdx = vocabList.findIndex(w => (w.chinese || '') === savedChinese);
+            }
+
+            // Priority 4: Match by sheetRow (approximate)
+            if (newIdx === -1 && savedSheetRow) {
+                newIdx = vocabList.findIndex(w => w.sheetRow === savedSheetRow);
+            }
+
+            if (newIdx !== -1 && !softDeletedIndices.has(newIdx)) {
+                console.log('📍 Restoring position to index:', newIdx);
+
+                // Restore based on the app mode
+                if (savedAppMode === 'sequential') {
+                    normalCurrentIdx = newIdx;
+                    // Calculate page
+                    const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx));
+                    const pos = filtered.indexOf(newIdx);
+                    if (pos !== -1) {
+                        normalCurrentPage = Math.floor(pos / 40);
+                    }
+                    renderNormalSidebar();
+                } else {
+                    // Random mode — restore history
+                    history = [newIdx];
+                    historyIndex = 0;
+                    renderRandomSidebar(newIdx);
+                }
+                console.log('✅ Position restored');
+            } else {
+                console.log('⚠️ Could not find the same word — starting fresh');
+            }
+        } catch (e) {
+            console.warn('Could not restore position:', e);
+        }
+    }
+
+    return result;
+};
 
 		   async function callApi(e, t) {
     if (!editUnlocked) return showPasswordModal((async n => { 
@@ -11036,29 +11206,35 @@ document.addEventListener('visibilitychange', function() {
 (function () {
     const el = document.getElementById('mmsCounter');
     let lastFetch = 0;
-    let cachedApi = null;
+    let cachedSheetCount = null;
     let lastRenderedSidebar = -1;
-    const MIN_INTERVAL = 800;
+    let lastReloadTime = 0;
+    let isReloading = false;
+    const MIN_INTERVAL = 30000;         // 30s between API calls
+    const RELOAD_COOLDOWN = 60000;      // 60s between auto-reloads
 
-    // ---- sidebar vocab count (from your existing vocabList) ----
+    // ---- Sidebar count (excluding soft-deleted) ----
     function getSidebarCount() {
         try {
-            if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 1;
+            if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
             if (typeof softDeletedIndices !== 'undefined' && softDeletedIndices instanceof Set) {
-                return vocabList.filter((_, i) => !softDeletedIndices.has(i)).length + 1;
+                return vocabList.filter((_, i) => !softDeletedIndices.has(i)).length;
             }
-            return vocabList.length + 1;
-        } catch (e) { return 1; }
+            return vocabList.length;
+        } catch (e) { return 0; }
     }
 
+    // ---- Render: [API+1] / [Sidebar+1] ----
     function render() {
         const sidebar = getSidebarCount();
-        el.textContent = (cachedApi === null ? '—' : cachedApi) + ' / ' + sidebar;
+        const apiPlus = (cachedSheetCount === null ? '—' : (cachedSheetCount + 1));
+        const sidebarPlus = sidebar + 1;
+        el.textContent = apiPlus + ' / ' + sidebarPlus;
         lastRenderedSidebar = sidebar;
     }
 
-    // ---- API count (Column E via Apps Script) ----
-     async function fetchApiCount() {
+    // ---- Fetch TOTAL rows in Google Sheet ----
+    async function fetchSheetCount() {
         const apiUrl = (typeof detectedApiUrl !== 'undefined' && detectedApiUrl)
             ? detectedApiUrl
             : localStorage.getItem('vocabMaster_ApiUrl');
@@ -11079,58 +11255,91 @@ document.addEventListener('visibilitychange', function() {
                 })
             });
 
-            // ⚠️ Read as text first, then try JSON parse
             const text = await res.text();
             let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                // Server returned HTML error page — silently skip
-                console.warn('countColumnE: server returned non-JSON, skipping');
-                return null;
-            }
+            try { data = JSON.parse(text); }
+            catch (e) { return null; }
 
             if (data && data.result === 'success' && typeof data.count === 'number') {
-                return data.count + 1;
+                return data.count;
             }
             return null;
         } catch (err) {
-            console.warn('countColumnE failed:', err);
             return null;
         }
     }
 
+    // ---- Detect mismatch and reload ----
+    async function checkAndReload() {
+        const now = Date.now();
+        if (now - lastReloadTime < RELOAD_COOLDOWN) return;
+        if (isReloading) return;
+        if (cachedSheetCount === null) return;
+
+        const sidebarCount = getSidebarCount();
+        if (sidebarCount === 0) return;
+
+        // ⚠️ Compare raw counts (not +1 versions)
+        if (sidebarCount !== cachedSheetCount) {
+            isReloading = true;
+            console.warn(
+                `⚠️ Count mismatch: sidebar=${sidebarCount} vs sheet=${cachedSheetCount}. Reloading...`
+            );
+            lastReloadTime = now;
+
+            try {
+                if (typeof showToast === 'function') {
+                    showToast(`🔄 Syncing...`);
+                }
+
+                if (typeof loadSheetData === 'function' && currentSheetId) {
+                    await loadSheetData(true);
+                    console.log('✅ Sheet reloaded');
+
+                    const newCount = await fetchSheetCount();
+                    if (newCount !== null) cachedSheetCount = newCount;
+                    render();
+                }
+            } catch (err) {
+                console.error('❌ Reload failed:', err);
+            } finally {
+                isReloading = false;
+            }
+        }
+    }
+
     async function refresh(forceApi) {
-        render(); // sidebar updates instantly, even if API is throttled
+        render();
         const now = Date.now();
         if (!forceApi && now - lastFetch < MIN_INTERVAL) return;
         lastFetch = now;
-        const apiCount = await fetchApiCount();
-        if (apiCount !== null) cachedApi = apiCount;
+        const sheetCount = await fetchSheetCount();
+        if (sheetCount !== null) cachedSheetCount = sheetCount;
         render();
+        checkAndReload();
     }
 
     window.refreshMmsCounter = refresh;
 
     setTimeout(() => refresh(true), 1500);
 
-    // ---- Wrap functions so the counter refreshes on every relevant action ----
+    // ---- Wrap functions so counter refreshes on relevant actions ----
     function wrapAfterLoad(name, forceApi) {
-    const orig = window[name];
-    if (typeof orig !== 'function') return;
-    window[name] = function () {
-        const result = orig.apply(this, arguments);
-        if (result && typeof result.then === 'function') {
-            result.then(() => setTimeout(() => refresh(forceApi), 100))
-                  .catch(() => setTimeout(() => refresh(forceApi), 100));
-        } else {
-            setTimeout(() => refresh(forceApi), 50);
-        }
-        return result;
-    };
-}
+        const orig = window[name];
+        if (typeof orig !== 'function') return;
+        window[name] = function () {
+            const result = orig.apply(this, arguments);
+            if (result && typeof result.then === 'function') {
+                result.then(() => setTimeout(() => refresh(forceApi), 100))
+                      .catch(() => setTimeout(() => refresh(forceApi), 100));
+            } else {
+                setTimeout(() => refresh(forceApi), 50);
+            }
+            return result;
+        };
+    }
 
-    // Navigation — sidebar only, no need to hit the API
+    // Navigation
     wrapAfterLoad('pickRandom', false);
     wrapAfterLoad('loadWordByMode', false);
     wrapAfterLoad('historyNext', false);
@@ -11141,31 +11350,29 @@ document.addEventListener('visibilitychange', function() {
     wrapAfterLoad('toggleAppMode', false);
     wrapAfterLoad('setGroupFilter', false);
 
-   // AFTER — don't force an extra API call; the 1s fallback picks it up
-wrapAfterLoad('addVocabToSheet', false);
-wrapAfterLoad('softDeleteVocab', false);
-wrapAfterLoad('restoreSoftDeleted', false);
-wrapAfterLoad('permanentlyDeleteSoftDeleted', false);
-wrapAfterLoad('permanentlyDeleteAllSoftDeletedAndClose', false);
-wrapAfterLoad('restoreAllSoftDeletedAndClose', false);
+    // Sheet-changing actions
+    wrapAfterLoad('addVocabToSheet', false);
+    wrapAfterLoad('softDeleteVocab', false);
+    wrapAfterLoad('restoreSoftDeleted', false);
+    wrapAfterLoad('permanentlyDeleteSoftDeleted', false);
+    wrapAfterLoad('permanentlyDeleteAllSoftDeletedAndClose', false);
+    wrapAfterLoad('restoreAllSoftDeletedAndClose', false);
 
-    // Fast sidebar watcher — catches any mutation we didn't wrap
-    setInterval(() => {
-        const c = getSidebarCount();
-        if (c !== lastRenderedSidebar) render();
-    }, 500);
+    // Fast watcher
+   setInterval(() => {
+    const c = getSidebarCount();
+    if (c !== lastRenderedSidebar) render();
+}, 1000);
 
-     // Fallback refresh — 1 s while visible, 0 while hidden
+    // Fallback refresh
     let fallbackTimer = null;
-
     function startFallback() {
         if (fallbackTimer) clearInterval(fallbackTimer);
-        fallbackTimer = setInterval(() => refresh(false), 1000);
+        fallbackTimer = setInterval(() => refresh(false), 30000);
     }
     function stopFallback() {
         if (fallbackTimer) { clearInterval(fallbackTimer); fallbackTimer = null; }
     }
-
     startFallback();
 
     document.addEventListener('visibilitychange', function () {
@@ -11176,7 +11383,7 @@ wrapAfterLoad('restoreAllSoftDeletedAndClose', false);
             startFallback();
         }
     });
-})();      
+})();
 </script>
 </body>
 </html>
