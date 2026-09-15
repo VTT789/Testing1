@@ -5721,8 +5721,14 @@ async function permanentlyDeleteAllSoftDeletedAndClose() {
 
         // ---- Show Recycle Bin Modal ----
         function showRecycleBinModal(keepParentModal = false) {
+    // Mark which modal is the parent (the one currently open behind us)
+    const parentModal = keepParentModal
+        ? document.querySelector('.modal-overlay')
+        : null;
+
     const overlay = document.createElement("div");
     overlay.className = "modal-overlay";
+    overlay.dataset.isRecycleBin = "true";   // ← KEY LINE: makes all selectors work
     const hasItems = softDeletedIndices.size > 0;
     overlay.innerHTML = `
         <div class="choice-modal" style="background:#1e293b; max-width:550px; width:90%; position:relative;">
@@ -5739,9 +5745,10 @@ async function permanentlyDeleteAllSoftDeletedAndClose() {
     `;
     document.body.appendChild(overlay);
 
-    if (keepParentModal) {
-        overlay._keepParent = true;
-    }
+   if (keepParentModal) {
+    overlay._keepParent = true;
+    overlay._parentModal = parentModal;   // ← keep the actual reference
+}
 
     overlay.onclick = (e) => {
         if (e.target === overlay) {
@@ -5812,12 +5819,10 @@ async function permanentlyDeleteAllSoftDeletedAndClose() {
                             if (actions) actions.style.display = softDeletedIndices.size > 0 ?
                                 'flex' : 'none';
                             if (softDeletedIndices.size === 0) {
-                                if (overlay._keepParent) {
-                                    overlay.remove();
-                                } else {
-                                    setTimeout(() => overlay.remove(), 600);
-                                }
-                            }
+    const parentRef = overlay._parentModal;
+    overlay.remove();
+    if (parentRef && parentRef.parentNode) parentRef.remove();
+}
                         } else {
                             const itemEl = document.getElementById(`rb-item-${idx}`);
                             if (itemEl) {
@@ -5887,21 +5892,14 @@ if (restoreAllBtn) {
     });
 }
 
-  const deleteAllBtn = overlay.querySelector("#deleteAllBtn");
+ const deleteAllBtn = overlay.querySelector("#deleteAllBtn");
 if (deleteAllBtn) {
     deleteAllBtn.addEventListener("click", async function(e) {
         e.stopPropagation();
-        const keepParent = overlay._keepParent;
-        // Close the recycle bin modal
+        const parentRef = overlay._parentModal;
         overlay.remove();
-        // Run the deletion
         await permanentlyDeleteAllSoftDeletedAndClose();
-        // If this recycle bin was opened from the edit/add modal,
-        // close that parent modal too — its word no longer exists.
-        if (keepParent) {
-            const parent = document.querySelector('.modal-overlay:not([data-is-recycle-bin="true"])');
-            if (parent) parent.remove();
-        }
+        if (parentRef && parentRef.parentNode) parentRef.remove();
     });
 }
 }
@@ -8858,39 +8856,28 @@ if (rbAddBtn) {
     const idx = window.currentEdit?.idx;
     const row = window.currentEdit?.row;
 
-    // ---- Guard: invalid index ----
     if (idx === undefined || idx < 0 || idx >= vocabList.length) {
         showToast("❌ Invalid vocabulary");
         a.remove();
         return;
     }
-
-    // ---- Guard: already in recycle bin ----
     if (softDeletedIndices.has(idx)) {
         showToast("⚠️ Already in recycle bin");
         a.remove();
         return;
     }
 
-    // ---- Snapshot the word name for the toast (before delete) ----
     const w = vocabList[idx];
     const label = (w && (w.chinese || w.khmer)) || '';
 
-    // ---- Perform the soft delete ----
-    softDeleteVocab(idx, row);   // this already calls renderSidebarUI + saveAllData internally
-
-    // ---- Close the edit modal ----
+    softDeleteVocab(idx, row);
     a.remove();
-
-    // ---- Ensure sidebar reflects the change (safe: idempotent) ----
     updateRecycleBinBadge();
 
-    // ---- Refresh the bottom-right counter immediately ----
     if (typeof window.refreshMmsCounter === 'function') {
         try { window.refreshMmsCounter(true); } catch (e) {}
     }
 
-    // ---- Also refresh modal search results if those modals are still open ----
     const editInput = document.getElementById('editChineseInput');
     if (editInput && window.editModalPerformSearch) {
         window.editModalPerformSearch(editInput.value);
@@ -8900,13 +8887,9 @@ if (rbAddBtn) {
         window.addModalPerformSearch(addInput.value);
     }
 
-    // ---- Show a clear confirmation ----
     if (label) showToast(`🗑️ Moved to recycle bin: ${label}`);
 };
-
-document.getElementById("deleteRowBtn").onclick = () => {
-    showPasswordProtectionModal(deleteAction, "delete vocabulary");
-};
+document.getElementById("deleteRowBtn").onclick = () => showPasswordProtectionModal(deleteAction, "delete vocabulary");
     document.getElementById("closeEditModalBtn").onclick = () => a.remove();
 
     const addIcon = document.getElementById("addIconInsideEdit");
