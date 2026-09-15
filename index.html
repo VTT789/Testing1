@@ -11672,17 +11672,25 @@ document.addEventListener('visibilitychange', function() {
 (function () {
     const el = document.getElementById('mmsCounter');
     let lastFetch = 0;
-    const MIN_INTERVAL = 800;
+    let cachedApi = null;
+    let lastRenderedSidebar = -1;
+    const MIN_INTERVAL = 0;
 
     // ---- sidebar vocab count (from your existing vocabList) ----
     function getSidebarCount() {
         try {
-            if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
+            if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 1;
             if (typeof softDeletedIndices !== 'undefined' && softDeletedIndices instanceof Set) {
-                return vocabList.filter((_, i) => !softDeletedIndices.has(i)).length;
+                return vocabList.filter((_, i) => !softDeletedIndices.has(i)).length + 1;
             }
-            return vocabList.length;
-        } catch (e) { return 0; }
+            return vocabList.length + 1;
+        } catch (e) { return 1; }
+    }
+
+    function render() {
+        const sidebar = getSidebarCount();
+        el.textContent = (cachedApi === null ? '—' : cachedApi) + ' / ' + sidebar;
+        lastRenderedSidebar = sidebar;
     }
 
     // ---- API count (Column E via Apps Script) ----
@@ -11708,7 +11716,7 @@ document.addEventListener('visibilitychange', function() {
             });
             const data = await res.json();
             if (data && data.result === 'success' && typeof data.count === 'number') {
-                return data.count;
+                return data.count + 1;
             }
             return null;
         } catch (err) {
@@ -11717,53 +11725,63 @@ document.addEventListener('visibilitychange', function() {
         }
     }
 
-    // ---- render: "API / sidebar" ----
-    let cachedApi = null;
-
     async function refresh(forceApi) {
+        render(); // sidebar updates instantly, even if API is throttled
         const now = Date.now();
-        const sidebar = getSidebarCount();
-
-        // Always update sidebar count immediately
-        el.textContent = (cachedApi === null ? '—' : cachedApi) + ' / ' + sidebar;
-
-        // Throttle the API call
         if (!forceApi && now - lastFetch < MIN_INTERVAL) return;
         lastFetch = now;
-
         const apiCount = await fetchApiCount();
         if (apiCount !== null) cachedApi = apiCount;
-        el.textContent = (cachedApi === null ? '—' : cachedApi) + ' / ' + getSidebarCount();
+        render();
     }
 
     window.refreshMmsCounter = refresh;
 
-    // First paint + first API fetch
     setTimeout(() => refresh(true), 1500);
 
-    // ---- hook navigation so it updates on every word change ----
-    function wrapAfterLoad(name) {
+    // ---- Wrap functions so the counter refreshes on every relevant action ----
+    function wrapAfterLoad(name, forceApi) {
         const orig = window[name];
         if (typeof orig !== 'function') return;
         window[name] = function () {
             const result = orig.apply(this, arguments);
-            setTimeout(() => refresh(false), 50);
+            // If async, refresh again when the promise settles
+            if (result && typeof result.then === 'function') {
+                const after = () => setTimeout(() => refresh(forceApi), 100);
+                result.then(after).catch(after);
+            }
+            setTimeout(() => refresh(forceApi), 50);
             return result;
         };
     }
 
-    wrapAfterLoad('pickRandom');
-    wrapAfterLoad('loadWordByMode');
-    wrapAfterLoad('historyNext');
-    wrapAfterLoad('historyPrev');
-    wrapAfterLoad('goNextNormal');
-    wrapAfterLoad('goPrevNormal');
-    wrapAfterLoad('moveSidebarFocus');
-    wrapAfterLoad('toggleAppMode');
-    wrapAfterLoad('setGroupFilter');
+    // Navigation — sidebar only, no need to hit the API
+    wrapAfterLoad('pickRandom', false);
+    wrapAfterLoad('loadWordByMode', false);
+    wrapAfterLoad('historyNext', false);
+    wrapAfterLoad('historyPrev', false);
+    wrapAfterLoad('goNextNormal', false);
+    wrapAfterLoad('goPrevNormal', false);
+    wrapAfterLoad('moveSidebarFocus', false);
+    wrapAfterLoad('toggleAppMode', false);
+    wrapAfterLoad('setGroupFilter', false);
 
-    // fallback + tab return
-    setInterval(() => refresh(false), 30000);
+    // Mutations that change the sheet → force API refresh
+    wrapAfterLoad('addVocabToSheet', true);
+    wrapAfterLoad('softDeleteVocab', true);
+    wrapAfterLoad('restoreSoftDeleted', true);
+    wrapAfterLoad('permanentlyDeleteSoftDeleted', true);
+    wrapAfterLoad('permanentlyDeleteAllSoftDeletedAndClose', true);
+    wrapAfterLoad('restoreAllSoftDeletedAndClose', true);
+
+    // Fast sidebar watcher — catches any mutation we didn't wrap
+    setInterval(() => {
+        const c = getSidebarCount();
+        if (c !== lastRenderedSidebar) render();
+    }, 500);
+
+    // Fallback refresh
+    setInterval(() => refresh(false), 1000);
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) refresh(true);
     });
