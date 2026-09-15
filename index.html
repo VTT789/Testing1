@@ -11647,5 +11647,144 @@ document.addEventListener('visibilitychange', function() {
     });
 };
     </script>
+ <!-- Bottom-right counter (Column E count from API) -->
+<div id="bottomRightCounter" style="
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    z-index: 99999;
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font: 700 13px Inter, system-ui, sans-serif;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.2);
+    pointer-events: none;
+    letter-spacing: 0.5px;
+">
+    <span id="mmsCounter">MMS: —</span>
+</div>
+
+<!-- Bottom-right counter: API count / Sidebar count -->
+<div id="bottomRightCounter" style="
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    z-index: 99999;
+    background: rgba(0,0,0,0.55);
+    color: #9ca3af;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font: 700 13px Inter, system-ui, sans-serif;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.12);
+    pointer-events: none;
+    letter-spacing: 0.5px;
+">
+    <span id="mmsCounter">— / —</span>
+</div>
+
+<script>
+(function () {
+    const el = document.getElementById('mmsCounter');
+    let lastFetch = 0;
+    const MIN_INTERVAL = 800;
+
+    // ---- sidebar vocab count (from your existing vocabList) ----
+    function getSidebarCount() {
+        try {
+            if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
+            if (typeof softDeletedIndices !== 'undefined' && softDeletedIndices instanceof Set) {
+                return vocabList.filter((_, i) => !softDeletedIndices.has(i)).length;
+            }
+            return vocabList.length;
+        } catch (e) { return 0; }
+    }
+
+    // ---- API count (Column E via Apps Script) ----
+    async function fetchApiCount() {
+        const apiUrl = (typeof detectedApiUrl !== 'undefined' && detectedApiUrl)
+            ? detectedApiUrl
+            : localStorage.getItem('vocabMaster_ApiUrl');
+        const sheetId = (typeof currentSheetId !== 'undefined' && currentSheetId)
+            ? currentSheetId
+            : localStorage.getItem('vocabMaster_SheetId');
+
+        if (!apiUrl || !sheetId) return null;
+
+        try {
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'countColumnE',
+                    sheetId: sheetId,
+                    sheetName: 'Sheet1'
+                })
+            });
+            const data = await res.json();
+            if (data && data.result === 'success' && typeof data.count === 'number') {
+                return data.count;
+            }
+            return null;
+        } catch (err) {
+            console.warn('countColumnE failed:', err);
+            return null;
+        }
+    }
+
+    // ---- render: "API / sidebar" ----
+    let cachedApi = null;
+
+    async function refresh(forceApi) {
+        const now = Date.now();
+        const sidebar = getSidebarCount();
+
+        // Always update sidebar count immediately
+        el.textContent = (cachedApi === null ? '—' : cachedApi) + ' / ' + sidebar;
+
+        // Throttle the API call
+        if (!forceApi && now - lastFetch < MIN_INTERVAL) return;
+        lastFetch = now;
+
+        const apiCount = await fetchApiCount();
+        if (apiCount !== null) cachedApi = apiCount;
+        el.textContent = (cachedApi === null ? '—' : cachedApi) + ' / ' + getSidebarCount();
+    }
+
+    window.refreshMmsCounter = refresh;
+
+    // First paint + first API fetch
+    setTimeout(() => refresh(true), 1500);
+
+    // ---- hook navigation so it updates on every word change ----
+    function wrapAfterLoad(name) {
+        const orig = window[name];
+        if (typeof orig !== 'function') return;
+        window[name] = function () {
+            const result = orig.apply(this, arguments);
+            setTimeout(() => refresh(false), 50);
+            return result;
+        };
+    }
+
+    wrapAfterLoad('pickRandom');
+    wrapAfterLoad('loadWordByMode');
+    wrapAfterLoad('historyNext');
+    wrapAfterLoad('historyPrev');
+    wrapAfterLoad('goNextNormal');
+    wrapAfterLoad('goPrevNormal');
+    wrapAfterLoad('moveSidebarFocus');
+    wrapAfterLoad('toggleAppMode');
+    wrapAfterLoad('setGroupFilter');
+
+    // fallback + tab return
+    setInterval(() => refresh(false), 30000);
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) refresh(true);
+    });
+})();
+</script>
 </body>
 </html>
