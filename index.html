@@ -5779,12 +5779,16 @@ async function permanentlyDeleteAllSoftDeletedAndClose() {
                     const actions = overlay.querySelector("#recycleBinActions");
                     if (actions) actions.style.display = softDeletedIndices.size > 0 ? 'flex' : 'none';
                     if (softDeletedIndices.size === 0) {
-                        if (overlay._keepParent) {
-                            overlay.remove();
-                        } else {
-                            setTimeout(() => overlay.remove(), 600);
-                        }
-                    }
+    const keepParent = overlay._keepParent;
+    if (keepParent) {
+        overlay.remove();
+        // Also close the parent edit/add modal
+        const parent = document.querySelector('.modal-overlay:not([data-is-recycle-bin="true"])');
+        if (parent) parent.remove();
+    } else {
+        setTimeout(() => overlay.remove(), 600);
+    }
+}
                 }
             }
 
@@ -5863,24 +5867,41 @@ async function permanentlyDeleteAllSoftDeletedAndClose() {
     }
 
     const restoreAllBtn = overlay.querySelector("#restoreAllBtn");
-    if (restoreAllBtn) {
-        restoreAllBtn.addEventListener("click", async function(e) {
-            e.stopPropagation();
-            await restoreAllSoftDeletedAndClose();
-            if (overlay._keepParent) {
-                overlay.remove();
-            }
-        });
-    }
+if (restoreAllBtn) {
+    restoreAllBtn.addEventListener("click", async function(e) {
+        e.stopPropagation();
+        const keepParent = overlay._keepParent;
 
-    const deleteAllBtn = overlay.querySelector("#deleteAllBtn");
+        // Close the recycle bin modal
+        overlay.remove();
+
+        // Run the restore
+        await restoreAllSoftDeletedAndClose();
+
+        // If this recycle bin was opened from the edit/add modal,
+        // close that parent modal too — the words are back in the list now.
+        if (keepParent) {
+            const parent = document.querySelector('.modal-overlay:not([data-is-recycle-bin="true"])');
+            if (parent) parent.remove();
+        }
+    });
+}
+
+  const deleteAllBtn = overlay.querySelector("#deleteAllBtn");
 if (deleteAllBtn) {
     deleteAllBtn.addEventListener("click", async function(e) {
         e.stopPropagation();
-        // Close the modal immediately
+        const keepParent = overlay._keepParent;
+        // Close the recycle bin modal
         overlay.remove();
-        // Then perform the deletion (which updates UI immediately)
+        // Run the deletion
         await permanentlyDeleteAllSoftDeletedAndClose();
+        // If this recycle bin was opened from the edit/add modal,
+        // close that parent modal too — its word no longer exists.
+        if (keepParent) {
+            const parent = document.querySelector('.modal-overlay:not([data-is-recycle-bin="true"])');
+            if (parent) parent.remove();
+        }
     });
 }
 }
