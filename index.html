@@ -11275,13 +11275,10 @@ document.addEventListener('visibilitychange', function() {
     const RELOAD_COOLDOWN = 60000;      // 60s between auto-reloads
 
     // ---- Sidebar count (excluding soft-deleted) ----
-    function getSidebarCount() {
+   function getSidebarCount() {
         try {
             if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
-            if (typeof softDeletedIndices !== 'undefined' && softDeletedIndices instanceof Set) {
-                return vocabList.filter((_, i) => !softDeletedIndices.has(i)).length;
-            }
-            return vocabList.length;
+            return vocabList.length;   // ✅ Count ALL items — including soft-deleted
         } catch (e) { return 0; }
     }
 
