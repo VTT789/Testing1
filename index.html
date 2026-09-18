@@ -4660,22 +4660,22 @@ async function deleteMultipleVocab(rows) {
         function getNormalPageForIndex(e) { return Math.floor(e / 40) }
 
         function filterVocabBySearch(e) {
-            if (!searchTerm) {
-                return dedupeIndices(e.filter((_, idx) =>
-                    !softDeletedIndices.has(idx) && !pendingDeletions.has(idx)));
-            }
-            const t = searchTerm.toLowerCase();
-            return dedupeIndices(e.filter((item, idx) => {
-                if (softDeletedIndices.has(idx) || pendingDeletions.has(idx)) return false;
-                return item.chinese.toLowerCase().includes(t) ||
-                       item.khmer.toLowerCase().includes(t);
-            }));
-        }
+    if (!searchTerm) {
+        // ⚡ Keep soft-deleted items visible (with strikethrough)
+        return dedupeIndices(e.filter((_, idx) => !pendingDeletions.has(idx)));
+    }
+    const t = searchTerm.toLowerCase();
+    return dedupeIndices(e.filter((item, idx) => {
+        if (pendingDeletions.has(idx)) return false;
+        return item.chinese.toLowerCase().includes(t) ||
+               item.khmer.toLowerCase().includes(t);
+    }));
+}
 
         function renderNormalSidebar() {
             if (!vocabList.length) return;
             // Use filteredList instead of filterVocabBySearch
-            const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
+            const filtered = filteredList.filter(idx => !pendingDeletions.has(idx));
             if (0 === filtered.length) {
                 sidebarIndices = [];
                 renderSidebarUI();
@@ -4908,12 +4908,12 @@ async function deleteMultipleVocab(rows) {
             setTimeout(() => startAutoCycle(), 100);
         }
     } else if (vocabList.length) {
-        // Find a non-soft-deleted word from the filtered list
-        const available = filteredList.filter(idx => !softDeletedIndices.has(idx));
-        if (available.length === 0) {
-            showToast("⚠️ No words available in this group!");
-            return;
-        }
+    // ⚡ Include all loaded words (soft-deleted shown with strikethrough)
+    const available = filteredList.filter(idx => !pendingDeletions.has(idx));
+    if (available.length === 0) {
+        showToast("⚠️ No words available in this group!");
+        return;
+    }
                 const newIdx = available[Math.floor(Math.random() * available.length)];
         if (newIdx !== -1) {
             loadWordByMode(newIdx, !0);
@@ -4933,7 +4933,7 @@ async function deleteMultipleVocab(rows) {
         function goPrevNormal() {
             if (autoTimer && (clearTimeout(autoTimer), autoTimer = null), !vocabList.length) return;
             // Use filteredList instead of all vocabList
-            const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx));
+            const filtered = filteredList.filter(idx => !pendingDeletions.has(idx));
             if (filtered.length === 0) return;
 
             let pos = filtered.indexOf(normalCurrentIdx);
@@ -4983,7 +4983,7 @@ async function deleteMultipleVocab(rows) {
         e.classList.remove("mode-random-active");
         e.classList.add("mode-sequential-active");
         // Use filteredList to get the list of available words
-        const filtered = filteredList.filter(idx => !softDeletedIndices.has(idx) && !pendingDeletions.has(idx));
+			const filtered = filteredList.filter(idx => !pendingDeletions.has(idx));
         if (filtered.length > 0) {
             // Try to keep the current word (if it is still in the filtered list)
             let currentIdx = -1;
@@ -6580,7 +6580,7 @@ function showEditGroupModalOnTop(presetGroup) {
         function syncPageInput() {
     const input = document.getElementById('pageJumpInput');
     if (input) {
-        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+        const filtered = filteredList.filter(idx => !pendingDeletions.has(idx));
         const totalPages = Math.ceil(filtered.length / 40) || 1;
         input.value = normalCurrentPage + 1;
         input.max = totalPages;
@@ -6718,14 +6718,13 @@ function showEditGroupModalOnTop(presetGroup) {
                 e.addEventListener("click", (t => {
                     t.stopPropagation();
                     const n = parseInt(e.dataset.index);
-                    if (!isNaN(n) && vocabList[n] && !pendingDeletions.has(n) && !softDeletedIndices
-                        .has(n)) {
-                        searchTerm = "";
-                        i.value = "";
-                        s.style.display = "none";
-                        loadWordByMode(n, true);
-                        blurSearchInput();
-                    } else if (softDeletedIndices.has(n)) {
+                    if (!isNaN(n) && vocabList[n] && !pendingDeletions.has(n)) {
+    searchTerm = "";
+    i.value = "";
+    s.style.display = "none";
+    loadWordByMode(n, true);
+    blurSearchInput();
+} else if (softDeletedIndices.has(n)) {
                         showToast("⚠️ This word is in the recycle bin");
                     }
                 }));
@@ -6805,7 +6804,7 @@ function showEditGroupModalOnTop(presetGroup) {
     updatePaginationControlsInside(o.querySelector("#paginationContainer"));
     let u = sidebarIndices;
     if ("normal" === appMode && searchTerm) u = filterVocabBySearch(vocabList).filter(idx => !pendingDeletions
-        .has(idx) && !softDeletedIndices.has(idx)).map((e => vocabList.findIndex((t => t === e))));
+    .has(idx)).map((e => vocabList.findIndex((t => t === e))));
     else "random" === appMode && searchTerm && "" !== searchTerm.trim() && (u = sidebarIndices);
     u = dedupeIndices(u).filter(idx => !pendingDeletions.has(idx));
     for (let e = 0; e < u.length; e++) {
@@ -6853,7 +6852,7 @@ o.innerHTML =
 
         function updatePaginationControlsInside(e) {
     if (!e) return;
-    const t = filteredList.filter(idx => !pendingDeletions.has(idx) && !softDeletedIndices.has(idx));
+    const t = filteredList.filter(idx => !pendingDeletions.has(idx));
     const totalItems = t.length;
     const totalPages = Math.ceil(totalItems / 40) || 1;
     
@@ -9143,43 +9142,57 @@ async function saveAllData() {
     safeSetItem('groupFilter', groupFilter);
     // ✅ groupMapData is NOT saved anymore (redundant — rebuilt from vocabList)
 
-    // ===== 3. Save big vocab list — localStorage first, IndexedDB fallback =====
+       // ===== 3. Save vocab list — ALWAYS to IndexedDB (skip localStorage) =====
+    // Reason: localStorage has ~5 MB limit, our vocab list is ~4-5 MB.
+    // IndexedDB has 50+ MB limit and never hits quota for 52k rows.
     if (vocabList.length > 0) {
         const compressed = compressVocabList(vocabList);
-        const jsonStr = JSON.stringify(compressed);
-        const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
 
-        if (!success) {
-    try {
-        const stored = await storeVocabListInIndexedDB(compressed);
-        if (stored) {
-            try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
-            try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
-            console.log('📦 Stored vocabulary list in IndexedDB');
-            
-            // ⚡ Hide the warning since we successfully stored in IndexedDB
+        // Try IndexedDB first — this is the primary storage
+        try {
+            const stored = await storeVocabListInIndexedDB(compressed);
+            if (stored) {
+                console.log('📦 Stored vocabulary list in IndexedDB:', compressed.length, 'items');
+
+                // Small marker in localStorage (only ~50 bytes) so we know where to look
+                try {
+                    localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true');
+                } catch (e) {
+                    // Even this tiny write failed — very rare
+                    console.warn('Could not set IndexedDB marker flag');
+                }
+
+                // Clean up any old localStorage copy (frees space)
+                try {
+                    localStorage.removeItem('vocabMaster_List_Compressed');
+                } catch (e) {}
+
+                // ⚡ Hide warning — data is safely stored
+                const warn = document.getElementById('cacheWarning');
+                if (warn) warn.style.display = 'none';
+                storageQuotaExceeded = false;
+                _quotaToastShown = false;
+
+            } else {
+                // IndexedDB failed — this is a real problem
+                console.error('❌ IndexedDB save failed');
+                const warn = document.getElementById('cacheWarning');
+                if (warn) {
+                    warn.textContent = '⚠️ Could not save data — tap to clear cache';
+                    warn.style.display = 'block';
+                }
+            }
+        } catch (idbError) {
+            console.error('❌ IndexedDB error:', idbError);
             const warn = document.getElementById('cacheWarning');
-            if (warn) warn.style.display = 'none';
-            
-            // ⚡ Also reset the quota flag since data is safely stored
-            storageQuotaExceeded = false;
-            _quotaToastShown = false;
-        } else {
-            // IndexedDB also failed — now show warning
-            const warn = document.getElementById('cacheWarning');
-            if (warn) warn.style.display = 'block';
-        }
-    } catch (idbError) {
-        console.warn('IndexedDB store error:', idbError);
-        const warn = document.getElementById('cacheWarning');
-        if (warn) warn.style.display = 'block';
-    }
-} else {
-            try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
-            try { await clearVocabListFromIndexedDB(); } catch (e) {}
+            if (warn) {
+                warn.textContent = '⚠️ Storage error — tap to clear cache';
+                warn.style.display = 'block';
+            }
         }
     } else {
-        try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+        // No vocab — clear everything
+        try { localStorage.removeItem('vocabMaster_List_Compressed'); } catch (e) {}
         try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
         try { await clearVocabListFromIndexedDB(); } catch (e) {}
     }
@@ -11255,14 +11268,12 @@ document.addEventListener('visibilitychange', function() {
 
     // ---- Sidebar count (excluding soft-deleted) ----
     function getSidebarCount() {
-        try {
-            if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
-            if (typeof softDeletedIndices !== 'undefined' && softDeletedIndices instanceof Set) {
-                return vocabList.filter((_, i) => !softDeletedIndices.has(i)).length;
-            }
-            return vocabList.length;
-        } catch (e) { return 0; }
-    }
+    try {
+        if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
+        // ⚡ Count ALL loaded items — soft-deleted stay visible with strikethrough
+        return vocabList.length;
+    } catch (e) { return 0; }
+}
 
     // ---- Render: [API+1] / [Sidebar+1] ----
     function render() {
