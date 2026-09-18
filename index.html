@@ -11253,12 +11253,13 @@ document.addEventListener('visibilitychange', function() {
     const MIN_INTERVAL = 10000;         // 30s between API calls
     const RELOAD_COOLDOWN = 60000;      // 60s between auto-reloads
 
-     // ---- Sidebar count (ALL items, including soft-deleted) ----
-    // Soft-deleted items still appear in the sidebar with strikethrough,
-    // so they should be counted. Otherwise soft-delete triggers a false mismatch.
+    // ---- Sidebar count (excluding soft-deleted) ----
     function getSidebarCount() {
         try {
             if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
+            if (typeof softDeletedIndices !== 'undefined' && softDeletedIndices instanceof Set) {
+                return vocabList.filter((_, i) => !softDeletedIndices.has(i)).length;
+            }
             return vocabList.length;
         } catch (e) { return 0; }
     }
