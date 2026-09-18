@@ -3276,8 +3276,30 @@ window.clearAllCache = async function() {
         }
 
         // ======================== ORIGINAL GLOBALS =========================
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || "MacIntel" === navigator.platform && navigator
-            .maxTouchPoints > 1;
+       // ⚡ Bulletproof iOS detection (works for Safari, Chrome, Firefox, Edge on iOS)
+const isIOS = (() => {
+    const ua = navigator.userAgent || '';
+    const platform = navigator.platform || '';
+    const maxTouch = navigator.maxTouchPoints || 0;
+
+    // Standard iOS devices
+    if (/iPad|iPhone|iPod/.test(ua)) return true;
+
+    // iPadOS 13+ reports as "MacIntel" but has touch support
+    if (platform === 'MacIntel' && maxTouch > 1) return true;
+
+    // Catch-all for WebKit on touch devices (covers edge cases)
+    if (/AppleWebKit/.test(ua) && /Mobile/.test(ua) && maxTouch > 0) return true;
+
+    return false;
+})();
+
+console.log('📱 Platform detection:', {
+    isIOS: isIOS,
+    ua: navigator.userAgent.substring(0, 80),
+    platform: navigator.platform,
+    maxTouchPoints: navigator.maxTouchPoints
+});
         let editUnlocked = !0,
             activePasswordModal = null,
             searchTerm = "",
@@ -9147,44 +9169,52 @@ async function saveAllData() {
     safeSetItem("vocabMaster_SoftData", JSON.stringify(softDataObj));
 
     safeSetItem('groupFilter', groupFilter);
-    // ✅ groupMapData is NOT saved anymore (redundant — rebuilt from vocabList)
-
-    // ===== 3. Save big vocab list — localStorage first, IndexedDB fallback =====
+      // ===== 3. Save big vocab list =====
+    // ⚡ On iOS, ALWAYS use IndexedDB (localStorage is too small — 5MB limit)
+    // On desktop, try localStorage first (faster), fall back to IndexedDB
     if (vocabList.length > 0) {
         const compressed = compressVocabList(vocabList);
         const jsonStr = JSON.stringify(compressed);
-        const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
+
+        let success = false;
+
+        if (isIOS) {
+            // iOS: skip localStorage entirely — it will just throw quota errors
+            console.log('📦 iOS detected — saving directly to IndexedDB');
+            success = false;
+        } else {
+            // Desktop: try localStorage first (it's synchronous and fast)
+            success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
+        }
 
         if (!success) {
-    try {
-        const stored = await storeVocabListInIndexedDB(compressed);
-        if (stored) {
-            try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
-            try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
-            console.log('📦 Stored vocabulary list in IndexedDB');
-            
-            // ⚡ Hide the warning since we successfully stored in IndexedDB
-            const warn = document.getElementById('cacheWarning');
-            if (warn) warn.style.display = 'none';
-            
-            // ⚡ Also reset the quota flag since data is safely stored
-            storageQuotaExceeded = false;
-            _quotaToastShown = false;
-        } else {
-            // IndexedDB also failed — only show warning on non-iOS
-            if (!isIOS) {
-                const warn = document.getElementById('cacheWarning');
-                if (warn) warn.style.display = 'block';
+            try {
+                const stored = await storeVocabListInIndexedDB(compressed);
+                if (stored) {
+                    try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
+                    try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+                    console.log('📦 Stored vocabulary list in IndexedDB');
+
+                    // ⚡ Hide the warning since we successfully stored in IndexedDB
+                    const warn = document.getElementById('cacheWarning');
+                    if (warn) warn.style.display = 'none';
+
+                    storageQuotaExceeded = false;
+                    _quotaToastShown = false;
+                } else {
+                    if (!isIOS) {
+                        const warn = document.getElementById('cacheWarning');
+                        if (warn) warn.style.display = 'block';
+                    }
+                }
+            } catch (idbError) {
+                console.warn('IndexedDB store error:', idbError);
+                if (!isIOS) {
+                    const warn = document.getElementById('cacheWarning');
+                    if (warn) warn.style.display = 'block';
+                }
             }
-        }
-    } catch (idbError) {
-        console.warn('IndexedDB store error:', idbError);
-        if (!isIOS) {
-            const warn = document.getElementById('cacheWarning');
-            if (warn) warn.style.display = 'block';
-        }
-    }
-}else {
+        } else {
             try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
             try { await clearVocabListFromIndexedDB(); } catch (e) {}
         }
