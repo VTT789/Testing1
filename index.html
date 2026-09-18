@@ -2917,15 +2917,32 @@ let _quotaErrorCount = 0;
 function safeSetItem(key, value) {
     // If quota is already exceeded, skip localStorage entirely
     if (storageQuotaExceeded) {
+        // Only try IndexedDB for critical data (vocab list)
+        if (key === 'vocabMaster_List_Compressed' || key === 'vocabMaster_List_StoredInIndexedDB') {
+            // Let the caller handle IndexedDB fallback
+            return false;
+        }
+        // For all other keys, just return false without showing toast
         return false;
     }
     
     try {
         localStorage.setItem(key, value);
-        // Reset quota state on success
+        // If we successfully wrote, reset the quota state
         storageQuotaExceeded = false;
         _quotaToastShown = false;
         _quotaErrorCount = 0;
+        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+if (!isIOSDevice) {
+    // Only show warning on non-iOS devices
+    const warn = document.getElementById('cacheWarning');
+    if (warn) warn.style.display = 'block';
+} else {
+    // On iOS: silently fallback to IndexedDB
+    console.log('📦 iOS detected — using IndexedDB fallback (no warning shown)');
+}
         return true;
     } catch (e) {
         // Check if this is a quota error
@@ -2937,25 +2954,25 @@ function safeSetItem(key, value) {
             _quotaErrorCount++;
             console.warn('localStorage quota exceeded for key:', key);
             
-            // ⚡ Only warn for non-vocab keys
-            // Vocab list is stored in IndexedDB, not localStorage
-            const isVocabKey = key === 'vocabMaster_List_Compressed' || 
-                              key === 'vocabMaster_List_StoredInIndexedDB';
+                      // ⚡ iOS has tiny localStorage quota — don't spam warnings
+            // IndexedDB fallback will handle storage silently
+            const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
             
-            if (isVocabKey) {
-                console.log('📦 localStorage quota hit for vocab key (silent):', key);
-            } else {
-                // Non-vocab key — genuine problem
-                console.warn('localStorage quota hit for key:', key);
+            if (!isIOSDevice) {
+                // Show the warning in the UI (only on non-iOS)
                 const warn = document.getElementById('cacheWarning');
                 if (warn) warn.style.display = 'block';
                 
+                // Show toast (throttled)
                 const now = Date.now();
                 if (!_quotaToastShown || (now - _lastQuotaCheck) > 10000) {
                     _quotaToastShown = true;
                     _lastQuotaCheck = now;
                     showToast('⚠️ Storage full! Tap "Clear Cache" in Load Vocabulary modal.');
                 }
+            } else {
+                console.log('📦 iOS: localStorage quota hit, using IndexedDB silently');
             }
             return false;
         }
@@ -9125,57 +9142,43 @@ async function saveAllData() {
     safeSetItem('groupFilter', groupFilter);
     // ✅ groupMapData is NOT saved anymore (redundant — rebuilt from vocabList)
 
-       // ===== 3. Save vocab list — ALWAYS to IndexedDB (skip localStorage) =====
-    // Reason: localStorage has ~5 MB limit, our vocab list is ~4-5 MB.
-    // IndexedDB has 50+ MB limit and never hits quota for 52k rows.
+    // ===== 3. Save big vocab list — localStorage first, IndexedDB fallback =====
     if (vocabList.length > 0) {
         const compressed = compressVocabList(vocabList);
+        const jsonStr = JSON.stringify(compressed);
+        const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
 
-        // Try IndexedDB first — this is the primary storage
-        try {
-            const stored = await storeVocabListInIndexedDB(compressed);
-            if (stored) {
-                console.log('📦 Stored vocabulary list in IndexedDB:', compressed.length, 'items');
-
-                // Small marker in localStorage (only ~50 bytes) so we know where to look
-                try {
-                    localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true');
-                } catch (e) {
-                    // Even this tiny write failed — very rare
-                    console.warn('Could not set IndexedDB marker flag');
-                }
-
-                // Clean up any old localStorage copy (frees space)
-                try {
-                    localStorage.removeItem('vocabMaster_List_Compressed');
-                } catch (e) {}
-
-                // ⚡ Hide warning — data is safely stored
-                const warn = document.getElementById('cacheWarning');
-                if (warn) warn.style.display = 'none';
-                storageQuotaExceeded = false;
-                _quotaToastShown = false;
-
-            } else {
-                // IndexedDB failed — this is a real problem
-                console.error('❌ IndexedDB save failed');
-                const warn = document.getElementById('cacheWarning');
-                if (warn) {
-                    warn.textContent = '⚠️ Could not save data — tap to clear cache';
-                    warn.style.display = 'block';
-                }
-            }
-        } catch (idbError) {
-            console.error('❌ IndexedDB error:', idbError);
+        if (!success) {
+    try {
+        const stored = await storeVocabListInIndexedDB(compressed);
+        if (stored) {
+            try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
+            try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+            console.log('📦 Stored vocabulary list in IndexedDB');
+            
+            // ⚡ Hide the warning since we successfully stored in IndexedDB
             const warn = document.getElementById('cacheWarning');
-            if (warn) {
-                warn.textContent = '⚠️ Storage error — tap to clear cache';
-                warn.style.display = 'block';
-            }
+            if (warn) warn.style.display = 'none';
+            
+            // ⚡ Also reset the quota flag since data is safely stored
+            storageQuotaExceeded = false;
+            _quotaToastShown = false;
+        } else {
+            // IndexedDB also failed — now show warning
+            const warn = document.getElementById('cacheWarning');
+            if (warn) warn.style.display = 'block';
+        }
+    } catch (idbError) {
+        console.warn('IndexedDB store error:', idbError);
+        const warn = document.getElementById('cacheWarning');
+        if (warn) warn.style.display = 'block';
+    }
+} else {
+            try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
+            try { await clearVocabListFromIndexedDB(); } catch (e) {}
         }
     } else {
-        // No vocab — clear everything
-        try { localStorage.removeItem('vocabMaster_List_Compressed'); } catch (e) {}
+        try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
         try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
         try { await clearVocabListFromIndexedDB(); } catch (e) {}
     }
@@ -9184,7 +9187,7 @@ async function saveAllData() {
        // ======================================================================
 // FIXED: loadSettings with IndexedDB fallback
 // ======================================================================
-async function loadSettings() {
+function loadSettings() {
     const settingsStr = safeGetItem("vocabMaster_Settings", null);
     if (settingsStr) {
         try {
@@ -10644,10 +10647,6 @@ async function loadSettings() {
                 (e.preventDefault(), moveSidebarFocus(1)) : "ArrowUp" === e.code && (e.preventDefault(),
                     moveSidebarFocus(-1)) : e.stopPropagation()
         })), window.onload = async () => {
-    // ⚡ Force-hide any stale storage warning on startup
-    const staleWarn = document.getElementById('cacheWarning');
-    if (staleWarn) staleWarn.style.display = 'none';
-
     // Show loading overlay with ABA icon
     const loadingOverlay = document.createElement('div');
     loadingOverlay.id = 'loadingOverlay';
