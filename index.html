@@ -4112,14 +4112,21 @@ console.log('📱 Platform detection:', {
                 if (Array.isArray(cached) && cached.length > 0) {
                     console.log('⚡ Loaded from local cache:', cached.length, 'words');
                     
-                    vocabList = decompressVocabList(cached);
-                    vocabularyData = vocabList;
-                    editUnlocked = true;
-                    updateEditButtonsState();
-                    
-                    // Build caches
-                    buildFirstCharCache();
-                    buildGroupMap();
+                   vocabList = s;
+vocabularyData = vocabList;
+editUnlocked = !0;
+updateEditButtonsState();
+
+// ⚡ On iOS: defer heavy operations with setTimeout to unblock UI
+await new Promise(resolve => setTimeout(resolve, 0));
+
+await loadApiAndPasswordFromSheet();
+buildGroupMap();
+
+// ⚡ Another yield to keep UI responsive
+await new Promise(resolve => setTimeout(resolve, 0));
+
+applyGroupFilter();
                     
                     // Load saved filter
                     const savedFilter = safeGetItem('groupFilter', '__ALL__');
@@ -6895,6 +6902,32 @@ function showEditGroupModalOnTop(presetGroup) {
         .has(idx) && !softDeletedIndices.has(idx)).map((e => vocabList.findIndex((t => t === e))));
     else "random" === appMode && searchTerm && "" !== searchTerm.trim() && (u = sidebarIndices);
     u = dedupeIndices(u).filter(idx => !pendingDeletions.has(idx));
+	// ⚡ iOS WINDOW: Only render ~200 items around the current index
+const MAX_SIDEBAR_ITEMS = 200;
+let displayList = u;
+
+if (u.length > MAX_SIDEBAR_ITEMS) {
+    // Find current index in the display list
+    let currentPos = -1;
+    if ("normal" === appMode && searchTerm) {
+        currentPos = u.indexOf(normalCurrentIdx);
+    } else {
+        currentPos = sidebarFocusIdx;
+    }
+    if (currentPos === -1) currentPos = 0;
+
+    // Window: 100 before + 100 after
+    const half = Math.floor(MAX_SIDEBAR_ITEMS / 2);
+    const start = Math.max(0, currentPos - half);
+    const end = Math.min(u.length, start + MAX_SIDEBAR_ITEMS);
+    displayList = u.slice(start, end);
+    
+    // Store the offset so we know the real index
+    u._displayOffset = start;
+    console.log(`⚡ iOS window: showing ${displayList.length} of ${u.length} items (offset ${start})`);
+}
+
+// Render only the window
     for (let e = 0; e < u.length; e++) {
         const n = u[e],
             o = document.createElement("div"),
@@ -9236,10 +9269,25 @@ async function saveAllData() {
         const jsonStr = JSON.stringify(compressed);
         const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
 
-        if (!success) {
-            try {
-                // ⚡ Try gzip compression first (huge size reduction)
-                const gzBlob = await gzipCompress(jsonStr);
+     if (!success) {
+    try {
+        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        
+        // ⚡ On iOS: skip gzip (CPU is precious, storage is fine)
+        // On other devices: use gzip to save storage
+        let gzBlob = null;
+        if (!isIOSDevice) {
+            gzBlob = await gzipCompress(jsonStr);
+        }
+        
+        if (gzBlob) {
+            // ... existing gzip save code
+        } else {
+            // Fallback: uncompressed IndexedDB (also iOS default)
+            const stored = await storeVocabListInIndexedDB(compressed);
+            // ... rest
+        }
                 
                 if (gzBlob) {
                     const stored = await saveCompressedToIDB(gzBlob);
@@ -11392,8 +11440,11 @@ document.addEventListener('visibilitychange', function() {
     let lastRenderedSidebar = -1;
     let lastReloadTime = 0;
     let isReloading = false;
-    const MIN_INTERVAL = 10000;         // 30s between API calls
-    const RELOAD_COOLDOWN = 60000;      // 60s between auto-reloads
+const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+const MIN_INTERVAL = isIOSDevice ? 60000 : 10000;      // 60s on iOS, 10s elsewhere
+const RELOAD_COOLDOWN = isIOSDevice ? 300000 : 60000;  // 5 min on iOS, 1 min elsewhere
 
     // ---- Sidebar count (excluding soft-deleted) ----
     function getSidebarCount() {
@@ -11550,7 +11601,7 @@ document.addEventListener('visibilitychange', function() {
     let fallbackTimer = null;
     function startFallback() {
         if (fallbackTimer) clearInterval(fallbackTimer);
-        fallbackTimer = setInterval(() => refresh(false), 10000);
+        fallbackTimer = setInterval(() => refresh(false), isIOSDevice ? 60000 : 10000);
     }
     function stopFallback() {
         if (fallbackTimer) { clearInterval(fallbackTimer); fallbackTimer = null; }
