@@ -2817,7 +2817,7 @@ body.night-mode .resizer {
                             <div class=size-row><label>KM Side Size</label><input type=range id=sKmSize min=0.5 max=4 step=0.1 value=0.9></div>
                             <div class=size-row><label>📋 Vocab Spacing</label><input type=range id=sVocabSpacing min=0 max=30 step=1 value=8><span id=vocabSpacingVal>8px</span></div>
                         </div>
-                        <div id="cacheWarning" class="cache-warning" onclick="if(typeof clearAllCache==='function'){clearAllCache();}else{localStorage.clear();location.reload();}" style="cursor:pointer;" title="Tap to clear cache">
+                       <div id="cacheWarning" class="cache-warning" onclick="if(typeof clearAllCache==='function'){clearAllCache();}else{localStorage.clear();location.reload();}" style="cursor:pointer; display: none !important;" title="Tap to clear cache">
     ⚠️ Storage full — tap to clear cache
 </div>
                     </div>
@@ -2935,17 +2935,9 @@ function safeSetItem(key, value) {
         storageQuotaExceeded = false;
         _quotaToastShown = false;
         _quotaErrorCount = 0;
-        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-if (!isIOSDevice) {
-    // Only show warning on non-iOS devices
-    const warn = document.getElementById('cacheWarning');
-    if (warn) warn.style.display = 'block';
-} else {
-    // On iOS: silently fallback to IndexedDB
-    console.log('📦 iOS detected — using IndexedDB fallback (no warning shown)');
-}
+          // ⚡ SUCCESS: always hide warning
+        const warn = document.getElementById('cacheWarning');
+        if (warn) warn.style.display = 'none';
         return true;
     } catch (e) {
         // Check if this is a quota error
@@ -9269,70 +9261,72 @@ async function saveAllData() {
         const jsonStr = JSON.stringify(compressed);
         const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
 
-     if (!success) {
-    try {
-        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        
-        // ⚡ On iOS: skip gzip (CPU is precious, storage is fine)
-        // On other devices: use gzip to save storage
-        let gzBlob = null;
-        if (!isIOSDevice) {
-            gzBlob = await gzipCompress(jsonStr);
-        }
-        
-        if (gzBlob) {
-            // ... existing gzip save code
-        } else {
-            // Fallback: uncompressed IndexedDB (also iOS default)
-            const stored = await storeVocabListInIndexedDB(compressed);
-            // ... rest
-        }
-                
-                if (gzBlob) {
-                    const stored = await saveCompressedToIDB(gzBlob);
-                    if (stored) {
-                        try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
-                        try { localStorage.setItem('vocabMaster_List_Gzipped', 'true'); } catch (e) {}
-                        try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
-                        console.log(`📦 Saved GZIPPED to IndexedDB: ${(gzBlob.size / 1024).toFixed(0)} KB for ${vocabList.length} words`);
-                        
-                        const warn = document.getElementById('cacheWarning');
-                        if (warn) warn.style.display = 'none';
-                        storageQuotaExceeded = false;
-                        _quotaToastShown = false;
-                    } else {
-                        const warn = document.getElementById('cacheWarning');
-                        if (warn) warn.style.display = 'block';
-                    }
-                } else {
-                    // Fallback: uncompressed IndexedDB
-                    const stored = await storeVocabListInIndexedDB(compressed);
-                    if (stored) {
-                        try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
-                        try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
-                        console.log('📦 Stored uncompressed in IndexedDB');
-                        const warn = document.getElementById('cacheWarning');
-                        if (warn) warn.style.display = 'none';
-                        storageQuotaExceeded = false;
-                    }
+         if (!success) {
+        try {
+            // ⚡ Detect iOS once at the top of the block
+            const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            
+            // On iOS: skip gzip (CPU is precious, storage is fine)
+            // On other devices: use gzip to save storage
+            let gzBlob = null;
+            if (!isIOSDevice) {
+                gzBlob = await gzipCompress(jsonStr);
+            }
+            
+            if (gzBlob) {
+                // ✅ Try compressed (gzip) save
+                const stored = await saveCompressedToIDB(gzBlob);
+                if (stored) {
+                    try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
+                    try { localStorage.setItem('vocabMaster_List_Gzipped', 'true'); } catch (e) {}
+                    try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+                    console.log(`📦 Saved GZIPPED to IndexedDB: ${(gzBlob.size / 1024).toFixed(0)} KB for ${vocabList.length} words`);
+                    
+                    const warn = document.getElementById('cacheWarning');
+                    if (warn) warn.style.display = 'none';
+                    storageQuotaExceeded = false;
+                    _quotaToastShown = false;
+                } else if (!isIOSDevice) {
+                    const warn = document.getElementById('cacheWarning');
+                    if (warn) warn.style.display = 'block';
                 }
-            } catch (idbError) {
-                console.warn('IndexedDB store error:', idbError);
+            } else {
+                // ✅ Fallback: uncompressed IndexedDB
+                const stored = await storeVocabListInIndexedDB(compressed);
+                if (stored) {
+                    try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
+                    try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+                    console.log('📦 Stored uncompressed in IndexedDB');
+                    const warn = document.getElementById('cacheWarning');
+                    if (warn) warn.style.display = 'none';
+                    storageQuotaExceeded = false;
+                } else if (!isIOSDevice) {
+                    const warn = document.getElementById('cacheWarning');
+                    if (warn) warn.style.display = 'block';
+                }
+            }
+        } catch (idbError) {
+            console.warn('IndexedDB store error:', idbError);
+            // ⚡ Never show warning on iOS
+            const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            if (!isIOSDevice) {
                 const warn = document.getElementById('cacheWarning');
                 if (warn) warn.style.display = 'block';
             }
-        } else {
-            try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
-            try { localStorage.removeItem('vocabMaster_List_Gzipped'); } catch (e) {}
-            try { await clearVocabListFromIndexedDB(); } catch (e) {}
         }
     } else {
-        try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
         try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
         try { localStorage.removeItem('vocabMaster_List_Gzipped'); } catch (e) {}
         try { await clearVocabListFromIndexedDB(); } catch (e) {}
     }
+} else {
+    try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+    try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
+    try { localStorage.removeItem('vocabMaster_List_Gzipped'); } catch (e) {}
+    try { await clearVocabListFromIndexedDB(); } catch (e) {}
+}
 }
 
        // ======================================================================
@@ -10905,13 +10899,24 @@ function loadSettings() {
     }
 
     loadSettings();
-    resetQuotaState(); // <-- ADD THIS LINE HERE
-	
-	 if (isIOS) {
-        const warn = document.getElementById('cacheWarning');
-        if (warn) warn.style.display = 'none';
+resetQuotaState();
+
+// ⚡ BULLETPROOF iOS PROTECTION — hide warning forever
+if (isIOS) {
+    const warn = document.getElementById('cacheWarning');
+    if (warn) {
+        warn.style.display = 'none';
+        warn.style.setProperty('display', 'none', 'important');
+        // Also watch for changes and hide again
+        const observer = new MutationObserver(() => {
+            if (warn.style.display !== 'none') {
+                warn.style.setProperty('display', 'none', 'important');
+            }
+        });
+        observer.observe(warn, { attributes: true, attributeFilter: ['style'] });
     }
-    loadSheetHistory();
+}
+loadSheetHistory();
 
     // ---- FIX: reload sheet if vocab list is empty but sheet ID exists ----
     if (vocabList.length === 0 && currentSheetId) {
