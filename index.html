@@ -2917,32 +2917,15 @@ let _quotaErrorCount = 0;
 function safeSetItem(key, value) {
     // If quota is already exceeded, skip localStorage entirely
     if (storageQuotaExceeded) {
-        // Only try IndexedDB for critical data (vocab list)
-        if (key === 'vocabMaster_List_Compressed' || key === 'vocabMaster_List_StoredInIndexedDB') {
-            // Let the caller handle IndexedDB fallback
-            return false;
-        }
-        // For all other keys, just return false without showing toast
         return false;
     }
     
     try {
         localStorage.setItem(key, value);
-        // If we successfully wrote, reset the quota state
+        // Reset quota state on success
         storageQuotaExceeded = false;
         _quotaToastShown = false;
         _quotaErrorCount = 0;
-        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-if (!isIOSDevice) {
-    // Only show warning on non-iOS devices
-    const warn = document.getElementById('cacheWarning');
-    if (warn) warn.style.display = 'block';
-} else {
-    // On iOS: silently fallback to IndexedDB
-    console.log('📦 iOS detected — using IndexedDB fallback (no warning shown)');
-}
         return true;
     } catch (e) {
         // Check if this is a quota error
@@ -2954,25 +2937,25 @@ if (!isIOSDevice) {
             _quotaErrorCount++;
             console.warn('localStorage quota exceeded for key:', key);
             
-                      // ⚡ iOS has tiny localStorage quota — don't spam warnings
-            // IndexedDB fallback will handle storage silently
-            const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            // ⚡ Only warn for non-vocab keys
+            // Vocab list is stored in IndexedDB, not localStorage
+            const isVocabKey = key === 'vocabMaster_List_Compressed' || 
+                              key === 'vocabMaster_List_StoredInIndexedDB';
             
-            if (!isIOSDevice) {
-                // Show the warning in the UI (only on non-iOS)
+            if (isVocabKey) {
+                console.log('📦 localStorage quota hit for vocab key (silent):', key);
+            } else {
+                // Non-vocab key — genuine problem
+                console.warn('localStorage quota hit for key:', key);
                 const warn = document.getElementById('cacheWarning');
                 if (warn) warn.style.display = 'block';
                 
-                // Show toast (throttled)
                 const now = Date.now();
                 if (!_quotaToastShown || (now - _lastQuotaCheck) > 10000) {
                     _quotaToastShown = true;
                     _lastQuotaCheck = now;
                     showToast('⚠️ Storage full! Tap "Clear Cache" in Load Vocabulary modal.');
                 }
-            } else {
-                console.log('📦 iOS: localStorage quota hit, using IndexedDB silently');
             }
             return false;
         }
@@ -9201,7 +9184,7 @@ async function saveAllData() {
        // ======================================================================
 // FIXED: loadSettings with IndexedDB fallback
 // ======================================================================
-function loadSettings() {
+async function loadSettings() {
     const settingsStr = safeGetItem("vocabMaster_Settings", null);
     if (settingsStr) {
         try {
@@ -10661,6 +10644,10 @@ function loadSettings() {
                 (e.preventDefault(), moveSidebarFocus(1)) : "ArrowUp" === e.code && (e.preventDefault(),
                     moveSidebarFocus(-1)) : e.stopPropagation()
         })), window.onload = async () => {
+    // ⚡ Force-hide any stale storage warning on startup
+    const staleWarn = document.getElementById('cacheWarning');
+    if (staleWarn) staleWarn.style.display = 'none';
+
     // Show loading overlay with ABA icon
     const loadingOverlay = document.createElement('div');
     loadingOverlay.id = 'loadingOverlay';
