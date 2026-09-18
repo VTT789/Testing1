@@ -2817,7 +2817,7 @@ body.night-mode .resizer {
                             <div class=size-row><label>KM Side Size</label><input type=range id=sKmSize min=0.5 max=4 step=0.1 value=0.9></div>
                             <div class=size-row><label>📋 Vocab Spacing</label><input type=range id=sVocabSpacing min=0 max=30 step=1 value=8><span id=vocabSpacingVal>8px</span></div>
                         </div>
-                       <div id="cacheWarning" class="cache-warning" onclick="if(typeof clearAllCache==='function'){clearAllCache();}else{localStorage.clear();location.reload();}" style="cursor:pointer; display: none !important;" title="Tap to clear cache">
+                        <div id="cacheWarning" class="cache-warning" onclick="if(typeof clearAllCache==='function'){clearAllCache();}else{localStorage.clear();location.reload();}" style="cursor:pointer;" title="Tap to clear cache">
     ⚠️ Storage full — tap to clear cache
 </div>
                     </div>
@@ -2935,9 +2935,17 @@ function safeSetItem(key, value) {
         storageQuotaExceeded = false;
         _quotaToastShown = false;
         _quotaErrorCount = 0;
-          // ⚡ SUCCESS: always hide warning
-        const warn = document.getElementById('cacheWarning');
-        if (warn) warn.style.display = 'none';
+        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+if (!isIOSDevice) {
+    // Only show warning on non-iOS devices
+    const warn = document.getElementById('cacheWarning');
+    if (warn) warn.style.display = 'block';
+} else {
+    // On iOS: silently fallback to IndexedDB
+    console.log('📦 iOS detected — using IndexedDB fallback (no warning shown)');
+}
         return true;
     } catch (e) {
         // Check if this is a quota error
@@ -3045,66 +3053,7 @@ function decompressVocabList(compressed) {
                 req.onerror = () => reject(req.error);
             });
         }
-// ═══════════════════════════════════════════════════════════════
-//  GZIP COMPRESSION HELPERS (native browser API)
-// ═══════════════════════════════════════════════════════════════
-async function gzipCompress(text) {
-    if (typeof CompressionStream === 'undefined') return null;
-    try {
-        const stream = new Blob([text]).stream()
-            .pipeThrough(new CompressionStream('gzip'));
-        const compressedBlob = await new Response(stream).blob();
-        return compressedBlob;
-    } catch (e) {
-        console.warn('gzip compress failed:', e);
-        return null;
-    }
-}
 
-async function gzipDecompress(blob) {
-    if (typeof DecompressionStream === 'undefined') return null;
-    try {
-        const stream = blob.stream()
-            .pipeThrough(new DecompressionStream('gzip'));
-        const text = await new Response(stream).text();
-        return text;
-    } catch (e) {
-        console.warn('gzip decompress failed:', e);
-        return null;
-    }
-}
-
-async function saveCompressedToIDB(compressedBlob) {
-    try {
-        const db = await openIDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(IDB_STORE, 'readwrite');
-            const store = tx.objectStore(IDB_STORE);
-            const req = store.put(compressedBlob, 'vocabListGzip');
-            req.onsuccess = () => { db.close(); resolve(true); };
-            req.onerror = () => { db.close(); reject(req.error); };
-        });
-    } catch (e) {
-        console.warn('IDB gzip save error:', e);
-        return false;
-    }
-}
-
-async function loadCompressedFromIDB() {
-    try {
-        const db = await openIDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(IDB_STORE, 'readonly');
-            const store = tx.objectStore(IDB_STORE);
-            const req = store.get('vocabListGzip');
-            req.onsuccess = () => { db.close(); resolve(req.result || null); };
-            req.onerror = () => { db.close(); reject(req.error); };
-        });
-    } catch (e) {
-        console.warn('IDB gzip load error:', e);
-        return null;
-    }
-}
         async function storeVocabListInIndexedDB(compressedList) {
             try {
                 const db = await openIDB();
@@ -3183,7 +3132,7 @@ window.clearAllCache = async function() {
                 k.startsWith('menu') || k.startsWith('emoji') || k.startsWith('sidebar') ||
                 k === 'floatingMenuLeft' || k === 'floatingMenuTop' || k === 'speechOrder' ||
                 k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || k === 'sheetHistory' ||
-                k === 'groupFilter' || k === 'groupMapData' || k === 'vocabMaster_List_StoredInIndexedDB' || k === 'vocabMaster_List_Gzipped') {
+                k === 'groupFilter' || k === 'groupMapData' || k === 'vocabMaster_List_StoredInIndexedDB') {
                 try { localStorage.removeItem(k); removedCount++; } catch (e) {}
             }
         }
@@ -3327,30 +3276,8 @@ window.clearAllCache = async function() {
         }
 
         // ======================== ORIGINAL GLOBALS =========================
-       // ⚡ Bulletproof iOS detection (works for Safari, Chrome, Firefox, Edge on iOS)
-const isIOS = (() => {
-    const ua = navigator.userAgent || '';
-    const platform = navigator.platform || '';
-    const maxTouch = navigator.maxTouchPoints || 0;
-
-    // Standard iOS devices
-    if (/iPad|iPhone|iPod/.test(ua)) return true;
-
-    // iPadOS 13+ reports as "MacIntel" but has touch support
-    if (platform === 'MacIntel' && maxTouch > 1) return true;
-
-    // Catch-all for WebKit on touch devices (covers edge cases)
-    if (/AppleWebKit/.test(ua) && /Mobile/.test(ua) && maxTouch > 0) return true;
-
-    return false;
-})();
-
-console.log('📱 Platform detection:', {
-    isIOS: isIOS,
-    ua: navigator.userAgent.substring(0, 80),
-    platform: navigator.platform,
-    maxTouchPoints: navigator.maxTouchPoints
-});
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || "MacIntel" === navigator.platform && navigator
+            .maxTouchPoints > 1;
         let editUnlocked = !0,
             activePasswordModal = null,
             searchTerm = "",
@@ -4104,21 +4031,14 @@ console.log('📱 Platform detection:', {
                 if (Array.isArray(cached) && cached.length > 0) {
                     console.log('⚡ Loaded from local cache:', cached.length, 'words');
                     
-                   vocabList = s;
-vocabularyData = vocabList;
-editUnlocked = !0;
-updateEditButtonsState();
-
-// ⚡ On iOS: defer heavy operations with setTimeout to unblock UI
-await new Promise(resolve => setTimeout(resolve, 0));
-
-await loadApiAndPasswordFromSheet();
-buildGroupMap();
-
-// ⚡ Another yield to keep UI responsive
-await new Promise(resolve => setTimeout(resolve, 0));
-
-applyGroupFilter();
+                    vocabList = decompressVocabList(cached);
+                    vocabularyData = vocabList;
+                    editUnlocked = true;
+                    updateEditButtonsState();
+                    
+                    // Build caches
+                    buildFirstCharCache();
+                    buildGroupMap();
                     
                     // Load saved filter
                     const savedFilter = safeGetItem('groupFilter', '__ALL__');
@@ -6894,32 +6814,6 @@ function showEditGroupModalOnTop(presetGroup) {
         .has(idx) && !softDeletedIndices.has(idx)).map((e => vocabList.findIndex((t => t === e))));
     else "random" === appMode && searchTerm && "" !== searchTerm.trim() && (u = sidebarIndices);
     u = dedupeIndices(u).filter(idx => !pendingDeletions.has(idx));
-	// ⚡ iOS WINDOW: Only render ~200 items around the current index
-const MAX_SIDEBAR_ITEMS = 200;
-let displayList = u;
-
-if (u.length > MAX_SIDEBAR_ITEMS) {
-    // Find current index in the display list
-    let currentPos = -1;
-    if ("normal" === appMode && searchTerm) {
-        currentPos = u.indexOf(normalCurrentIdx);
-    } else {
-        currentPos = sidebarFocusIdx;
-    }
-    if (currentPos === -1) currentPos = 0;
-
-    // Window: 100 before + 100 after
-    const half = Math.floor(MAX_SIDEBAR_ITEMS / 2);
-    const start = Math.max(0, currentPos - half);
-    const end = Math.min(u.length, start + MAX_SIDEBAR_ITEMS);
-    displayList = u.slice(start, end);
-    
-    // Store the offset so we know the real index
-    u._displayOffset = start;
-    console.log(`⚡ iOS window: showing ${displayList.length} of ${u.length} items (offset ${start})`);
-}
-
-// Render only the window
     for (let e = 0; e < u.length; e++) {
         const n = u[e],
             o = document.createElement("div"),
@@ -9253,80 +9147,52 @@ async function saveAllData() {
     safeSetItem("vocabMaster_SoftData", JSON.stringify(softDataObj));
 
     safeSetItem('groupFilter', groupFilter);
-      // ===== 3. Save big vocab list =====
-    // ⚡ On iOS, ALWAYS use IndexedDB (localStorage is too small — 5MB limit)
-    // On desktop, try localStorage first (faster), fall back to IndexedDB
-       if (vocabList.length > 0) {
+    // ✅ groupMapData is NOT saved anymore (redundant — rebuilt from vocabList)
+
+    // ===== 3. Save big vocab list — localStorage first, IndexedDB fallback =====
+    if (vocabList.length > 0) {
         const compressed = compressVocabList(vocabList);
         const jsonStr = JSON.stringify(compressed);
         const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
 
-         if (!success) {
-        try {
-            // ⚡ Detect iOS once at the top of the block
-            const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (!success) {
+    try {
+        const stored = await storeVocabListInIndexedDB(compressed);
+        if (stored) {
+            try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
+            try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+            console.log('📦 Stored vocabulary list in IndexedDB');
             
-            // On iOS: skip gzip (CPU is precious, storage is fine)
-            // On other devices: use gzip to save storage
-            let gzBlob = null;
-            if (!isIOSDevice) {
-                gzBlob = await gzipCompress(jsonStr);
-            }
+            // ⚡ Hide the warning since we successfully stored in IndexedDB
+            const warn = document.getElementById('cacheWarning');
+            if (warn) warn.style.display = 'none';
             
-            if (gzBlob) {
-                // ✅ Try compressed (gzip) save
-                const stored = await saveCompressedToIDB(gzBlob);
-                if (stored) {
-                    try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
-                    try { localStorage.setItem('vocabMaster_List_Gzipped', 'true'); } catch (e) {}
-                    try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
-                    console.log(`📦 Saved GZIPPED to IndexedDB: ${(gzBlob.size / 1024).toFixed(0)} KB for ${vocabList.length} words`);
-                    
-                    const warn = document.getElementById('cacheWarning');
-                    if (warn) warn.style.display = 'none';
-                    storageQuotaExceeded = false;
-                    _quotaToastShown = false;
-                } else if (!isIOSDevice) {
-                    const warn = document.getElementById('cacheWarning');
-                    if (warn) warn.style.display = 'block';
-                }
-            } else {
-                // ✅ Fallback: uncompressed IndexedDB
-                const stored = await storeVocabListInIndexedDB(compressed);
-                if (stored) {
-                    try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
-                    try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
-                    console.log('📦 Stored uncompressed in IndexedDB');
-                    const warn = document.getElementById('cacheWarning');
-                    if (warn) warn.style.display = 'none';
-                    storageQuotaExceeded = false;
-                } else if (!isIOSDevice) {
-                    const warn = document.getElementById('cacheWarning');
-                    if (warn) warn.style.display = 'block';
-                }
-            }
-        } catch (idbError) {
-            console.warn('IndexedDB store error:', idbError);
-            // ⚡ Never show warning on iOS
-            const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            if (!isIOSDevice) {
+            // ⚡ Also reset the quota flag since data is safely stored
+            storageQuotaExceeded = false;
+            _quotaToastShown = false;
+        } else {
+            // IndexedDB also failed — only show warning on non-iOS
+            if (!isIOS) {
                 const warn = document.getElementById('cacheWarning');
                 if (warn) warn.style.display = 'block';
             }
         }
+    } catch (idbError) {
+        console.warn('IndexedDB store error:', idbError);
+        if (!isIOS) {
+            const warn = document.getElementById('cacheWarning');
+            if (warn) warn.style.display = 'block';
+        }
+    }
+}else {
+            try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
+            try { await clearVocabListFromIndexedDB(); } catch (e) {}
+        }
     } else {
+        try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
         try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
-        try { localStorage.removeItem('vocabMaster_List_Gzipped'); } catch (e) {}
         try { await clearVocabListFromIndexedDB(); } catch (e) {}
     }
-} else {
-    try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
-    try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
-    try { localStorage.removeItem('vocabMaster_List_Gzipped'); } catch (e) {}
-    try { await clearVocabListFromIndexedDB(); } catch (e) {}
-}
 }
 
        // ======================================================================
@@ -9489,71 +9355,42 @@ function loadSettings() {
     }
 
     // If localStorage didn't have data, try IndexedDB
-       // If localStorage didn't have data, try IndexedDB
     if (vocabList.length === 0) {
         const storedInIndexedDB = safeGetItem('vocabMaster_List_StoredInIndexedDB', 'false') === 'true';
-        const isGzipped = safeGetItem('vocabMaster_List_Gzipped', 'false') === 'true';
-        
         if (storedInIndexedDB) {
-            (async () => {
-                try {
-                    let compressed = null;
-                    
-                    // ⚡ Try gzipped first
-                    if (isGzipped) {
-                        const gzBlob = await loadCompressedFromIDB();
-                        if (gzBlob) {
-                            const jsonStr = await gzipDecompress(gzBlob);
-                            if (jsonStr) {
-                                compressed = JSON.parse(jsonStr);
-                                console.log('⚡ Loaded GZIPPED from IndexedDB:', compressed.length, 'words');
-                            }
+            // Try to load from IndexedDB
+            loadVocabListFromIndexedDB().then(compressed => {
+                if (compressed && Array.isArray(compressed) && compressed.length > 0) {
+                    vocabList = decompressVocabList(compressed);
+                    lastSheetDataHash = computeSheetHash(vocabList);
+                    console.log('📦 Loaded vocab list from IndexedDB:', vocabList.length, 'words');
+                    buildFirstCharCache();
+                    buildGroupMap();
+                    applyGroupFilter();
+                    if (appMode === 'random' && filteredList.length > 0) {
+                        const idx = filteredList[Math.floor(Math.random() * filteredList.length)];
+                        if (idx !== undefined) {
+                            history = [idx];
+                            historyIndex = 0;
+                            renderRandomSidebar(idx);
                         }
+                    } else if (appMode === 'sequential' && filteredList.length > 0) {
+                        normalCurrentIdx = filteredList[0] || 0;
+                        normalCurrentPage = 0;
+                        renderNormalSidebar();
                     }
-                    
-                    // Fallback: uncompressed
-                    if (!compressed) {
-                        compressed = await loadVocabListFromIndexedDB();
-                        if (compressed) console.log('📦 Loaded uncompressed from IndexedDB:', compressed.length, 'words');
-                    }
-                    
-                    if (compressed && Array.isArray(compressed) && compressed.length > 0) {
-                        vocabList = decompressVocabList(compressed);
-                        lastSheetDataHash = computeSheetHash(vocabList);
-                        buildFirstCharCache();
-                        buildGroupMap();
-                        
-                        const savedFilter = safeGetItem('groupFilter', '__ALL__');
-                        if (savedFilter && groupMap.has(savedFilter)) groupFilter = savedFilter;
-                        else groupFilter = '__ALL__';
-                        
-                        applyGroupFilter();
-                        
-                        if (appMode === 'random' && filteredList.length > 0) {
-                            const idx = filteredList[Math.floor(Math.random() * filteredList.length)];
-                            if (idx !== undefined) {
-                                history = [idx];
-                                historyIndex = 0;
-                                renderRandomSidebar(idx);
-                            }
-                        } else if (appMode === 'sequential' && filteredList.length > 0) {
-                            normalCurrentIdx = filteredList[0] || 0;
-                            normalCurrentPage = 0;
-                            renderNormalSidebar();
-                        }
-                        
-                        updateRecycleBinBadge();
-                        updateStatusBar();
-                        renderSidebarUI();
-                        updateDisplay();
-                        forceShrink();
-                    }
-                } catch (err) {
-                    console.warn('Failed to load from IndexedDB:', err);
-                    safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
-                    safeRemoveItem('vocabMaster_List_Gzipped');
+                    updateRecycleBinBadge();
+                    updateStatusBar();
+                    applyGroupFilter();
+                    renderSidebarUI();
+                    updateDisplay();
+                    forceShrink();
                 }
-            })();
+            }).catch(err => {
+                console.warn('Failed to load from IndexedDB:', err);
+                // Clear the flag so we don't keep trying
+                safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
+            });
         }
     }
 
@@ -10899,24 +10736,13 @@ function loadSettings() {
     }
 
     loadSettings();
-resetQuotaState();
-
-// ⚡ BULLETPROOF iOS PROTECTION — hide warning forever
-if (isIOS) {
-    const warn = document.getElementById('cacheWarning');
-    if (warn) {
-        warn.style.display = 'none';
-        warn.style.setProperty('display', 'none', 'important');
-        // Also watch for changes and hide again
-        const observer = new MutationObserver(() => {
-            if (warn.style.display !== 'none') {
-                warn.style.setProperty('display', 'none', 'important');
-            }
-        });
-        observer.observe(warn, { attributes: true, attributeFilter: ['style'] });
+    resetQuotaState(); // <-- ADD THIS LINE HERE
+	
+	 if (isIOS) {
+        const warn = document.getElementById('cacheWarning');
+        if (warn) warn.style.display = 'none';
     }
-}
-loadSheetHistory();
+    loadSheetHistory();
 
     // ---- FIX: reload sheet if vocab list is empty but sheet ID exists ----
     if (vocabList.length === 0 && currentSheetId) {
@@ -11445,20 +11271,17 @@ document.addEventListener('visibilitychange', function() {
     let lastRenderedSidebar = -1;
     let lastReloadTime = 0;
     let isReloading = false;
-const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-const MIN_INTERVAL = isIOSDevice ? 60000 : 10000;      // 60s on iOS, 10s elsewhere
-const RELOAD_COOLDOWN = isIOSDevice ? 300000 : 60000;  // 5 min on iOS, 1 min elsewhere
+    const MIN_INTERVAL = 10000;         // 30s between API calls
+    const RELOAD_COOLDOWN = 60000;      // 60s between auto-reloads
 
     // ---- Sidebar count (excluding soft-deleted) ----
-      // ---- Sidebar count (ALL items, including soft-deleted) ----
-    // Soft-deleted items still appear in the sidebar with strikethrough,
-    // so they should be counted. Otherwise soft-delete triggers a false mismatch.
     function getSidebarCount() {
         try {
             if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
-            return vocabList.length;   // ✅ Count ALL items — including soft-deleted
+            if (typeof softDeletedIndices !== 'undefined' && softDeletedIndices instanceof Set) {
+                return vocabList.filter((_, i) => !softDeletedIndices.has(i)).length;
+            }
+            return vocabList.length;
         } catch (e) { return 0; }
     }
 
@@ -11606,7 +11429,7 @@ const RELOAD_COOLDOWN = isIOSDevice ? 300000 : 60000;  // 5 min on iOS, 1 min el
     let fallbackTimer = null;
     function startFallback() {
         if (fallbackTimer) clearInterval(fallbackTimer);
-        fallbackTimer = setInterval(() => refresh(false), isIOSDevice ? 60000 : 10000);
+        fallbackTimer = setInterval(() => refresh(false), 10000);
     }
     function stopFallback() {
         if (fallbackTimer) { clearInterval(fallbackTimer); fallbackTimer = null; }
