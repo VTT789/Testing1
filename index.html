@@ -2974,7 +2974,10 @@ if (!isIOSDevice) {
                     _lastQuotaCheck = now;
                     showToast('⚠️ Storage full! Tap "Clear Cache" in Load Vocabulary modal.');
                 }
-            } else {
+             } else {
+                // ⚡ iOS: make sure the warning is never visible
+                const warn = document.getElementById('cacheWarning');
+                if (warn) warn.style.display = 'none';
                 console.log('📦 iOS: localStorage quota hit, using IndexedDB silently');
             }
             return false;
@@ -9168,16 +9171,20 @@ async function saveAllData() {
             storageQuotaExceeded = false;
             _quotaToastShown = false;
         } else {
-            // IndexedDB also failed — now show warning
-            const warn = document.getElementById('cacheWarning');
-            if (warn) warn.style.display = 'block';
+            // IndexedDB also failed — only show warning on non-iOS
+            if (!isIOS) {
+                const warn = document.getElementById('cacheWarning');
+                if (warn) warn.style.display = 'block';
+            }
         }
     } catch (idbError) {
         console.warn('IndexedDB store error:', idbError);
-        const warn = document.getElementById('cacheWarning');
-        if (warn) warn.style.display = 'block';
+        if (!isIOS) {
+            const warn = document.getElementById('cacheWarning');
+            if (warn) warn.style.display = 'block';
+        }
     }
-} else {
+}else {
             try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
             try { await clearVocabListFromIndexedDB(); } catch (e) {}
         }
@@ -9403,6 +9410,12 @@ function loadSettings() {
     }
     updateRecycleBinBadge();
     setTimeout(setupInsertSymbolLongPress, 200);
+	
+	
+ if (isIOS) {
+        const warn = document.getElementById('cacheWarning');
+        if (warn) warn.style.display = 'none';
+    }
 }
 
         function toggleBold(e, t) {
@@ -10724,6 +10737,11 @@ function loadSettings() {
 
     loadSettings();
     resetQuotaState(); // <-- ADD THIS LINE HERE
+	
+	 if (isIOS) {
+        const warn = document.getElementById('cacheWarning');
+        if (warn) warn.style.display = 'none';
+    }
     loadSheetHistory();
 
     // ---- FIX: reload sheet if vocab list is empty but sheet ID exists ----
