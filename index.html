@@ -11452,13 +11452,13 @@ const MIN_INTERVAL = isIOSDevice ? 60000 : 10000;      // 60s on iOS, 10s elsewh
 const RELOAD_COOLDOWN = isIOSDevice ? 300000 : 60000;  // 5 min on iOS, 1 min elsewhere
 
     // ---- Sidebar count (excluding soft-deleted) ----
+      // ---- Sidebar count (ALL items, including soft-deleted) ----
+    // Soft-deleted items still appear in the sidebar with strikethrough,
+    // so they should be counted. Otherwise soft-delete triggers a false mismatch.
     function getSidebarCount() {
         try {
             if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
-            if (typeof softDeletedIndices !== 'undefined' && softDeletedIndices instanceof Set) {
-                return vocabList.filter((_, i) => !softDeletedIndices.has(i)).length;
-            }
-            return vocabList.length;
+            return vocabList.length;   // ✅ Count ALL items — including soft-deleted
         } catch (e) { return 0; }
     }
 
