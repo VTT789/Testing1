@@ -3053,7 +3053,66 @@ function decompressVocabList(compressed) {
                 req.onerror = () => reject(req.error);
             });
         }
+// ═══════════════════════════════════════════════════════════════
+//  GZIP COMPRESSION HELPERS (native browser API)
+// ═══════════════════════════════════════════════════════════════
+async function gzipCompress(text) {
+    if (typeof CompressionStream === 'undefined') return null;
+    try {
+        const stream = new Blob([text]).stream()
+            .pipeThrough(new CompressionStream('gzip'));
+        const compressedBlob = await new Response(stream).blob();
+        return compressedBlob;
+    } catch (e) {
+        console.warn('gzip compress failed:', e);
+        return null;
+    }
+}
 
+async function gzipDecompress(blob) {
+    if (typeof DecompressionStream === 'undefined') return null;
+    try {
+        const stream = blob.stream()
+            .pipeThrough(new DecompressionStream('gzip'));
+        const text = await new Response(stream).text();
+        return text;
+    } catch (e) {
+        console.warn('gzip decompress failed:', e);
+        return null;
+    }
+}
+
+async function saveCompressedToIDB(compressedBlob) {
+    try {
+        const db = await openIDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IDB_STORE, 'readwrite');
+            const store = tx.objectStore(IDB_STORE);
+            const req = store.put(compressedBlob, 'vocabListGzip');
+            req.onsuccess = () => { db.close(); resolve(true); };
+            req.onerror = () => { db.close(); reject(req.error); };
+        });
+    } catch (e) {
+        console.warn('IDB gzip save error:', e);
+        return false;
+    }
+}
+
+async function loadCompressedFromIDB() {
+    try {
+        const db = await openIDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IDB_STORE, 'readonly');
+            const store = tx.objectStore(IDB_STORE);
+            const req = store.get('vocabListGzip');
+            req.onsuccess = () => { db.close(); resolve(req.result || null); };
+            req.onerror = () => { db.close(); reject(req.error); };
+        });
+    } catch (e) {
+        console.warn('IDB gzip load error:', e);
+        return null;
+    }
+}
         async function storeVocabListInIndexedDB(compressedList) {
             try {
                 const db = await openIDB();
@@ -3132,7 +3191,7 @@ window.clearAllCache = async function() {
                 k.startsWith('menu') || k.startsWith('emoji') || k.startsWith('sidebar') ||
                 k === 'floatingMenuLeft' || k === 'floatingMenuTop' || k === 'speechOrder' ||
                 k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || k === 'sheetHistory' ||
-                k === 'groupFilter' || k === 'groupMapData' || k === 'vocabMaster_List_StoredInIndexedDB') {
+                k === 'groupFilter' || k === 'groupMapData' || k === 'vocabMaster_List_StoredInIndexedDB' || k === 'vocabMaster_List_Gzipped') {
                 try { localStorage.removeItem(k); removedCount++; } catch (e) {}
             }
         }
@@ -9172,55 +9231,58 @@ async function saveAllData() {
       // ===== 3. Save big vocab list =====
     // ⚡ On iOS, ALWAYS use IndexedDB (localStorage is too small — 5MB limit)
     // On desktop, try localStorage first (faster), fall back to IndexedDB
-    if (vocabList.length > 0) {
+       if (vocabList.length > 0) {
         const compressed = compressVocabList(vocabList);
         const jsonStr = JSON.stringify(compressed);
-
-        let success = false;
-
-        if (isIOS) {
-            // iOS: skip localStorage entirely — it will just throw quota errors
-            console.log('📦 iOS detected — saving directly to IndexedDB');
-            success = false;
-        } else {
-            // Desktop: try localStorage first (it's synchronous and fast)
-            success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
-        }
+        const success = safeSetItem("vocabMaster_List_Compressed", jsonStr);
 
         if (!success) {
             try {
-                const stored = await storeVocabListInIndexedDB(compressed);
-                if (stored) {
-                    try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
-                    try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
-                    console.log('📦 Stored vocabulary list in IndexedDB');
-
-                    // ⚡ Hide the warning since we successfully stored in IndexedDB
-                    const warn = document.getElementById('cacheWarning');
-                    if (warn) warn.style.display = 'none';
-
-                    storageQuotaExceeded = false;
-                    _quotaToastShown = false;
-                } else {
-                    if (!isIOS) {
+                // ⚡ Try gzip compression first (huge size reduction)
+                const gzBlob = await gzipCompress(jsonStr);
+                
+                if (gzBlob) {
+                    const stored = await saveCompressedToIDB(gzBlob);
+                    if (stored) {
+                        try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
+                        try { localStorage.setItem('vocabMaster_List_Gzipped', 'true'); } catch (e) {}
+                        try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+                        console.log(`📦 Saved GZIPPED to IndexedDB: ${(gzBlob.size / 1024).toFixed(0)} KB for ${vocabList.length} words`);
+                        
+                        const warn = document.getElementById('cacheWarning');
+                        if (warn) warn.style.display = 'none';
+                        storageQuotaExceeded = false;
+                        _quotaToastShown = false;
+                    } else {
                         const warn = document.getElementById('cacheWarning');
                         if (warn) warn.style.display = 'block';
+                    }
+                } else {
+                    // Fallback: uncompressed IndexedDB
+                    const stored = await storeVocabListInIndexedDB(compressed);
+                    if (stored) {
+                        try { localStorage.setItem('vocabMaster_List_StoredInIndexedDB', 'true'); } catch (e) {}
+                        try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
+                        console.log('📦 Stored uncompressed in IndexedDB');
+                        const warn = document.getElementById('cacheWarning');
+                        if (warn) warn.style.display = 'none';
+                        storageQuotaExceeded = false;
                     }
                 }
             } catch (idbError) {
                 console.warn('IndexedDB store error:', idbError);
-                if (!isIOS) {
-                    const warn = document.getElementById('cacheWarning');
-                    if (warn) warn.style.display = 'block';
-                }
+                const warn = document.getElementById('cacheWarning');
+                if (warn) warn.style.display = 'block';
             }
         } else {
             try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
+            try { localStorage.removeItem('vocabMaster_List_Gzipped'); } catch (e) {}
             try { await clearVocabListFromIndexedDB(); } catch (e) {}
         }
     } else {
         try { localStorage.removeItem("vocabMaster_List_Compressed"); } catch (e) {}
         try { localStorage.removeItem('vocabMaster_List_StoredInIndexedDB'); } catch (e) {}
+        try { localStorage.removeItem('vocabMaster_List_Gzipped'); } catch (e) {}
         try { await clearVocabListFromIndexedDB(); } catch (e) {}
     }
 }
@@ -9385,42 +9447,71 @@ function loadSettings() {
     }
 
     // If localStorage didn't have data, try IndexedDB
+       // If localStorage didn't have data, try IndexedDB
     if (vocabList.length === 0) {
         const storedInIndexedDB = safeGetItem('vocabMaster_List_StoredInIndexedDB', 'false') === 'true';
+        const isGzipped = safeGetItem('vocabMaster_List_Gzipped', 'false') === 'true';
+        
         if (storedInIndexedDB) {
-            // Try to load from IndexedDB
-            loadVocabListFromIndexedDB().then(compressed => {
-                if (compressed && Array.isArray(compressed) && compressed.length > 0) {
-                    vocabList = decompressVocabList(compressed);
-                    lastSheetDataHash = computeSheetHash(vocabList);
-                    console.log('📦 Loaded vocab list from IndexedDB:', vocabList.length, 'words');
-                    buildFirstCharCache();
-                    buildGroupMap();
-                    applyGroupFilter();
-                    if (appMode === 'random' && filteredList.length > 0) {
-                        const idx = filteredList[Math.floor(Math.random() * filteredList.length)];
-                        if (idx !== undefined) {
-                            history = [idx];
-                            historyIndex = 0;
-                            renderRandomSidebar(idx);
+            (async () => {
+                try {
+                    let compressed = null;
+                    
+                    // ⚡ Try gzipped first
+                    if (isGzipped) {
+                        const gzBlob = await loadCompressedFromIDB();
+                        if (gzBlob) {
+                            const jsonStr = await gzipDecompress(gzBlob);
+                            if (jsonStr) {
+                                compressed = JSON.parse(jsonStr);
+                                console.log('⚡ Loaded GZIPPED from IndexedDB:', compressed.length, 'words');
+                            }
                         }
-                    } else if (appMode === 'sequential' && filteredList.length > 0) {
-                        normalCurrentIdx = filteredList[0] || 0;
-                        normalCurrentPage = 0;
-                        renderNormalSidebar();
                     }
-                    updateRecycleBinBadge();
-                    updateStatusBar();
-                    applyGroupFilter();
-                    renderSidebarUI();
-                    updateDisplay();
-                    forceShrink();
+                    
+                    // Fallback: uncompressed
+                    if (!compressed) {
+                        compressed = await loadVocabListFromIndexedDB();
+                        if (compressed) console.log('📦 Loaded uncompressed from IndexedDB:', compressed.length, 'words');
+                    }
+                    
+                    if (compressed && Array.isArray(compressed) && compressed.length > 0) {
+                        vocabList = decompressVocabList(compressed);
+                        lastSheetDataHash = computeSheetHash(vocabList);
+                        buildFirstCharCache();
+                        buildGroupMap();
+                        
+                        const savedFilter = safeGetItem('groupFilter', '__ALL__');
+                        if (savedFilter && groupMap.has(savedFilter)) groupFilter = savedFilter;
+                        else groupFilter = '__ALL__';
+                        
+                        applyGroupFilter();
+                        
+                        if (appMode === 'random' && filteredList.length > 0) {
+                            const idx = filteredList[Math.floor(Math.random() * filteredList.length)];
+                            if (idx !== undefined) {
+                                history = [idx];
+                                historyIndex = 0;
+                                renderRandomSidebar(idx);
+                            }
+                        } else if (appMode === 'sequential' && filteredList.length > 0) {
+                            normalCurrentIdx = filteredList[0] || 0;
+                            normalCurrentPage = 0;
+                            renderNormalSidebar();
+                        }
+                        
+                        updateRecycleBinBadge();
+                        updateStatusBar();
+                        renderSidebarUI();
+                        updateDisplay();
+                        forceShrink();
+                    }
+                } catch (err) {
+                    console.warn('Failed to load from IndexedDB:', err);
+                    safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
+                    safeRemoveItem('vocabMaster_List_Gzipped');
                 }
-            }).catch(err => {
-                console.warn('Failed to load from IndexedDB:', err);
-                // Clear the flag so we don't keep trying
-                safeRemoveItem('vocabMaster_List_StoredInIndexedDB');
-            });
+            })();
         }
     }
 
