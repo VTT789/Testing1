@@ -2739,7 +2739,7 @@ body.night-mode .resizer {
                         <button class=tab-btn id=tabPinyin onclick='switchTab("pinyin")'>LAYERS</button>
                     </div>
                     <div id=mainControls class="control-group active">
-                        <div class=size-row><label>Next Word Delay (s)</label><input type=range id=autoDelay class=size-slider min=1 max=15 step=1 value=1><span id=delayVal style=font-size:.7rem;width:20px>1s</span></div>
+                        <div class=size-row><label>Next Word Delay (s)</label><input type=range id=autoDelay class=size-slider min=0 max=15 step=1 value=1><span id=delayVal style=font-size:.7rem;width:20px>1s</span></div>
                         <div id=zhMainControls>
                             <div class=style-grid><label>ZH Font</label><select id=mZhFont class=font-select>
         <option value="'Baguette Simplified'">Baguette Simplified</option>
@@ -5107,13 +5107,11 @@ async function deleteMultipleVocab(rows) {
     }
     if (!autoActive) return;
     const delay = 1000 * parseInt(document.getElementById("autoDelay").value);
-    autoTimer = setTimeout(() => {
-        autoTimer = null;
-        if (!autoActive) return;
-        pickRandom();
-        // ❌ No nested setTimeout here — speakAutoSequence() will call startAutoCycle()
-        //    again after BOTH Chinese and Khmer speech finish.
-    }, delay);
+autoTimer = setTimeout(() => {
+    autoTimer = null;
+    if (!autoActive) return;
+    pickRandom();
+}, delay > 0 ? delay : 50);
 }
 
         function toggleSidebar() {
