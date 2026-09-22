@@ -1465,25 +1465,29 @@ body.night-mode .resizer {
             background: #e8e8e8 !important;
         }
         .insert-symbol-icon-inside {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, .2);
-            border: none;
-            border-radius: 40px;
-            font-size: 1.3rem;
-            padding: 8px 16px;
-            cursor: pointer;
-            transition: all .2s;
-            color: #fff;
-            font-weight: 700;
-            backdrop-filter: blur(4px);
-            line-height: 1;
-            z-index: 2;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, .2);
+    border: none;
+    border-radius: 40px;
+    font-size: 1.3rem;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all .2s;
+    color: #fff;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+    line-height: 1;
+    z-index: 2;
+    user-select: none;
+    -webkit-user-select: none;
+    /* ⚡ ADD THESE 3 LINES: */
+    -webkit-touch-callout: none;   /* kills iOS native copy bubble */
+    -webkit-tap-highlight-color: transparent; /* kills grey flash */
+    touch-action: manipulation;    /* disables double-tap zoom */
+}
         .insert-symbol-icon-inside:hover {
             background: rgba(255, 255, 255, .4);
             transform: translateY(-50%) scale(1.02)
@@ -7217,35 +7221,61 @@ o.innerHTML =
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
                 const startLongPress = (e) => {
-                    const target = btn.getAttribute('data-target');
-                    const input = document.getElementById(target);
-                    if (!input) return;
-                    const text = input.value;
-                    if (!text) return;
+    const target = btn.getAttribute('data-target');
+    const input = document.getElementById(target);
+    if (!input) return;
+    const text = input.value;
+    if (!text) return;
 
-                    longPressHandled = false;
+    longPressHandled = false;
 
-                    if (longPressTimer) {
-                        clearTimeout(longPressTimer);
-                        longPressTimer = null;
-                    }
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
 
-                    longPressTimer = setTimeout(() => {
-                        longPressHandled = true;
-                        isLongPress = true;
+    // ⚡ Capture start position to detect finger drift
+    let startX = 0, startY = 0;
+    if (e.touches && e.touches[0]) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+    } else if (e.clientX !== undefined) {
+        startX = e.clientX;
+        startY = e.clientY;
+    }
 
-                        btn.classList.add('copy-mode');
-                        setTimeout(() => btn.classList.remove('copy-mode'), 800);
+    const moveHandler = (ev) => {
+        const t = ev.touches && ev.touches[0] ? ev.touches[0] : ev;
+        if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            window.removeEventListener('touchmove', moveHandler);
+            window.removeEventListener('mousemove', moveHandler);
+        }
+    };
+    window.addEventListener('touchmove', moveHandler, { passive: true });
+    window.addEventListener('mousemove', moveHandler);
 
-                        if (isIOS) {
-                            showCopyPopupWithButton(text, "text");
-                        } else {
-                            copyTextDirectly(text, "text");
-                        }
+    longPressTimer = setTimeout(() => {
+        longPressHandled = true;
+        isLongPress = true;
 
-                        longPressTimer = null;
-                    }, 400);
-                };
+        btn.classList.add('copy-mode');
+        setTimeout(() => btn.classList.remove('copy-mode'), 800);
+
+        if (isIOS) {
+            showCopyPopupWithButton(text, "text");
+        } else {
+            copyTextDirectly(text, "text");
+        }
+
+        longPressTimer = null;
+        window.removeEventListener('touchmove', moveHandler);
+        window.removeEventListener('mousemove', moveHandler);
+    }, isIOS ? 650 : 400);
+};
 
                 const endLongPress = (e) => {
                     if (longPressTimer) {
