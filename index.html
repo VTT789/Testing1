@@ -735,9 +735,9 @@ body.night-mode .resizer {
             transition: none;
             order: 1
         }
-        body.night-mode .pinyin-top {
-            color: #fbbf24
-        }
+      body.night-mode .pinyin-top {
+    color: #fbbf24
+}
         .chinese-main {
             font-weight: 500;
             color: #fff;
@@ -760,8 +760,8 @@ body.night-mode .resizer {
             order: 3
         }
         body.night-mode .chinese-bottom {
-            color: #60a5fa
-        }
+    color: inherit
+}
         .khmer-text {
     position: absolute;
     cursor: grab;
@@ -2809,7 +2809,7 @@ body.night-mode .resizer {
                     <div id=sideControls class=control-group>
                         <button id=sidebarToggleBtn class="btn-main btn-accent" style=margin-bottom:10px;width:100% onclick=toggleSidebar()>SHOW SIDEBAR</button>
                         <div id=sidebarControlsContainer>
-                            <div class=side-style-grid><label>ZH Font</label><select id=sZhFont class=font-select><option value="'BaguettePinyin'">Baguette (Pinyin)</option><option value="'XHeiPinyin'">X Hei Pinyin</option><option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option><option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option><option value="'Pinyin'">FZPY01</option></select><input type=color id=sZhColor value=#ffffff></div>
+                           <div class=side-style-grid><label>ZH Font</label><select id=sZhFont class=font-select><option value="'BaguettePinyin'">Baguette (Pinyin)</option><option value="'XHeiPinyin'">X Hei Pinyin</option><option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option><option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option><option value="'Hanyi Changyi'">Hanyi Changyi</option><option value="'Pinyin'">FZPY01</option></select><input type=color id=sZhColor value=#ffffff></div>
                             <div class=side-style-grid><label>KM Font</label><select id=sKmFont class=font-select><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type=color id=sKmColor value=#ffffff></div>
                             <div class=size-row><label>ZH Side Size</label><input type=range id=sZhSize min=0.5 max=4 step=0.1 value=1.1></div>
                             <div class=size-row><label>KM Side Size</label><input type=range id=sKmSize min=0.5 max=4 step=0.1 value=0.9></div>
@@ -9264,7 +9264,10 @@ function loadSettings() {
             if (t.kmVoice) document.getElementById("kmVoiceSelect").value = t.kmVoice;
             if (void 0 !== t.zhRate) document.getElementById("zhRateSlider").value = t.zhRate;
             if (t.pinyinFont) document.getElementById("pinyinFont").value = t.pinyinFont;
-            if (t.pinyinColor) document.getElementById("pinyinColor").value = t.pinyinColor || "#fbbf24";
+            if (t.pinyinColor) {
+    // Force white if saved value is the old amber default
+    document.getElementById("pinyinColor").value = (t.pinyinColor === "#fbbf24" || t.pinyinColor === "#f59e0b" || t.pinyinColor === "#ffbf00") ? "#ffffff" : t.pinyinColor;
+}
             if (void 0 !== t.pinyinBold) {
                 const e = document.getElementById("pinyinBold");
                 t.pinyinBold ? e.classList.add("active") : e.classList.remove("active");
@@ -9275,7 +9278,10 @@ function loadSettings() {
             }
             if (t.pinyinSpacing) document.getElementById("pinyinSpacing").value = t.pinyinSpacing;
             if (t.bottomFont) document.getElementById("bottomFont").value = t.bottomFont;
-            if (t.bottomCharColor) document.getElementById("bottomCharColor").value = t.bottomCharColor || "#60a5fa";
+           if (t.bottomCharColor) {
+    // Force white if saved value is the old blue default
+    document.getElementById("bottomCharColor").value = (t.bottomCharColor === "#60a5fa" || t.bottomCharColor === "#3b82f6" || t.bottomCharColor === "#0000ff") ? "#ffffff" : t.bottomCharColor;
+}
             if (void 0 !== t.bottomBold) {
                 const e = document.getElementById("bottomBold");
                 t.bottomBold ? e.classList.add("active") : e.classList.remove("active");
@@ -9308,26 +9314,29 @@ function loadSettings() {
                 groupFilter = t.groupFilter;
             }
         } catch (e) { console.warn("Settings parse error:", e); }
-    } else {
-        document.getElementById("pinyinFont").value = "'Baguette Simplified'";
-        document.getElementById("pinyinColor").value = "#fbbf24";
-        document.getElementById("pinyinSizePx").value = "55";
-        userSetPinyinFontSize = 55;
-        document.getElementById("pinyinSpacing").value = "0";
-        document.getElementById("bottomSizePx").value = "55";
-        userSetBottomFontSize = 55;
-        document.getElementById("mKmColor").value = "#ffffff";
-        document.getElementById("bottomCharColor").value = "#60a5fa";
-        document.getElementById("shadowSlider").value = "3";
-        sidebarVisible = false;
-        document.getElementById("rightSide").classList.add("hidden");
-        document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
-        bottomCharVisible = true;
-        document.body.classList.add("night-mode");
-        const darkBtn = document.getElementById("dragDarkModeBtn");
-        if (darkBtn) darkBtn.innerHTML = "☀️";
-        groupFilter = safeGetItem('groupFilter', '__ALL__');
-    }
+ } else {
+    document.getElementById("pinyinFont").value = "'Baguette Simplified'";
+    document.getElementById("pinyinColor").value = "#ffffff";
+    document.getElementById("pinyinSizePx").value = "55";
+    userSetPinyinFontSize = 55;
+    document.getElementById("pinyinSpacing").value = "0";
+    document.getElementById("bottomSizePx").value = "55";
+    userSetBottomFontSize = 55;
+    document.getElementById("mZhColor").value = "#ffffff";
+    document.getElementById("mKmColor").value = "#ffffff";
+    document.getElementById("sZhColor").value = "#ffffff";
+    document.getElementById("sKmColor").value = "#ffffff";
+    document.getElementById("bottomCharColor").value = "#ffffff";
+    document.getElementById("shadowSlider").value = "3";
+    sidebarVisible = false;
+    document.getElementById("rightSide").classList.add("hidden");
+    document.getElementById("sidebarToggleBtn").innerText = "SHOW SIDEBAR";
+    bottomCharVisible = true;
+    document.body.classList.add("night-mode");
+    const darkBtn = document.getElementById("dragDarkModeBtn");
+    if (darkBtn) darkBtn.innerHTML = "☀️";
+    groupFilter = safeGetItem('groupFilter', '__ALL__');
+}
 
     // ---- Load soft-deleted data ----
     try {
@@ -10432,13 +10441,13 @@ function loadSettings() {
             const e = document.getElementById('dragDarkModeBtn');
             e && (e.innerHTML = document.body.classList.contains('night-mode') ? "☀️" : "🌙");
             const isNight = document.body.classList.contains('night-mode');
-            const color = isNight ? '#ffffff' : '#000000';
-            document.getElementById('mZhColor').value = color;
-            document.getElementById('mKmColor').value = color;
-            document.getElementById('sZhColor').value = color;
-            document.getElementById('sKmColor').value = color;
-            document.getElementById('pinyinColor').value = color;
-            document.getElementById('bottomCharColor').value = color;
+const color = isNight ? '#ffffff' : '#000000';
+document.getElementById('mZhColor').value = color;
+document.getElementById('mKmColor').value = color;
+document.getElementById('sZhColor').value = color;
+document.getElementById('sKmColor').value = color;
+document.getElementById('pinyinColor').value = '#ffffff';
+document.getElementById('bottomCharColor').value = '#ffffff';
             applyStyles();
             renderSidebarUI();
         }
@@ -10773,7 +10782,23 @@ function loadSettings() {
     }
 
     loadSettings();
-    resetQuotaState(); // <-- ADD THIS LINE HERE
+// ===== HARD FORCE WHITE DEFAULTS (post-migration) =====
+// Migrate any old amber/blue pinyin/bottom colors to white
+(function migrateOldColors() {
+    const pinyinEl = document.getElementById("pinyinColor");
+    const bottomEl = document.getElementById("bottomCharColor");
+    const oldPinyin = ["#fbbf24", "#f59e0b", "#ffbf00", "#fcd34d"];
+    const oldBottom = ["#60a5fa", "#3b82f6", "#0000ff", "#60a5fa"];
+    if (pinyinEl && oldPinyin.includes(pinyinEl.value.toLowerCase())) {
+        pinyinEl.value = "#ffffff";
+        console.log('🎨 Migrated pinyin color to white');
+    }
+    if (bottomEl && oldBottom.includes(bottomEl.value.toLowerCase())) {
+        bottomEl.value = "#ffffff";
+        console.log('🎨 Migrated bottom color to white');
+    }
+})();
+resetQuotaState(); // <-- ADD THIS LINE HERE
 	
 	 if (isIOS) {
         const warn = document.getElementById('cacheWarning');
