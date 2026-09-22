@@ -3806,9 +3806,17 @@ console.log('📱 Platform detection:', {
             openSheetToKhmerColumn(e)
         }
 
+          const _fileNameApiCache = new Map();   // ← in-memory cache
+
         async function getFileNameFromApi(sheetId = null) {
             const id = sheetId || currentSheetId;
             if (!detectedApiUrl || !id) return null;
+
+            // ⚡ Return cached result if we already fetched it this session
+            if (_fileNameApiCache.has(id)) {
+                return _fileNameApiCache.get(id);
+            }
+
             try {
                 const e = await fetch(detectedApiUrl, {
                     method: "POST",
@@ -3825,8 +3833,10 @@ console.log('📱 Platform detection:', {
                         console.warn('API returned URL instead of filename:', t.fileName);
                         return null;
                     }
+                                     _fileNameApiCache.set(id, t.fileName);
                     return t.fileName;
                 }
+                _fileNameApiCache.set(id, null);
                 return null;
             } catch (e) {
                 console.warn("getFileName error:", e);
@@ -4203,7 +4213,6 @@ console.log('📱 Platform detection:', {
                     document.getElementById("khmerWord").innerText = "";
                 }
 
-                const m = await getFileNameFromApi();
                 let sheetName = await getFileNameFromApi();
                 const u = document.getElementById("studioTitleSpan");
                 if (u) {
