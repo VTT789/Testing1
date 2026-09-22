@@ -1418,10 +1418,12 @@ body.night-mode .resizer {
             color: rgba(255, 255, 255, .6)
         }
         /* X Hei font for Chinese inputs only - search results use default font */
-        #addChineseInput,
-        #editChineseInput {
-            font-family: 'XHeiPinyin', 'PingFang SC', 'Microsoft YaHei', sans-serif !important;
-        }
+        /* Chinese inputs use sidebar font - controlled by JS, search results use default font */
+#addChineseInput,
+#editChineseInput {
+    /* font-family set dynamically by applyInputFontStyle() */
+}
+
         /* Search results use default system font */
         #vocabSearchResults,
         #vocabSearchResultsEdit {
@@ -2740,18 +2742,14 @@ body.night-mode .resizer {
                         <div class=size-row><label>Next Word Delay (s)</label><input type=range id=autoDelay class=size-slider min=1 max=15 step=1 value=1><span id=delayVal style=font-size:.7rem;width:20px>1s</span></div>
                         <div id=zhMainControls>
                             <div class=style-grid><label>ZH Font</label><select id=mZhFont class=font-select>
-                                    <option value="'Baguette Simplified'">Baguette Simplified</option>
-                                    <option value="'BaguettePinyin'">Baguette (Pinyin)</option>
-                                    <option value="'XHeiPinyin'">X Hei Pinyin</option>
-                                    <option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option>
-                                    <option value="'Founder Bold Round'">Founder Bold Round</option>
-                                    <option value="'Hanyi Amber'">Hanyi Amber</option>
-                                    <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
-                                    <option value="'Founder Shaoer'">Founder Shaoer</option>
-                                    <option value="'Hanyi Changyi'">Hanyi Changyi</option>
-                                    <option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option>
-                                    <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
-                                </select><input type=color id=mZhColor value=#ffffff><button id=mZhBold class=bold-icon-btn onclick='toggleBold("mZhBold",applyChineseMainStyle)'><span>BOLD</span></button></div>
+        <option value="'Baguette Simplified'">Baguette Simplified</option>
+        <option value="'Founder Bold Round'">Founder Bold Round</option>
+        <option value="'Hanyi Amber'">Hanyi Amber</option>
+        <option value="'HanZhen Wide Standard'">HanZhen Wide Standard</option>
+        <option value="'Founder Shaoer'">Founder Shaoer</option>
+        <option value="'Hanyi Changyi'">Hanyi Changyi</option>
+        <option value="'Hanyi Extra Bold'">Hanyi Extra Bold Round</option>
+    </select><input type=color id=mZhColor value=#ffffff><button id=mZhBold class=bold-icon-btn onclick='toggleBold("mZhBold",applyChineseMainStyle)'><span>BOLD</span></button></div>
                             <div class=size-row><label>Main Char Size (vh)</label><input type=range id=mZhSize class=size-slider min=2 max=150 value=42><span id=mZhSizeVal>42vh</span></div>
                             <div class=shadow-style-grid>
                                 <label>Shadow</label>
@@ -2811,7 +2809,7 @@ body.night-mode .resizer {
                     <div id=sideControls class=control-group>
                         <button id=sidebarToggleBtn class="btn-main btn-accent" style=margin-bottom:10px;width:100% onclick=toggleSidebar()>SHOW SIDEBAR</button>
                         <div id=sidebarControlsContainer>
-                            <div class=side-style-grid><label>ZH Font</label><select id=sZhFont class=font-select><option value="'BaguettePinyin'">Baguette</option><option value="'XHeiPinyin'">X Hei</option><option value="'Cream Pudding Pinyin'">Cream Pudding</option><option value="'Pinyin'">FZPY01</option></select><input type=color id=sZhColor value=#ffffff></div>
+                            <div class=side-style-grid><label>ZH Font</label><select id=sZhFont class=font-select><option value="'BaguettePinyin'">Baguette (Pinyin)</option><option value="'XHeiPinyin'">X Hei Pinyin</option><option value="'Cream Pudding Pinyin'">Cream Pudding Pinyin</option><option value="'Yezi Kaiti Pinyin'">Yezi Kaiti Pinyin</option><option value="'Pinyin'">FZPY01</option></select><input type=color id=sZhColor value=#ffffff></div>
                             <div class=side-style-grid><label>KM Font</label><select id=sKmFont class=font-select><option value="'KHLazySmooth'">LazySmooth</option><option value="'KHDangrek'">Dangrek</option><option value="'KHROSAPSRA'">Rosapsra</option><option value="'KHMithSalaPali'">MithSalaPali</option></select><input type=color id=sKmColor value=#ffffff></div>
                             <div class=size-row><label>ZH Side Size</label><input type=range id=sZhSize min=0.5 max=4 step=0.1 value=1.1></div>
                             <div class=size-row><label>KM Side Size</label><input type=range id=sKmSize min=0.5 max=4 step=0.1 value=0.9></div>
@@ -9087,13 +9085,22 @@ if (rbBtn) {
         }
 
         function applySidebarStyles() {
-            document.querySelectorAll(".side-zh").forEach((e => { e.style.fontFamily = document.getElementById(
-                        "sZhFont").value, e.style.color = document.getElementById("sZhColor").value, e.style
-                    .fontSize = document.getElementById("sZhSize").value + "rem" })),
-                document.querySelectorAll(".side-km").forEach((e => { e.style.fontFamily = document.getElementById(
-                        "sKmFont").value, e.style.color = document.getElementById("sKmColor").value, e.style
-                    .fontSize = document.getElementById("sKmSize").value + "rem" }))
-        }
+    document.querySelectorAll(".side-zh").forEach((e => { e.style.fontFamily = document.getElementById(
+                "sZhFont").value, e.style.color = document.getElementById("sZhColor").value, e.style
+            .fontSize = document.getElementById("sZhSize").value + "rem" })),
+        document.querySelectorAll(".side-km").forEach((e => { e.style.fontFamily = document.getElementById(
+                "sKmFont").value, e.style.color = document.getElementById("sKmColor").value, e.style
+            .fontSize = document.getElementById("sKmSize").value + "rem" })),
+        applyInputFontStyle()
+}
+
+function applyInputFontStyle() {
+    var font = document.getElementById("sZhFont") ? document.getElementById("sZhFont").value : "'XHeiPinyin'";
+    ["addChineseInput", "editChineseInput"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.setProperty("font-family", font + ", 'PingFang SC', 'Microsoft YaHei', sans-serif", "important");
+    });
+}
 
         function applyStyles() {
             const e = document.getElementById("khmerWord");
@@ -11196,7 +11203,7 @@ if (rbBtn) {
     document.getElementById("mZhFont").addEventListener("change", function() { applyChineseMainStyle();
         saveAllData(); });
     document.getElementById("mKmFont").addEventListener("change", applyStyles);
-    document.getElementById("sZhFont").addEventListener("change", applyStyles);
+    document.getElementById("sZhFont").addEventListener("change", function() { applyStyles(); applyInputFontStyle(); });
     document.getElementById("sKmFont").addEventListener("change", applyStyles);
     document.getElementById("zhRateSlider").addEventListener("input", function() { applyRateDisplay();
         saveAllData(); });
