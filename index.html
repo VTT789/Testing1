@@ -8424,11 +8424,22 @@ if (rbAddBtn) {
         const oldKhmer = vocabList[idx]?.khmer || '';
         const oldChinese = vocabList[idx]?.chinese || '';
 
-        vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row, group: selectedGroup || '' };
+     vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row, group: selectedGroup || '' };
         buildFirstCharCache();
+        buildGroupMap();
+        applyGroupFilter();
         saveAllData();
-        renderSidebarUI();
-        updateDisplay();
+
+        // ⚡ Reload the SAME word after update (don't jump to first)
+        if (appMode === 'random') {
+            history = [idx];
+            historyIndex = 0;
+            renderRandomSidebar(idx);
+        } else {
+            normalCurrentIdx = idx;
+            renderNormalSidebar();
+        }
+        loadWordByMode(idx, false);   // false = don't push to history again
         showToast("✅ Updated successfully");
         refreshAddModalSearch();
 
@@ -10519,7 +10530,7 @@ document.getElementById('bottomCharColor').value = '#ffffff';
                         addSheetToHistory(sheetId);
                         showToast(`📥 Loading default sheet...`);
                         await loadSheetData(true);
-                    }, 300);
+                    }, 500);
                 };
 
                 const endHold = function(ev) {
