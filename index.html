@@ -4057,7 +4057,7 @@ console.log('📱 Platform detection:', {
     const cachedTime = parseInt(safeGetItem(cacheTimeKey, '0')) || 0;
     const now = Date.now();
     
-   if (now - cachedTime < 86400000) {   // 24 hours
+    if (now - cachedTime < 60000) {   // 1 minute (faster sync)
         const cachedData = safeGetItem(cacheKey, null);
         if (cachedData) {
             try {
@@ -4217,8 +4217,7 @@ console.log('📱 Platform detection:', {
                     document.getElementById("khmerWord").innerText = "";
                 }
 
-                let sheetName = safeGetItem('sheetName_' + currentSheetId, '');
-if (!sheetName) sheetName = await getFileNameFromApi();
+                let sheetName = await getFileNameFromApi();
                 const u = document.getElementById("studioTitleSpan");
                 if (u) {
                     if (!sheetName || !sheetName.trim()) {
@@ -4250,7 +4249,21 @@ if (!sheetName) sheetName = await getFileNameFromApi();
 
                                 updateRecycleBinBadge();
                 updateStatusBar();
-                showToast(`✅ Loaded ${vocabList.length} words in ${groupMap.size} groups`);
+                // ⚡ Ensure the sidebar reflects the freshly loaded data
+try {
+    buildFirstCharCache();
+    buildGroupMap();
+    applyGroupFilter();
+    renderSidebarUI();
+    updateDisplay();
+} catch (e) { console.warn('Sidebar refresh error:', e); }
+
+// ⚡ FORCE the bottom-right counter (API / Sidebar) to refresh NOW
+try {
+    if (typeof window.refreshMmsCounter === 'function') {
+        window.refreshMmsCounter(true);   // true = force API fetch
+    }
+} catch (e) { console.warn('Counter refresh error:', e); }
                 
                 // ⚡ SAVE TO CACHE
                 try {
@@ -8424,22 +8437,11 @@ if (rbAddBtn) {
         const oldKhmer = vocabList[idx]?.khmer || '';
         const oldChinese = vocabList[idx]?.chinese || '';
 
-     vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row, group: selectedGroup || '' };
+        vocabList[idx] = { khmer: km || oldKhmer, chinese: ch || oldChinese, sheetRow: row, group: selectedGroup || '' };
         buildFirstCharCache();
-        buildGroupMap();
-        applyGroupFilter();
         saveAllData();
-
-        // ⚡ Reload the SAME word after update (don't jump to first)
-        if (appMode === 'random') {
-            history = [idx];
-            historyIndex = 0;
-            renderRandomSidebar(idx);
-        } else {
-            normalCurrentIdx = idx;
-            renderNormalSidebar();
-        }
-        loadWordByMode(idx, false);   // false = don't push to history again
+        renderSidebarUI();
+        updateDisplay();
         showToast("✅ Updated successfully");
         refreshAddModalSearch();
 
@@ -10530,7 +10532,7 @@ document.getElementById('bottomCharColor').value = '#ffffff';
                         addSheetToHistory(sheetId);
                         showToast(`📥 Loading default sheet...`);
                         await loadSheetData(true);
-                    }, 500);
+                    }, 300);
                 };
 
                 const endHold = function(ev) {
@@ -10861,9 +10863,9 @@ resetQuotaState(); // <-- ADD THIS LINE HERE
         await loadSheetData(true);
     }
 
-if (currentSheetId && !detectedApiUrl) {
-    try {
-        await loadApiAndPasswordFromSheet();
+    if (currentSheetId) {
+        try {
+            await loadApiAndPasswordFromSheet();
             console.log("✅ API and password refreshed from sheet");
         } catch (e) {
             console.warn("Could not refresh API/password from sheet, using cached values:", e);
@@ -11382,7 +11384,7 @@ document.addEventListener('visibilitychange', function() {
     let lastRenderedSidebar = -1;
     let lastReloadTime = 0;
     let isReloading = false;
-    const MIN_INTERVAL = 10000;         // 30s between API calls
+    const MIN_INTERVAL = 5000;          // 5s between API calls
     const RELOAD_COOLDOWN = 60000;      // 60s between auto-reloads
 
     // ---- Sidebar count (excluding soft-deleted) ----
@@ -11449,7 +11451,31 @@ document.addEventListener('visibilitychange', function() {
         if (sidebarCount === 0) return;
 
         // ⚠️ Compare raw counts (not +1 versions)
-        if (sidebarCount !== cachedSheetCount) {
+        // ⚠️ Compare raw counts (not +1 versions)
+// ALSO check content hash so edits (same row count) are detected
+let contentChanged = false;
+try {
+    const fresh = await fetch('https://opensheet.elk.sh/' + currentSheetId + '/Sheet1');
+    if (fresh.ok) {
+        const freshJson = await fresh.json();
+        const freshHash = (function(data){
+            let str = JSON.stringify(data), hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0;
+            }
+            return hash.toString();
+        })(freshJson);
+        if (typeof lastSheetDataHash !== 'undefined' &&
+            lastSheetDataHash &&
+            freshHash !== lastSheetDataHash) {
+            contentChanged = true;
+            console.log('⚠️ Sheet content changed (hash mismatch)');
+        }
+    }
+} catch (e) { /* network hiccup — ignore */ }
+
+if (sidebarCount !== cachedSheetCount || contentChanged) {
             isReloading = true;
             console.warn(
                 `⚠️ Count mismatch: sidebar=${sidebarCount} vs sheet=${cachedSheetCount}. Reloading...`
@@ -11461,8 +11487,13 @@ document.addEventListener('visibilitychange', function() {
                     showToast(`🔄 Syncing...`);
                 }
 
-                if (typeof loadSheetData === 'function' && currentSheetId) {
-                    await loadSheetData(true);
+            if (typeof loadSheetData === 'function' && currentSheetId) {
+    // ⚡ Clear the 5-min fast cache so the reload actually hits the sheet
+    try {
+        localStorage.removeItem('fastVocabCache_' + currentSheetId);
+        localStorage.removeItem('fastVocabCacheTime_' + currentSheetId);
+    } catch (e) {}
+    await loadSheetData(true);
                     console.log('✅ Sheet reloaded');
 
                     const newCount = await fetchSheetCount();
@@ -11477,7 +11508,7 @@ document.addEventListener('visibilitychange', function() {
         }
     }
 
-    async function refresh(forceApi, skipReloadCheck) {
+    async function refresh(forceApi) {
         render();
         const now = Date.now();
         if (!forceApi && now - lastFetch < MIN_INTERVAL) return;
@@ -11485,10 +11516,7 @@ document.addEventListener('visibilitychange', function() {
         const sheetCount = await fetchSheetCount();
         if (sheetCount !== null) cachedSheetCount = sheetCount;
         render();
-        // ⚡ Skip reload check after write actions (add/update/delete)
-        if (!skipReloadCheck) {
-            checkAndReload();
-        }
+        checkAndReload();
     }
 
     window.refreshMmsCounter = refresh;
@@ -11496,22 +11524,22 @@ document.addEventListener('visibilitychange', function() {
     setTimeout(() => refresh(true), 1500);
 
     // ---- Wrap functions so counter refreshes on relevant actions ----
-        function wrapAfterLoad(name, forceApi, skipReloadCheck) {
+    function wrapAfterLoad(name, forceApi) {
         const orig = window[name];
         if (typeof orig !== 'function') return;
         window[name] = function () {
             const result = orig.apply(this, arguments);
             if (result && typeof result.then === 'function') {
-                result.then(() => setTimeout(() => refresh(forceApi, skipReloadCheck), 100))
-                      .catch(() => setTimeout(() => refresh(forceApi, skipReloadCheck), 100));
+                result.then(() => setTimeout(() => refresh(forceApi), 100))
+                      .catch(() => setTimeout(() => refresh(forceApi), 100));
             } else {
-                setTimeout(() => refresh(forceApi, skipReloadCheck), 50);
+                setTimeout(() => refresh(forceApi), 50);
             }
             return result;
         };
     }
 
-    // Navigation — normal refresh (still checks reload)
+    // Navigation
     wrapAfterLoad('pickRandom', false);
     wrapAfterLoad('loadWordByMode', false);
     wrapAfterLoad('historyNext', false);
@@ -11522,13 +11550,13 @@ document.addEventListener('visibilitychange', function() {
     wrapAfterLoad('toggleAppMode', false);
     wrapAfterLoad('setGroupFilter', false);
 
-    // ⚡ Sheet-changing actions — SKIP reload check, only refresh counter
-    wrapAfterLoad('addVocabToSheet', false, true);
-    wrapAfterLoad('softDeleteVocab', false, true);
-    wrapAfterLoad('restoreSoftDeleted', false, true);
-    wrapAfterLoad('permanentlyDeleteSoftDeleted', false, true);
-    wrapAfterLoad('permanentlyDeleteAllSoftDeletedAndClose', false, true);
-    wrapAfterLoad('restoreAllSoftDeletedAndClose', false, true);
+    // Sheet-changing actions
+    wrapAfterLoad('addVocabToSheet', false);
+    wrapAfterLoad('softDeleteVocab', false);
+    wrapAfterLoad('restoreSoftDeleted', false);
+    wrapAfterLoad('permanentlyDeleteSoftDeleted', false);
+    wrapAfterLoad('permanentlyDeleteAllSoftDeletedAndClose', false);
+    wrapAfterLoad('restoreAllSoftDeletedAndClose', false);
 
     // Fast watcher
    setInterval(() => {
@@ -11540,7 +11568,7 @@ document.addEventListener('visibilitychange', function() {
     let fallbackTimer = null;
     function startFallback() {
         if (fallbackTimer) clearInterval(fallbackTimer);
-        fallbackTimer = setInterval(() => refresh(false), 10000);
+        fallbackTimer = setInterval(() => refresh(false), 5000);
     }
     function stopFallback() {
         if (fallbackTimer) { clearInterval(fallbackTimer); fallbackTimer = null; }
@@ -11639,7 +11667,7 @@ document.addEventListener('visibilitychange', function() {
                             const cacheKey = 'fastVocabCache_' + currentSheetId;
                             const cacheTimeKey = 'fastVocabCacheTime_' + currentSheetId;
                             localStorage.removeItem(cacheKey);
-                            localStorage.removeItem(cacheTimeKey);
+localStorage.removeItem(cacheTimeKey);
                             console.log('🗑️ Local cache cleared for fresh reload');
                         } catch (e) {
                             console.warn('Could not clear cache:', e);
