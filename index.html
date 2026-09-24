@@ -4057,7 +4057,7 @@ console.log('📱 Platform detection:', {
     const cachedTime = parseInt(safeGetItem(cacheTimeKey, '0')) || 0;
     const now = Date.now();
     
-    if (now - cachedTime < 300000) {   // 5 minutes
+   if (now - cachedTime < 86400000) {   // 24 hours
         const cachedData = safeGetItem(cacheKey, null);
         if (cachedData) {
             try {
@@ -4217,7 +4217,8 @@ console.log('📱 Platform detection:', {
                     document.getElementById("khmerWord").innerText = "";
                 }
 
-                let sheetName = await getFileNameFromApi();
+                let sheetName = safeGetItem('sheetName_' + currentSheetId, '');
+if (!sheetName) sheetName = await getFileNameFromApi();
                 const u = document.getElementById("studioTitleSpan");
                 if (u) {
                     if (!sheetName || !sheetName.trim()) {
@@ -10849,9 +10850,9 @@ resetQuotaState(); // <-- ADD THIS LINE HERE
         await loadSheetData(true);
     }
 
-    if (currentSheetId) {
-        try {
-            await loadApiAndPasswordFromSheet();
+if (currentSheetId && !detectedApiUrl) {
+    try {
+        await loadApiAndPasswordFromSheet();
             console.log("✅ API and password refreshed from sheet");
         } catch (e) {
             console.warn("Could not refresh API/password from sheet, using cached values:", e);
@@ -11465,7 +11466,7 @@ document.addEventListener('visibilitychange', function() {
         }
     }
 
-    async function refresh(forceApi) {
+    async function refresh(forceApi, skipReloadCheck) {
         render();
         const now = Date.now();
         if (!forceApi && now - lastFetch < MIN_INTERVAL) return;
@@ -11473,7 +11474,10 @@ document.addEventListener('visibilitychange', function() {
         const sheetCount = await fetchSheetCount();
         if (sheetCount !== null) cachedSheetCount = sheetCount;
         render();
-        checkAndReload();
+        // ⚡ Skip reload check after write actions (add/update/delete)
+        if (!skipReloadCheck) {
+            checkAndReload();
+        }
     }
 
     window.refreshMmsCounter = refresh;
@@ -11481,22 +11485,22 @@ document.addEventListener('visibilitychange', function() {
     setTimeout(() => refresh(true), 1500);
 
     // ---- Wrap functions so counter refreshes on relevant actions ----
-    function wrapAfterLoad(name, forceApi) {
+        function wrapAfterLoad(name, forceApi, skipReloadCheck) {
         const orig = window[name];
         if (typeof orig !== 'function') return;
         window[name] = function () {
             const result = orig.apply(this, arguments);
             if (result && typeof result.then === 'function') {
-                result.then(() => setTimeout(() => refresh(forceApi), 100))
-                      .catch(() => setTimeout(() => refresh(forceApi), 100));
+                result.then(() => setTimeout(() => refresh(forceApi, skipReloadCheck), 100))
+                      .catch(() => setTimeout(() => refresh(forceApi, skipReloadCheck), 100));
             } else {
-                setTimeout(() => refresh(forceApi), 50);
+                setTimeout(() => refresh(forceApi, skipReloadCheck), 50);
             }
             return result;
         };
     }
 
-    // Navigation
+    // Navigation — normal refresh (still checks reload)
     wrapAfterLoad('pickRandom', false);
     wrapAfterLoad('loadWordByMode', false);
     wrapAfterLoad('historyNext', false);
@@ -11507,13 +11511,13 @@ document.addEventListener('visibilitychange', function() {
     wrapAfterLoad('toggleAppMode', false);
     wrapAfterLoad('setGroupFilter', false);
 
-    // Sheet-changing actions
-    wrapAfterLoad('addVocabToSheet', false);
-    wrapAfterLoad('softDeleteVocab', false);
-    wrapAfterLoad('restoreSoftDeleted', false);
-    wrapAfterLoad('permanentlyDeleteSoftDeleted', false);
-    wrapAfterLoad('permanentlyDeleteAllSoftDeletedAndClose', false);
-    wrapAfterLoad('restoreAllSoftDeletedAndClose', false);
+    // ⚡ Sheet-changing actions — SKIP reload check, only refresh counter
+    wrapAfterLoad('addVocabToSheet', false, true);
+    wrapAfterLoad('softDeleteVocab', false, true);
+    wrapAfterLoad('restoreSoftDeleted', false, true);
+    wrapAfterLoad('permanentlyDeleteSoftDeleted', false, true);
+    wrapAfterLoad('permanentlyDeleteAllSoftDeletedAndClose', false, true);
+    wrapAfterLoad('restoreAllSoftDeletedAndClose', false, true);
 
     // Fast watcher
    setInterval(() => {
