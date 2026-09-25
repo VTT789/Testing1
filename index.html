@@ -3684,7 +3684,8 @@ console.log('📱 Platform detection:', {
 
         // ---- Delete lock to prevent concurrent deletions ----
         let isDeleting = false;
-
+		let __writeInProgress = false;
+let __writeInProgressUntil = 0;   // safety timeout (ms since epoch)
         // ---- Speech cancellation token ----
         let _speechCancelToken = null;
 
@@ -4046,35 +4047,30 @@ console.log('📱 Platform detection:', {
 
         
 
-        // ---- MODIFIED loadSheetData with GROUP column ----
        async function loadSheetData(forceReload = false) {
     if (!forceReload) return;
     if (!currentSheetId) return void showToast("❌ Please enter a Google Sheet URL");
-    
-    // ⚡ CHECK CACHE FIRST (5-minute cache)
+
+    // ⚡ CHECK CACHE — SKIP entirely when forceReload=true
     const cacheKey = 'fastVocabCache_' + currentSheetId;
     const cacheTimeKey = 'fastVocabCacheTime_' + currentSheetId;
     const cachedTime = parseInt(safeGetItem(cacheTimeKey, '0')) || 0;
     const now = Date.now();
-    
-    if (now - cachedTime < 5000) {   // 5 seconds
+    const useCache = !forceReload && (now - cachedTime < 5000);
+
+    if (useCache) {
         const cachedData = safeGetItem(cacheKey, null);
         if (cachedData) {
             try {
                 const cached = JSON.parse(cachedData);
                 if (Array.isArray(cached) && cached.length > 0) {
                     console.log('⚡ Loaded from local cache:', cached.length, 'words');
-                    
                     vocabList = decompressVocabList(cached);
                     vocabularyData = vocabList;
                     editUnlocked = true;
                     updateEditButtonsState();
-                    
-                    // Build caches
                     buildFirstCharCache();
                     buildGroupMap();
-                    
-                    // Load saved filter
                     const savedFilter = safeGetItem('groupFilter', '__ALL__');
                     if (savedFilter && groupMap.has(savedFilter)) {
                         groupFilter = savedFilter;
@@ -4082,8 +4078,6 @@ console.log('📱 Platform detection:', {
                         groupFilter = '__ALL__';
                     }
                     applyGroupFilter();
-                    
-                    // Initialize display
                     if (filteredList.length > 0) {
                         if (appMode === 'random') {
                             const idx = filteredList[Math.floor(Math.random() * filteredList.length)];
@@ -4102,184 +4096,175 @@ console.log('📱 Platform detection:', {
                         updateChineseDisplay("");
                         document.getElementById("khmerWord").innerText = "";
                     }
-                    
                     updateRecycleBinBadge();
                     updateStatusBar();
                     showToast(`⚡ Loaded ${vocabList.length} words from cache`);
-                    return;   // ⚡ DONE — skip the slow fetch
+                    return;
                 }
             } catch (cacheErr) {
                 console.warn('Cache read error:', cacheErr);
             }
         }
     }
-    
-    // ⚡ CACHE MISS — do the slow fetch
-    console.log('🌐 Cache miss — fetching from sheet...');
-    const e = `https://opensheet.elk.sh/${currentSheetId}/Sheet1`;
+
+    // ⚡ CACHE MISS — fetch from our own Apps Script getAll endpoint
+    console.log('🌐 Cache miss — fetching from Apps Script getAll...');
     try {
-        const t = await fetch(e);
-                if (!t.ok) throw new Error(`HTTP ${t.status}`);
-                const n = await t.json();
-                if (!Array.isArray(n) || 0 === n.length) throw new Error("No data found in sheet");
-                lastSheetDataHash = computeSheetHash(n);
-                const o = n[0],
-                    i = Object.keys(o);
-                let a = -1,
-                    r = -1,
-                    gCol = -1;
-                for (let e = 0; e < i.length; e++) {
-                    const t = i[e].toLowerCase();
-                    (t.includes("khmer") || t.includes("km") || t.includes("ភាសា")) && (a = e);
-                    (t.includes("chinese") || t.includes("zh") || t.includes("中文")) && (r = e);
-                    (t.includes("group") || t.includes("group") || t.includes("ក្រុម")) && (gCol = e);
-                }
-                -1 === a && i.length > 3 && (a = 3);
-                -1 === r && i.length > 4 && (r = 4);
-                -1 === gCol && i.length > 5 && (gCol = 5);
-
-                const s = [],
-                    l = Object.values(o);
-                let d = -1 !== a && l.length > a && l[a] || "",
-                    c = -1 !== r && l.length > r && l[r] || "",
-                    grp = -1 !== gCol && l.length > gCol && l[gCol] || "";
+        const t = await fetch(detectedApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'getAll',
+                sheetId: currentSheetId,
+                sheetName: 'Sheet1'
+            })
+        });
+        if (!t.ok) throw new Error(`HTTP ${t.status}`);
+        const resp = await t.json();
+        if (!resp || resp.result !== 'success' || !Array.isArray(resp.data)) {
+            throw new Error("getAll returned no data");
+        }
+        // ⚡ Convert the header+rows format to the {khmer, chinese, group} shape
+        const raw = resp.data;
+        if (raw.length === 0) throw new Error("No data found in sheet");
+        const headerRow = raw[0] || {};
+        const headers = Object.keys(headerRow);
+        // Find the column keys we care about
+        let khmerKey = '', chineseKey = '', groupKey = '';
+        headers.forEach(h => {
+            const lower = h.toLowerCase();
+            if (lower.includes('khmer') || lower.includes('km') || lower.includes('ភាសា')) khmerKey = h;
+            if (lower.includes('chinese') || lower.includes('zh') || lower.includes('中文')) chineseKey = h;
+            if (lower.includes('group') || lower.includes('ក្រុម')) groupKey = h;
+        });
+        const s = [];
+        for (let i = 1; i < raw.length; i++) {
+            const row = raw[i];
+            const khmer = khmerKey ? String(row[khmerKey] || '').trim() : '';
+            const chinese = chineseKey ? String(row[chineseKey] || '').trim() : '';
+            const grp = groupKey ? String(row[groupKey] || '').trim() : '';
+            if (khmer || chinese) {
                 s.push({
-                    khmer: d.toString().trim(),
-                    chinese: c.toString().trim(),
-                    sheetRow: 2,
-                    group: grp.toString().trim() || 'Uncategorized'
+                    khmer: khmer,
+                    chinese: chinese,
+                    sheetRow: i + 1,   // row 1 = header, row 2 = first data
+                    group: grp || 'Uncategorized'
                 });
-
-                for (let e = 1; e < n.length; e++) {
-                    const t = n[e],
-                        o = Object.values(t),
-                        i = -1 !== a && o.length > a && o[a] || "",
-                        l = -1 !== r && o.length > r && o[r] || "",
-                        grpVal = -1 !== gCol && o.length > gCol && o[gCol] || "";
-                    (i || l) && s.push({
-                        khmer: i.toString().trim(),
-                        chinese: l.toString().trim(),
-                        sheetRow: e + 2,
-                        group: grpVal.toString().trim() || 'Uncategorized'
-                    });
-                }
-
-                vocabList = s;
-                vocabularyData = vocabList;
-                editUnlocked = !0;
-                updateEditButtonsState();
-                await loadApiAndPasswordFromSheet();
-
-                // Build group map
-                buildGroupMap();
-
-                // Apply filter
-                applyGroupFilter();
-
-                // Save data
-                saveAllData();
-
-                // Save sheet ID to localStorage
-                if (currentSheetId) {
-                    safeSetItem("vocabMaster_SheetId", currentSheetId);
-                }
-
-                // Clear soft-deleted indices on fresh load (they are no longer valid)
-                softDeletedIndices.clear();
-                softDeletedData.clear();
-
-                // Load saved filter preference
-                const savedFilter = safeGetItem('groupFilter', '__ALL__');
-                if (savedFilter && groupMap.has(savedFilter)) {
-                    groupFilter = savedFilter;
-                } else {
-                    groupFilter = '__ALL__';
-                }
-                applyGroupFilter();
-
-                // Initialize display
-                if (filteredList.length > 0) {
-                    if (appMode === 'random') {
-                        const idx = filteredList[Math.floor(Math.random() * filteredList.length)];
-                        if (idx !== undefined) {
-                            history = [idx];
-                            historyIndex = 0;
-                            renderRandomSidebar(idx);
-                        }
-                    } else {
-                        normalCurrentIdx = 0;
-                        normalCurrentPage = 0;
-                        renderNormalSidebar();
-                    }
-                } else {
-                    renderSidebarUI();
-                    updateChineseDisplay("");
-                    document.getElementById("khmerWord").innerText = "";
-                }
-
-                let sheetName = await getFileNameFromApi();
-                const u = document.getElementById("studioTitleSpan");
-                if (u) {
-                    if (!sheetName || !sheetName.trim()) {
-                        sheetName = safeGetItem('sheetName_' + currentSheetId, '');
-                    }
-                    if (!sheetName || !sheetName.trim()) {
-                        sheetName = currentSheetId;
-                        if (sheetName.length > 20) {
-                            sheetName = sheetName.substring(0, 12) + '...' + sheetName.substring(sheetName.length - 8);
-                        }
-                    }
-                    if (sheetName && sheetName.trim() &&
-                        !sheetName.startsWith('http://') &&
-                        !sheetName.startsWith('https://') &&
-                        !sheetName.includes('docs.google.com')) {
-                        let filename = sheetName.length > 20 ? sheetName.substring(0, 20) + "..." : sheetName;
-                        u.innerText = "⠿ " + filename;
-                    } else {
-                        let shortId = currentSheetId;
-                        if (shortId.length > 20) {
-                            shortId = shortId.substring(0, 12) + '...' + shortId.substring(shortId.length - 8);
-                        }
-                        u.innerText = "⠿ " + shortId;
-                    }
-                }
-
-                // Create group filter UI
-                createGroupFilterUI();
-
-                                updateRecycleBinBadge();
-                updateStatusBar();
-                // ⚡ Ensure the sidebar reflects the freshly loaded data
-try {
-    buildFirstCharCache();
-    buildGroupMap();
-    applyGroupFilter();
-    renderSidebarUI();
-    updateDisplay();
-} catch (e) { console.warn('Sidebar refresh error:', e); }
-
-// ⚡ FORCE the bottom-right counter (API / Sidebar) to refresh NOW
-try {
-    if (typeof window.refreshMmsCounter === 'function') {
-        window.refreshMmsCounter(true);   // true = force API fetch
-    }
-} catch (e) { console.warn('Counter refresh error:', e); }
-                
-                // ⚡ SAVE TO CACHE
-                try {
-                    safeSetItem(cacheKey, JSON.stringify(compressVocabList(vocabList)));
-                    safeSetItem(cacheTimeKey, String(now));
-                    console.log('💾 Saved to cache');
-                } catch (cacheSaveErr) {
-                    console.warn('Cache save error:', cacheSaveErr);
-                }
-
-            } catch (e) {
-                console.error("Error loading sheet:", e);
-                showToast(`❌ Error: ${e.message}`);
             }
         }
-		
+        vocabList = s;
+        vocabularyData = vocabList;
+        editUnlocked = true;
+        updateEditButtonsState();
+        await loadApiAndPasswordFromSheet();
+        buildGroupMap();
+        applyGroupFilter();
+        saveAllData();
+        if (currentSheetId) {
+            safeSetItem("vocabMaster_SheetId", currentSheetId);
+        }
+        softDeletedIndices.clear();
+        softDeletedData.clear();
+        const savedFilter = safeGetItem('groupFilter', '__ALL__');
+        if (savedFilter && groupMap.has(savedFilter)) {
+            groupFilter = savedFilter;
+        } else {
+            groupFilter = '__ALL__';
+        }
+        applyGroupFilter();
+        if (filteredList.length > 0) {
+            if (appMode === 'random') {
+                const idx = filteredList[Math.floor(Math.random() * filteredList.length)];
+                if (idx !== undefined) {
+                    history = [idx];
+                    historyIndex = 0;
+                    renderRandomSidebar(idx);
+                }
+            } else {
+                normalCurrentIdx = 0;
+                normalCurrentPage = 0;
+                renderNormalSidebar();
+            }
+        } else {
+            renderSidebarUI();
+            updateChineseDisplay("");
+            document.getElementById("khmerWord").innerText = "";
+        }
+        let sheetName = await getFileNameFromApi();
+        const u = document.getElementById("studioTitleSpan");
+        if (u && sheetName && sheetName.trim() &&
+            !sheetName.startsWith('http') && !sheetName.includes('/')) {
+            u.innerText = "⠿ " + (sheetName.length > 20 ? sheetName.substring(0, 20) + "..." : sheetName);
+        }
+        try {
+            buildFirstCharCache();
+            buildGroupMap();
+            applyGroupFilter();
+            renderSidebarUI();
+            updateDisplay();
+        } catch (e) { console.warn('Sidebar refresh error:', e); }
+        try {
+            if (typeof window.refreshMmsCounter === 'function') {
+                window.refreshMmsCounter(true);
+            }
+        } catch (e) { console.warn('Counter refresh error:', e); }
+        updateRecycleBinBadge();
+        updateStatusBar();
+        // ⚡ SAVE TO CACHE (only for later non-forced reads)
+        try {
+            safeSetItem(cacheKey, JSON.stringify(compressVocabList(vocabList)));
+            safeSetItem(cacheTimeKey, String(now));
+            console.log('💾 Saved to cache');
+        } catch (cacheSaveErr) {
+            console.warn('Cache save error:', cacheSaveErr);
+        }
+    } catch (e) {
+        console.error("Error loading sheet via getAll:", e);
+        // ⚡ Fallback: try opensheet if getAll fails
+        try {
+            const fallbackUrl = `https://opensheet.elk.sh/${currentSheetId}/Sheet1?t=${Date.now()}`;
+            const fr = await fetch(fallbackUrl);
+            if (!fr.ok) throw new Error(`Fallback HTTP ${fr.status}`);
+            const n = await fr.json();
+            if (!Array.isArray(n) || n.length === 0) throw new Error("No data");
+            const o = n[0];
+            const i = Object.keys(o);
+            let a = -1, r = -1, gCol = -1;
+            for (let e = 0; e < i.length; e++) {
+                const t = i[e].toLowerCase();
+                (t.includes("khmer") || t.includes("km") || t.includes("ភាសា")) && (a = e);
+                (t.includes("chinese") || t.includes("zh") || t.includes("中文")) && (r = e);
+                (t.includes("group") || t.includes("ក្រុម")) && (gCol = e);
+            }
+            -1 === a && i.length > 3 && (a = 3);
+            -1 === r && i.length > 4 && (r = 4);
+            -1 === gCol && i.length > 5 && (gCol = 5);
+            const s = [];
+            const l = Object.values(o);
+            let d = -1 !== a && l.length > a && l[a] || "";
+            let c = -1 !== r && l.length > r && l[r] || "";
+            let grp = -1 !== gCol && l.length > gCol && l[gCol] || "";
+            s.push({ khmer: d.toString().trim(), chinese: c.toString().trim(), sheetRow: 2, group: grp.toString().trim() || 'Uncategorized' });
+            for (let e = 1; e < n.length; e++) {
+                const row = n[e], vals = Object.values(row);
+                const kh = -1 !== a && vals.length > a && vals[a] || "";
+                const ch = -1 !== r && vals.length > r && vals[r] || "";
+                const gr = -1 !== gCol && vals.length > gCol && vals[gCol] || "";
+                (kh || ch) && s.push({ khmer: kh.toString().trim(), chinese: ch.toString().trim(), sheetRow: e + 2, group: gr.toString().trim() || 'Uncategorized' });
+            }
+            vocabList = s;
+            vocabularyData = vocabList;
+            buildGroupMap();
+            applyGroupFilter();
+            saveAllData();
+            try { window.refreshMmsCounter(true); } catch (e) {}
+            console.log('✅ Loaded via opensheet fallback');
+        } catch (fallbackErr) {
+            console.error("Fallback also failed:", fallbackErr);
+            showToast(`❌ Error: ${e.message}`);
+        }
+    }
+}
 		
 		// ═══════════════════════════════════════════════════════════════════
 //  WRAPPER: Preserves current word position across reloads
@@ -4377,7 +4362,7 @@ loadSheetData = async function (forceReload) {
     return result;
 };
 
-		   async function callApi(e, t) {
+		  async function callApi(e, t) {
     if (!editUnlocked) return showPasswordModal((async n => { 
         if (n) await callApi(e, t); 
     })), false;
@@ -4390,6 +4375,10 @@ loadSheetData = async function (forceReload) {
         showToast("❌ No sheet loaded");
         return false;
     }
+    
+    // ⚡ Set write lock so counter won't reload during our own write
+    __writeInProgress = true;
+    __writeInProgressUntil = Date.now() + 15000;
     
     const n = { ...e, sheetId: currentSheetId, sheetName: "Sheet1" };
     
@@ -4439,6 +4428,14 @@ loadSheetData = async function (forceReload) {
         console.error(`❌ ${t} failed:`, errMsg);
         showToast(`❌ ${t} failed: ${errMsg}`);
         throw new Error(errMsg);
+    } finally {
+        // ⚡ Clear write lock 1.5s AFTER the write finishes
+        // (gives the sheet time to reflect the change before counter re-checks)
+        setTimeout(() => {
+            __writeInProgress = false;
+            __writeInProgressUntil = 0;   // ← also reset the safety timeout
+            console.log('🔓 Write lock cleared');
+        }, 1500);
     }
 }
 
@@ -7683,8 +7680,9 @@ buildGroupMap();
 saveAllData();
 const newIdx = vocabList.length - 1;
 
-// --- FIX: Ensure new vocab is displayed on main screen ---
-// Update the filtered list to include the new item
+// ⚡ Force filter to "All" so the new item is visible
+groupFilter = '__ALL__';
+safeSetItem('groupFilter', groupFilter);
 applyGroupFilter();
 
 if (appMode === 'random') {
@@ -11446,6 +11444,18 @@ const RELOAD_COOLDOWN = 3000;       // 3s between auto-reloads
 
     // ---- Detect mismatch and reload ----
     async function checkAndReload() {
+	
+	    // ⚡ Skip check while a write is in progress (or within grace period)
+    if (typeof __writeInProgress !== 'undefined' && __writeInProgress) {
+        console.log('⏸️ Write in progress — skipping reload check');
+        return;
+    }
+    // ⚡ Safety: also skip if the lock timeout hasn't expired (protects against stuck writes)
+    if (typeof __writeInProgressUntil !== 'undefined' && Date.now() < __writeInProgressUntil) {
+        console.log('⏸️ Write lock still active — skipping reload check');
+        return;
+    }
+	
         const now = Date.now();
         if (now - lastReloadTime < RELOAD_COOLDOWN) return;
         if (isReloading) return;
@@ -11530,15 +11540,21 @@ render();
     }
 
     async function refresh(forceApi) {
-        render();
-        const now = Date.now();
-        if (!forceApi && now - lastFetch < MIN_INTERVAL) return;
-        lastFetch = now;
-        const sheetCount = await fetchSheetCount();
-        if (sheetCount !== null) cachedSheetCount = sheetCount;
-        render();
-        checkAndReload();
+    render();
+    
+    // ⚡ Don't even fetch the count while a write is in progress
+    if (typeof __writeInProgress !== 'undefined' && __writeInProgress) {
+        return;
     }
+    
+    const now = Date.now();
+    if (!forceApi && now - lastFetch < MIN_INTERVAL) return;
+    lastFetch = now;
+    const sheetCount = await fetchSheetCount();
+    if (sheetCount !== null) cachedSheetCount = sheetCount;
+    render();
+    checkAndReload();
+}
 
     window.refreshMmsCounter = refresh;
 
@@ -11591,13 +11607,57 @@ render();
     wrapAfterLoad('setGroupFilter', false);
 
     // Sheet-changing actions
-    wrapAfterLoad('addVocabToSheet', false);
-    wrapAfterLoad('softDeleteVocab', false);
-    wrapAfterLoad('restoreSoftDeleted', false);
-    wrapAfterLoad('permanentlyDeleteSoftDeleted', false);
-    wrapAfterLoad('permanentlyDeleteAllSoftDeletedAndClose', false);
-    wrapAfterLoad('restoreAllSoftDeletedAndClose', false);
+        // ⚡ NEW: Prime lastKnownModified after any write so we don't false-trigger
+    async function primeLastModified() {
+        try {
+            const res = await fetch(detectedApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'getLastModified',
+                    sheetId: currentSheetId
+                })
+            });
+            const data = await res.json();
+            if (data.result === 'success' && data.lastUpdated) {
+                lastKnownModified = data.lastUpdated;
+                console.log('🔄 Re-primed lastKnownModified:', new Date(lastKnownModified).toLocaleTimeString());
+            }
+        } catch (e) { /* ignore */ }
+    }
 
+    // ⚡ Wrap writes to re-prime lastKnownModified + refresh counter
+    function wrapWrite(name) {
+        const orig = window[name];
+        if (typeof orig !== 'function') return;
+        window[name] = function () {
+            const result = orig.apply(this, arguments);
+            if (result && typeof result.then === 'function') {
+                result.then(() => {
+                    // Re-prime so OUR change isn't seen as someone else's
+                    primeLastModified();
+                    setTimeout(() => refresh(false), 300);
+                }).catch(() => {
+                    setTimeout(() => refresh(false), 300);
+                });
+            } else {
+                primeLastModified();
+                setTimeout(() => refresh(false), 300);
+            }
+            return result;
+        };
+    }
+
+    // Sheet-changing actions — use wrapWrite instead of wrapAfterLoad
+    wrapWrite('addVocabToSheet');
+    wrapWrite('updateVocabByRow');
+    wrapWrite('deleteVocabByRow');
+    wrapWrite('deleteMultipleVocab');
+    wrapWrite('softDeleteVocab');
+    wrapWrite('restoreSoftDeleted');
+    wrapWrite('permanentlyDeleteSoftDeleted');
+    wrapWrite('permanentlyDeleteAllSoftDeletedAndClose');
+    wrapWrite('restoreAllSoftDeletedAndClose');
     // Fast watcher
    setInterval(() => {
     const c = getSidebarCount();
