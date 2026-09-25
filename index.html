@@ -11384,16 +11384,18 @@ document.addEventListener('visibilitychange', function() {
     let lastRenderedSidebar = -1;
     let lastReloadTime = 0;
     let isReloading = false;
+	let lastKnownModified = 0;   // ⚡ NEW: track sheet edit time
    const MIN_INTERVAL = 1000;          // 1s between API calls
 const RELOAD_COOLDOWN = 3000;       // 3s between auto-reloads
     // ---- Sidebar count (excluding soft-deleted) ----
   function getSidebarCount() {
     try {
         if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
-        const softCount = (typeof softDeletedIndices !== 'undefined')
-            ? softDeletedIndices.size
-            : 0;
-        return vocabList.length - softCount;
+        // ✅ Include soft-deleted items in the count.
+        // They only disappear from the count when permanently deleted
+        // (permanentlyDeleteSoftDeleted / permanentlyDeleteAllSoftDeletedAndClose
+        //  call vocabList.splice, which reduces vocabList.length).
+        return vocabList.length;
     } catch (e) { return 0; }
 }
 
@@ -11455,27 +11457,39 @@ const RELOAD_COOLDOWN = 3000;       // 3s between auto-reloads
         // ⚠️ Compare raw counts (not +1 versions)
         // ⚠️ Compare raw counts (not +1 versions)
 // ALSO check content hash so edits (same row count) are detected
+// ⚡ Use syncCheck — returns count + lastModified in one cheap call
 let contentChanged = false;
 try {
-    const fresh = await fetch('https://opensheet.elk.sh/' + currentSheetId + '/Sheet1');
-    if (fresh.ok) {
-        const freshJson = await fresh.json();
-        const freshHash = (function(data){
-            let str = JSON.stringify(data), hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = ((hash << 5) - hash) + str.charCodeAt(i);
-                hash |= 0;
+    const syncRes = await fetch(detectedApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+            action: 'syncCheck',
+            sheetId: currentSheetId,
+            sheetName: 'Sheet1'
+        })
+    });
+    const syncData = await syncRes.json();
+    if (syncData.result === 'success') {
+        // Update cached count from the fresh response
+        if (typeof syncData.count === 'number') {
+            cachedSheetCount = syncData.count;
+        }
+        // Detect edits via lastModified
+        if (syncData.lastUpdated && lastKnownModified) {
+            if (syncData.lastUpdated > lastKnownModified) {
+                contentChanged = true;
+                console.log('⚠️ Sheet modified externally:',
+                    new Date(lastKnownModified), '→', new Date(syncData.lastUpdated));
             }
-            return hash.toString();
-        })(freshJson);
-        if (typeof lastSheetDataHash !== 'undefined' &&
-            lastSheetDataHash &&
-            freshHash !== lastSheetDataHash) {
-            contentChanged = true;
-            console.log('⚠️ Sheet content changed (hash mismatch)');
+        }
+        // Remember this timestamp        if (syncData.lastUpdated) {
+            lastKnownModified = syncData.lastUpdated;
         }
     }
-} catch (e) { /* network hiccup — ignore */ }
+} catch (e) {
+    // Network hiccup — ignore, next tick will retry
+}
 
 if (sidebarCount !== cachedSheetCount || contentChanged) {
             isReloading = true;
@@ -11527,7 +11541,26 @@ render();
 
     window.refreshMmsCounter = refresh;
 
-    setTimeout(() => refresh(true), 1500);
+    setTimeout(async () => {
+    try {
+        const primeRes = await fetch(detectedApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'getLastModified',
+                sheetId: currentSheetId
+            })
+        });
+        const primeData = await primeRes.json();
+        if (primeData.result === 'success' && primeData.lastUpdated) {
+            lastKnownModified = primeData.lastUpdated;
+            console.log('✅ Primed lastKnownModified:',
+                new Date(lastKnownModified).toLocaleTimeString());
+        }
+    } catch (e) {
+        console.warn('Could not prime lastKnownModified:', e);
+    }
+}, 2000);
 
     // ---- Wrap functions so counter refreshes on relevant actions ----
     function wrapAfterLoad(name, forceApi) {
@@ -11683,7 +11716,7 @@ localStorage.removeItem(cacheTimeKey);
 
                         // Refresh the counter after reload
                         if (typeof window.refreshMmsCounter === 'function') {
-                            setTimeout(() => window.refreshMmsCounter(true), 500);
+                            setTimeout(() => window.refreshMmsCounter(true), 800);
                         }
 
                         if (typeof showToast === 'function') {
