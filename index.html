@@ -11384,16 +11384,18 @@ document.addEventListener('visibilitychange', function() {
     let lastRenderedSidebar = -1;
     let lastReloadTime = 0;
     let isReloading = false;
-    const MIN_INTERVAL = 5000;          // 5s between API calls
-    const RELOAD_COOLDOWN = 60000;      // 60s between auto-reloads
-
+   const MIN_INTERVAL = 1000;          // 1s between API calls
+const RELOAD_COOLDOWN = 3000;       // 3s between auto-reloads
     // ---- Sidebar count (excluding soft-deleted) ----
   function getSidebarCount() {
-        try {
-            if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
-            return vocabList.length;   // ✅ Count ALL items — including soft-deleted
-        } catch (e) { return 0; }
-    }
+    try {
+        if (typeof vocabList === 'undefined' || !Array.isArray(vocabList)) return 0;
+        const softCount = (typeof softDeletedIndices !== 'undefined')
+            ? softDeletedIndices.size
+            : 0;
+        return vocabList.length - softCount;
+    } catch (e) { return 0; }
+}
 
     // ---- Render: [API+1] / [Sidebar+1] ----
     function render() {
@@ -11496,9 +11498,13 @@ if (sidebarCount !== cachedSheetCount || contentChanged) {
     await loadSheetData(true);
                     console.log('✅ Sheet reloaded');
 
-                    const newCount = await fetchSheetCount();
-                    if (newCount !== null) cachedSheetCount = newCount;
-                    render();
+                    let newCount = await fetchSheetCount();
+if (newCount === null) {
+    await new Promise(r => setTimeout(r, 500));
+    newCount = await fetchSheetCount();
+}
+if (newCount !== null) cachedSheetCount = newCount;
+render();
                 }
             } catch (err) {
                 console.error('❌ Reload failed:', err);
@@ -11568,7 +11574,7 @@ if (sidebarCount !== cachedSheetCount || contentChanged) {
     let fallbackTimer = null;
     function startFallback() {
         if (fallbackTimer) clearInterval(fallbackTimer);
-        fallbackTimer = setInterval(() => refresh(false), 5000);
+        fallbackTimer = setInterval(() => refresh(false), 1000);
     }
     function stopFallback() {
         if (fallbackTimer) { clearInterval(fallbackTimer); fallbackTimer = null; }
