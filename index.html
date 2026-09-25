@@ -4057,7 +4057,7 @@ console.log('📱 Platform detection:', {
     const cachedTime = parseInt(safeGetItem(cacheTimeKey, '0')) || 0;
     const now = Date.now();
     
-    if (now - cachedTime < 60000) {   // 1 minute (faster sync)
+    if (now - cachedTime < 5000) {   // 5 seconds
         const cachedData = safeGetItem(cacheKey, null);
         if (cachedData) {
             try {
