@@ -4794,38 +4794,13 @@ async function deleteMultipleVocab(rows) {
             for (let [k, arr] of firstCharCache.entries()) arr.sort((a, b) => a - b);
         }
 
-                   function getRelatedIndices(currentIdx) {
+        function getRelatedIndices(currentIdx) {
             const currentWord = vocabList[currentIdx];
-            if (!currentWord) return [currentIdx];
-
-            // ⭐ Group by the "group" field
-            const grp = currentWord.group || 'Uncategorized';
-            const all = groupMap.get(grp) || [];
-
-            // Skip soft-deleted / pending-deleted neighbors
-            const clean = all.filter(i =>
-                i !== currentIdx &&
-                !softDeletedIndices.has(i) &&
-                !pendingDeletions.has(i)
-            );
-
-            // ⚡ Cap to 19 others → 20 total (perf-safe on mobile)
-            const others = clean.slice(0, 19);
-
-            // If group is tiny (< 3 others), top up with same-first-char siblings
-            // so the sidebar doesn't look empty.
-            if (others.length < 3 && currentWord.chinese) {
-                const firstChar = currentWord.chinese.charAt(0);
-                const charPool = (firstCharCache.get(firstChar) || []).filter(i =>
-                    i !== currentIdx &&
-                    !clean.includes(i) &&
-                    !softDeletedIndices.has(i) &&
-                    !pendingDeletions.has(i)
-                );
-                const topUp = charPool.slice(0, 19 - others.length);
-                return dedupeIndices([currentIdx, ...others, ...topUp]);
-            }
-
+            if (!currentWord || !currentWord.chinese) return [currentIdx];
+            const firstChar = currentWord.chinese.charAt(0);
+            const all = firstCharCache.get(firstChar) || [];
+            // Cap to 19 others → 20 total. Big perf win on iOS.
+            const others = all.filter(i => i !== currentIdx).slice(0, 19);
             return dedupeIndices([currentIdx, ...others]);
         }
         let lastRandomIndicesStr = "";
@@ -5587,7 +5562,7 @@ async function permanentlyDeleteSoftDeleted(idx) {
             softDeletedIndices.add(k);
         }
 
-                pendingDeletions.delete(idx);
+        pendingDeletions.delete(idx);
         return true;
     } catch (err) {
         console.warn("Delete failed for row", rowToDelete, err);
@@ -5595,20 +5570,6 @@ async function permanentlyDeleteSoftDeleted(idx) {
         return false;
     }
 }
-
-// ⚡ Retry a failed permanent deletion from the Recycle Bin modal
-async function retryFailedDeletion(idx) {
-    if (!softDeletedIndices.has(idx)) return false;
-    try {
-        await permanentlyDeleteSoftDeleted(idx);
-        return true;
-    } catch (err) {
-        console.warn('Retry failed:', err);
-        showToast('❌ Retry failed: ' + (err.message || 'Unknown error'));
-        return false;
-    }
-}
-
         async function restoreAllSoftDeletedAndClose() {
             const count = softDeletedIndices.size;
             if (count === 0) {
@@ -7013,7 +6974,7 @@ function showEditGroupModalOnTop(presetGroup) {
             <div class="word-wrapper">
                 <span class="side-zh">${escapeHtml(vocabList[n].chinese)} ${delBadge}</span>
                 <span class="side-km">${escapeHtml(vocabList[n].khmer)}</span>
-                ${groupLabel ? `<span class="side-group" title="${escapeHtml(groupLabel)}">${escapeHtml(groupLabel)}</span>` : ''}
+                ${groupLabel ? `<span class="side-group">${escapeHtml(groupLabel)}</span>` : ''}
             </div>
         </div>`;
     }
