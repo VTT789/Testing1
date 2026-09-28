@@ -6006,7 +6006,7 @@ if (deleteAllBtn) {
         try {
             const result = await deleteMultipleVocab(rowsToDelete);
             console.log(`✅ Background delete completed for ${rowsToDelete.length} rows`, result);
-        } catch (err) {
+                } catch (err) {
             console.error("Background delete API error:", err);
             // Only show error toast if there was a real failure
             if (err && err.message && !err.message.includes('success')) {
@@ -6015,6 +6015,99 @@ if (deleteAllBtn) {
         }
     });
 }
+}
+
+// ===== Recycle Bin button handler (long-press to delete all) =====
+function attachRecycleBinButtonHandlers() {
+    const rbBtn = document.getElementById('recycleBinBtn');
+    if (!rbBtn || rbBtn._handlersAttached) return;
+    rbBtn._handlersAttached = true;
+
+    let holdTimer = null;
+    let isLongPress = false;
+    let longPressHandled = false;
+    let pointerMoved = false;
+
+    const startHold = function(e) {
+        isLongPress = false;
+        longPressHandled = false;
+        pointerMoved = false;
+        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+
+        holdTimer = setTimeout(async () => {
+            if (pointerMoved) return;
+            isLongPress = true;
+            longPressHandled = true;
+
+            const count = softDeletedIndices.size;
+            if (count === 0) { showToast("Recycle bin is empty"); return; }
+            if (!confirm(`⚠️ Permanently delete all ${count} items from sheet? This action cannot be undone!`)) return;
+
+            const rowsToDelete = [];
+            const validIndices = [];
+            for (const idx of softDeletedIndices) {
+                const item = vocabList[idx];
+                if (item && item.sheetRow) {
+                    rowsToDelete.push(item.sheetRow);
+                    validIndices.push(idx);
+                }
+            }
+            if (rowsToDelete.length === 0) { showToast("No valid rows to delete"); return; }
+
+            const sorted = validIndices.sort((a, b) => b - a);
+            for (const idx of sorted) {
+                if (softDeletedIndices.has(idx)) {
+                    vocabList.splice(idx, 1);
+                    softDeletedIndices.delete(idx);
+                    softDeletedData.delete(idx);
+                }
+            }
+
+            // Adjust sheetRow values for remaining items
+            for (let i = 0; i < vocabList.length; i++) {
+                let shift = 0;
+                for (const delRow of rowsToDelete) {
+                    if (delRow < vocabList[i].sheetRow) shift++;
+                }
+                if (shift > 0) vocabList[i].sheetRow -= shift;
+            }
+
+            renderSidebarUI();
+            updateRecycleBinBadge();
+            keepCurrentWordAfterDelete();
+            saveAllData();
+            showToast(`✅ Deleted ${validIndices.length} items locally`);
+
+            try { await deleteMultipleVocab(rowsToDelete); } catch (err) { console.error(err); }
+            setTimeout(() => { longPressHandled = false; }, 300);
+            holdTimer = null;
+        }, 500);
+    };
+
+    const endHold = function() {
+        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+        setTimeout(() => { isLongPress = false; }, 100);
+    };
+
+    const handleClick = function(e) {
+        if (longPressHandled || isLongPress) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        e.stopPropagation();
+        showRecycleBinModal(false);
+    };
+
+    rbBtn.addEventListener('pointerdown', startHold);
+    rbBtn.addEventListener('pointerup', endHold);
+    rbBtn.addEventListener('pointercancel', () => {
+        if (holdTimer) clearTimeout(holdTimer);
+        isLongPress = false;
+        longPressHandled = false;
+    });
+    rbBtn.addEventListener('pointermove', () => { pointerMoved = true; });
+    rbBtn.addEventListener('click', handleClick);
 }
 
 // ===== FUNCTION TO EDIT GROUP NAME (updates all items in that group) =====
@@ -10839,13 +10932,19 @@ document.getElementById('bottomCharColor').value = '#ffffff';
         loadEmojiPosition();
     }
 
-    loadSettings();
+      loadSettings();
     resetQuotaState();
     if (isIOS) {
         const warn = document.getElementById('cacheWarning');
         if (warn) warn.style.display = 'none';
     }
     loadSheetHistory();
+
+    // ⚡ Bind this FIRST so the button always works even if later init throws
+    const _insertBtn = document.getElementById("insertDataBtn");
+    if (_insertBtn) {
+        _insertBtn.onclick = () => showLoadVocabularyModal();
+    }
 
     // ===== 3. HIDE OVERLAY NOW (perceived speed!) =====
     if (loadingOverlay) {
@@ -10993,7 +11092,12 @@ document.getElementById('bottomCharColor').value = '#ffffff';
     }
 
     // ⚡ Recycle Bin button — moved from 500 lines of inline logic to a function
-    attachRecycleBinButtonHandlers();
+    // Recycle Bin button — safe call (won't break if it fails)
+    try {
+        attachRecycleBinButtonHandlers();
+    } catch (err) {
+        console.warn('Recycle bin handler failed (non-fatal):', err);
+    }
 
     if (!sidebarVisible) document.getElementById("sidebarControlsContainer")?.classList.add("sidebar-controls-hidden");
 
@@ -11084,7 +11188,7 @@ document.getElementById('bottomCharColor').value = '#ffffff';
     if (vocabList.length) updateDisplay();
     setTimeout(() => { loadAllDragPositions(); forceShrink(); applyBottomAutoScale(); }, 100);
 
-    document.getElementById("insertDataBtn").onclick = () => showLoadVocabularyModal();
+    // (insertDataBtn binding moved to top of onload for reliability)
 
     document.addEventListener('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); requestAddNewVocab(); }
