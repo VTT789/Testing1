@@ -4159,7 +4159,7 @@ let __writeInProgressUntil = 0;   // safety timeout (ms since epoch)
         vocabularyData = vocabList;
         editUnlocked = true;
         updateEditButtonsState();
-        await loadApiAndPasswordFromSheet();
+           // await loadApiAndPasswordFromSheet();  ← REMOVE (already handled)
         buildGroupMap();
         applyGroupFilter();
         saveAllData();
@@ -9145,7 +9145,7 @@ if (rbBtn) {
                 sidebarFocusIdx))), applyStyles(), forceShrink(), applyBottomAutoScale()
         }
 
-        let _sidebarStyleCacheKey = null;
+     let _sidebarStyleCacheKey = null;
 
 function applySidebarStyles() {
     const zhFont  = document.getElementById("sZhFont").value;
@@ -9155,16 +9155,10 @@ function applySidebarStyles() {
     const kmColor = document.getElementById("sKmColor").value;
     const kmSize  = document.getElementById("sKmSize").value;
 
-    // ⚡ Build a signature of the current values
     const cacheKey = `${zhFont}|${zhColor}|${zhSize}|${kmFont}|${kmColor}|${kmSize}`;
-
-    // ⚡ If nothing changed since last call, skip everything
-    if (_sidebarStyleCacheKey === cacheKey) {
-        return;
-    }
+    if (_sidebarStyleCacheKey === cacheKey) return;
     _sidebarStyleCacheKey = cacheKey;
 
-    // ⚡ Write as CSS variables on <html> — ONE write affects all rows
     const root = document.documentElement.style;
     root.setProperty('--side-zh-font',  zhFont);
     root.setProperty('--side-zh-color', zhColor);
@@ -10888,24 +10882,25 @@ resetQuotaState(); // <-- ADD THIS LINE HERE
     }
     loadSheetHistory();
 
-   // ---- FIX: Only reload sheet if vocab list is empty AND we have no cache ----
-if (vocabList.length === 0 && currentSheetId) {
-    console.log('🔄 Vocab list empty – reloading sheet...');
-    await loadSheetData(true);
-} else if (vocabList.length > 0) {
-    console.log(`⚡ Using cached vocab list (${vocabList.length} words) — skipping network fetch`);
-}
-
-// ---- FIX: Only fetch API/password if missing (was doing it every open) ----
-if (currentSheetId && (!detectedApiUrl || !dynamicPassword)) {
-    try {
-        await loadApiAndPasswordFromSheet();
-        console.log("✅ API and password refreshed from sheet");
-    } catch (e) {
-        console.warn("Could not refresh API/password from sheet, using cached values:", e);
+      // ⚡ Only reload if we truly have no cached data
+    if (vocabList.length === 0 && currentSheetId) {
+        console.log('🔄 Vocab list empty – reloading sheet...');
+        await loadSheetData(true);
+    } else if (vocabList.length > 0) {
+        console.log(`⚡ Using cached vocab list (${vocabList.length} words) — skipping network fetch`);
     }
-} else if (detectedApiUrl && dynamicPassword) {
-    console.log("⚡ Using cached API URL & password");
+
+    // ⚡ Only fetch API/password from sheet if we don't have them cached
+    if (currentSheetId && (!detectedApiUrl || !dynamicPassword)) {
+        try {
+            await loadApiAndPasswordFromSheet();
+            console.log("✅ API and password refreshed from sheet");
+        } catch (e) {
+            console.warn("Could not refresh API/password from sheet, using cached values:", e);
+        }
+    } else if (detectedApiUrl && dynamicPassword) {
+        console.log("⚡ Using cached API URL & password");
+ 
 }
 
     await loadChineseVoices();
