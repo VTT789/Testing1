@@ -1313,21 +1313,24 @@ body.night-mode .resizer {
             cursor: pointer
         }
         .side-zh {
-            font-weight: 600;
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow-x: hidden;
-            text-overflow: ellipsis;
-            color: var(--text-primary)
-        }
-        .side-km {
-            font-size: .85rem;
-            opacity: .8;
-            white-space: nowrap;
-            overflow-x: hidden;
-            text-overflow: ellipsis;
-            color: var(--text-primary)
-        }
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    color: var(--side-zh-color, var(--text-primary));
+    font-family: var(--side-zh-font, inherit);
+    font-size: var(--side-zh-size, 1.1rem);
+}
+.side-km {
+    opacity: .8;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    color: var(--side-km-color, var(--text-primary));
+    font-family: var(--side-km-font, inherit);
+    font-size: var(--side-km-size, 0.85rem);
+}
         .btn-main {
             background: #f1f5f9;
             border: 1px solid #cbd5e1;
@@ -4196,13 +4199,13 @@ let __writeInProgressUntil = 0;   // safety timeout (ms since epoch)
             !sheetName.startsWith('http') && !sheetName.includes('/')) {
             u.innerText = "⠿ " + (sheetName.length > 20 ? sheetName.substring(0, 20) + "..." : sheetName);
         }
-        try {
-            buildFirstCharCache();
-            buildGroupMap();
-            applyGroupFilter();
-            renderSidebarUI();
-            updateDisplay();
-        } catch (e) { console.warn('Sidebar refresh error:', e); }
+       try {
+    // buildFirstCharCache();  // ⚡ already built above — remove
+    // buildGroupMap();        // ⚡ already built above — remove
+    // applyGroupFilter();     // ⚡ already built above — remove
+    renderSidebarUI();
+    updateDisplay();
+} catch (e) { console.warn('Sidebar refresh error:', e); }
         try {
             if (typeof window.refreshMmsCounter === 'function') {
                 window.refreshMmsCounter(true);
@@ -6898,6 +6901,21 @@ o.innerHTML =
         };
     }
 }
+// ═══════════════════════════════════════════════════════════════════
+// ⚡ Debounce renderSidebarUI — collapse rapid calls into one
+// ═══════════════════════════════════════════════════════════════════
+let _renderSidebarDebounceTimer = null;
+const _originalRenderSidebarUI = renderSidebarUI;
+renderSidebarUI = function(...args) {
+    if (_renderSidebarDebounceTimer) {
+        clearTimeout(_renderSidebarDebounceTimer);
+    }
+    _renderSidebarDebounceTimer = setTimeout(() => {
+        _renderSidebarDebounceTimer = null;
+        _originalRenderSidebarUI.apply(this, args);
+        if (typeof syncPageInput === 'function') syncPageInput();
+    }, 30);
+};
 
         function updatePaginationControlsInside(e) {
     if (!e) return;
@@ -7197,18 +7215,12 @@ o.innerHTML =
     }
 }
 
-        // Patch renderNormalSidebar and renderSidebarUI to sync after rendering
-        const origRenderNormalSidebar = renderNormalSidebar;
-        renderNormalSidebar = function() {
-            origRenderNormalSidebar();
-            setTimeout(syncPageInput, 50);
-        };
-
-        const origRenderSidebarUI = renderSidebarUI;
-        renderSidebarUI = function(e) {
-            origRenderSidebarUI(e);
-            setTimeout(syncPageInput, 50);
-        };
+// Patch renderNormalSidebar to sync after rendering
+const origRenderNormalSidebar = renderNormalSidebar;
+renderNormalSidebar = function() {
+    origRenderNormalSidebar();
+    setTimeout(syncPageInput, 50);
+};
 
         // ---- DELETE FUNCTIONS (now using soft delete) ----
         // These are kept for compatibility but now use soft delete
@@ -9133,14 +9145,35 @@ if (rbBtn) {
                 sidebarFocusIdx))), applyStyles(), forceShrink(), applyBottomAutoScale()
         }
 
-        function applySidebarStyles() {
-    document.querySelectorAll(".side-zh").forEach((e => { e.style.fontFamily = document.getElementById(
-                "sZhFont").value, e.style.color = document.getElementById("sZhColor").value, e.style
-            .fontSize = document.getElementById("sZhSize").value + "rem" })),
-        document.querySelectorAll(".side-km").forEach((e => { e.style.fontFamily = document.getElementById(
-                "sKmFont").value, e.style.color = document.getElementById("sKmColor").value, e.style
-            .fontSize = document.getElementById("sKmSize").value + "rem" })),
-        applyInputFontStyle()
+        let _sidebarStyleCacheKey = null;
+
+function applySidebarStyles() {
+    const zhFont  = document.getElementById("sZhFont").value;
+    const zhColor = document.getElementById("sZhColor").value;
+    const zhSize  = document.getElementById("sZhSize").value;
+    const kmFont  = document.getElementById("sKmFont").value;
+    const kmColor = document.getElementById("sKmColor").value;
+    const kmSize  = document.getElementById("sKmSize").value;
+
+    // ⚡ Build a signature of the current values
+    const cacheKey = `${zhFont}|${zhColor}|${zhSize}|${kmFont}|${kmColor}|${kmSize}`;
+
+    // ⚡ If nothing changed since last call, skip everything
+    if (_sidebarStyleCacheKey === cacheKey) {
+        return;
+    }
+    _sidebarStyleCacheKey = cacheKey;
+
+    // ⚡ Write as CSS variables on <html> — ONE write affects all rows
+    const root = document.documentElement.style;
+    root.setProperty('--side-zh-font',  zhFont);
+    root.setProperty('--side-zh-color', zhColor);
+    root.setProperty('--side-zh-size',  zhSize + 'rem');
+    root.setProperty('--side-km-font',  kmFont);
+    root.setProperty('--side-km-color', kmColor);
+    root.setProperty('--side-km-size',  kmSize + 'rem');
+
+    applyInputFontStyle();
 }
 
 function applyInputFontStyle() {
@@ -10855,20 +10888,25 @@ resetQuotaState(); // <-- ADD THIS LINE HERE
     }
     loadSheetHistory();
 
-    // ---- FIX: reload sheet if vocab list is empty but sheet ID exists ----
-    if (vocabList.length === 0 && currentSheetId) {
-        console.log('🔄 Vocab list empty – reloading sheet...');
-        await loadSheetData(true);
-    }
+   // ---- FIX: Only reload sheet if vocab list is empty AND we have no cache ----
+if (vocabList.length === 0 && currentSheetId) {
+    console.log('🔄 Vocab list empty – reloading sheet...');
+    await loadSheetData(true);
+} else if (vocabList.length > 0) {
+    console.log(`⚡ Using cached vocab list (${vocabList.length} words) — skipping network fetch`);
+}
 
-    if (currentSheetId) {
-        try {
-            await loadApiAndPasswordFromSheet();
-            console.log("✅ API and password refreshed from sheet");
-        } catch (e) {
-            console.warn("Could not refresh API/password from sheet, using cached values:", e);
-        }
+// ---- FIX: Only fetch API/password if missing (was doing it every open) ----
+if (currentSheetId && (!detectedApiUrl || !dynamicPassword)) {
+    try {
+        await loadApiAndPasswordFromSheet();
+        console.log("✅ API and password refreshed from sheet");
+    } catch (e) {
+        console.warn("Could not refresh API/password from sheet, using cached values:", e);
     }
+} else if (detectedApiUrl && dynamicPassword) {
+    console.log("⚡ Using cached API URL & password");
+}
 
     await loadChineseVoices();
 
@@ -10880,7 +10918,12 @@ resetQuotaState(); // <-- ADD THIS LINE HERE
         orderBtn.addEventListener('click', toggleSpeechOrder);
     }
 
+   // Use requestIdleCallback if available
+if ('requestIdleCallback' in window) {
+    requestIdleCallback(setupInsertSymbolLongPress, { timeout: 1000 });
+} else {
     setTimeout(setupInsertSymbolLongPress, 300);
+}
 
     if (vocabList.length > 0) {
         buildFirstCharCache();
@@ -11559,6 +11602,8 @@ render();
     window.refreshMmsCounter = refresh;
 
     setTimeout(async () => {
+    // ⚡ Skip if no API or already primed recently
+    if (!detectedApiUrl || !currentSheetId) return;
     try {
         const primeRes = await fetch(detectedApiUrl, {
             method: 'POST',
@@ -11577,7 +11622,7 @@ render();
     } catch (e) {
         console.warn('Could not prime lastKnownModified:', e);
     }
-}, 2000);
+}, 5000);  // ⚡ 2s → 5s
 
     // ---- Wrap functions so counter refreshes on relevant actions ----
     function wrapAfterLoad(name, forceApi) {
