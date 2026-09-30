@@ -7,8 +7,12 @@
     <meta name="description" content="Chinese-Khmer vocabulary learning tool with Edge TTS neural voice pronunciation, Google Sheets synchronization, flashcards, and interactive exercises." />
     <meta property="og:title" content="Vocab Master" />
     <meta property="og:description" content="Chinese-Khmer vocabulary learning tool with Edge TTS neural voice pronunciation, Google Sheets synchronization, flashcards, and interactive exercises." />
-    <link rel="icon" href="/static/ABAicon.png" type="image/png" />
+       <link rel="icon" href="/static/ABAicon.png" type="image/png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/static/ABAicon.png" />
+    <link rel="preconnect" href="https://script.google.com" crossorigin>
+    <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+    <link rel="dns-prefetch" href="https://script.google.com">
+    <link rel="dns-prefetch" href="https://script.googleusercontent.com">
     <script defer src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
 <script src="/static/config.js"></script>
 <!-- xlsx removed - not used anywhere in this file -->
@@ -3126,6 +3130,7 @@ window.clearAllCache = async function() {
         return;
     const sheetId = currentSheetId || safeGetItem('vocabMaster_SheetId', '');
     const password = dynamicPassword || safeGetItem('vocabMaster_Password', '012891556');
+	const apiUrl = detectedApiUrl || safeGetItem('vocabMaster_ApiUrl', '');
     try {
         const keys = Object.keys(localStorage);
         let removedCount = 0;
@@ -3133,7 +3138,7 @@ window.clearAllCache = async function() {
             if (k.startsWith('vocabMaster_') || k.startsWith('drag_') || k.startsWith('gear') ||
                 k.startsWith('menu') || k.startsWith('emoji') || k.startsWith('sidebar') ||
                 k === 'floatingMenuLeft' || k === 'floatingMenuTop' || k === 'speechOrder' ||
-                k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || k === 'sheetHistory' ||
+                k === 'topPinyinSectionHidden' || k === 'bottomSectionHidden' || 
                 k === 'groupFilter' || k === 'groupMapData' || k === 'vocabMaster_List_StoredInIndexedDB') {
                 try { localStorage.removeItem(k); removedCount++; } catch (e) {}
             }
@@ -3153,6 +3158,9 @@ window.clearAllCache = async function() {
         if (password) {
             try { localStorage.setItem('vocabMaster_Password', password); } catch (e) {}
         }
+		if (apiUrl) {
+    try { localStorage.setItem('vocabMaster_ApiUrl', apiUrl); } catch (e) {}
+}
         showToast(`✅ Cache cleared! (${removedCount} items removed) Reloading...`);
         setTimeout(() => location.reload(), 500);
     } catch (e) {
@@ -4107,8 +4115,20 @@ let __writeInProgressUntil = 0;   // safety timeout (ms since epoch)
         }
     }
 
-    // ⚡ CACHE MISS — fetch from our own Apps Script getAll endpoint
+     // ⚡ CACHE MISS — fetch from our own Apps Script getAll endpoint
     console.log('🌐 Cache miss — fetching from Apps Script getAll...');
+
+    // Guard: make sure we have a valid API URL before fetching
+    if (!detectedApiUrl || !detectedApiUrl.startsWith('http')) {
+        const storedApi = safeGetItem('vocabMaster_ApiUrl', '');
+        if (storedApi && storedApi.startsWith('http')) {
+            detectedApiUrl = storedApi;
+        } else {
+            showToast('❌ No API URL configured. Please load the sheet again.');
+            return;
+        }
+    }
+
     try {
         const t = await fetch(detectedApiUrl, {
             method: 'POST',
@@ -4210,6 +4230,23 @@ let __writeInProgressUntil = 0;   // safety timeout (ms since epoch)
         } catch (e) { console.warn('Counter refresh error:', e); }
         updateRecycleBinBadge();
         updateStatusBar();
+		
+		  // Add a non-blocking sync dot in the corner
+    (function addSyncDot() {
+        let dot = document.getElementById('syncDot');
+        if (!dot) {
+            dot = document.createElement('div');
+            dot.id = 'syncDot';
+            dot.style.cssText = `
+                position: fixed; top: 8px; right: 8px;
+                width: 10px; height: 10px; border-radius: 50%;
+                background: #94a3b8; z-index: 99999;
+                transition: background 0.3s, transform 0.3s;
+                pointer-events: none;
+            `;
+            document.body.appendChild(dot);
+        }
+    })();
         // ⚡ SAVE TO CACHE (only for later non-forced reads)
         try {
             safeSetItem(cacheKey, JSON.stringify(compressVocabList(vocabList)));
@@ -4218,8 +4255,12 @@ let __writeInProgressUntil = 0;   // safety timeout (ms since epoch)
         } catch (cacheSaveErr) {
             console.warn('Cache save error:', cacheSaveErr);
         }
-    } catch (e) {
+        } catch (e) {
         console.error("Error loading sheet via getAll:", e);
+        if (!currentSheetId) {
+            showToast('❌ No sheet loaded — please load a sheet first.');
+            return;
+        }
         // ⚡ Fallback: try opensheet if getAll fails
         try {
             const fallbackUrl = `https://opensheet.elk.sh/${currentSheetId}/Sheet1?t=${Date.now()}`;
@@ -4428,7 +4469,7 @@ loadSheetData = async function (forceReload) {
         console.error(`❌ ${t} failed:`, errMsg);
         showToast(`❌ ${t} failed: ${errMsg}`);
         throw new Error(errMsg);
-    } finally {
+      } finally {
         // ⚡ Clear write lock 1.5s AFTER the write finishes
         // (gives the sheet time to reflect the change before counter re-checks)
         setTimeout(() => {
@@ -4438,6 +4479,60 @@ loadSheetData = async function (forceReload) {
         }, 1500);
     }
 }
+
+// ============================================================
+// BACKGROUND WRITE QUEUE — batches rapid writes into one call
+// ============================================================
+let _writeQueue = [];
+let _writeQueueTimer = null;
+const WRITE_BATCH_DELAY = 250; // ms to wait for more writes before flushing
+
+function queueWrite(payload) {
+    _writeQueue.push(payload);
+    if (_writeQueueTimer) clearTimeout(_writeQueueTimer);
+    _writeQueueTimer = setTimeout(flushWriteQueue, WRITE_BATCH_DELAY);
+}
+
+async function flushWriteQueue() {
+    _writeQueueTimer = null;
+    if (_writeQueue.length === 0) return;
+
+    const batch = _writeQueue.slice();
+    _writeQueue = [];
+
+    // Single write → send as-is
+    if (batch.length === 1) {
+        try {
+            await callApi(batch[0], batch[0].action.toUpperCase());
+        } catch (err) {
+            console.warn('Write failed:', err);
+            showToast(`⚠️ Sync failed — will retry on next reload`);
+        }
+        return;
+    }
+
+    // Multiple writes → send as a batch
+    try {
+        await callApi({ action: "addMultiple", items: batch }, "ADD BATCH");
+    } catch (err) {
+        console.warn('Batch write failed:', err);
+        showToast(`⚠️ Batch sync failed (${batch.length} items)`);
+    }
+}
+
+// Flush queue when leaving the page (best-effort)
+window.addEventListener('beforeunload', () => {
+    if (_writeQueue.length > 0) {
+        try {
+            navigator.sendBeacon(detectedApiUrl, JSON.stringify({
+                action: "addMultiple",
+                sheetId: currentSheetId,
+                sheetName: "Sheet1",
+                items: _writeQueue
+            }));
+        } catch (e) {}
+    }
+});
 
         async function addVocabToSheet(e, t, group = '') {
     if (!editUnlocked) {
@@ -7828,9 +7923,7 @@ scrollToSidebarItem();
         if (window.addModalPerformSearch) {
             window.addModalPerformSearch(chineseInput.value.trim());
         }
-        addVocabToSheet(khmer, chinese, selectedGroup).catch(err => {
-            showToast("❌ Add failed: " + err.message);
-        });
+     queueWrite({ action: "add", vocab: khmer, chinese: chinese, group: selectedGroup });
     };
     document.getElementById("closeAddModalBtn").onclick = () => e.remove();
     document.getElementById("editIconFromAdd").addEventListener("click", () => {
@@ -10967,7 +11060,19 @@ document.getElementById('bottomCharColor').value = '#ffffff';
             }
             tasks.push(loadChineseVoices());
             await Promise.allSettled(tasks);
+ tasks.push(loadChineseVoices());
+            await Promise.allSettled(tasks);
 
+            // Warm up Apps Script so first real write is fast
+            setTimeout(() => {
+                if (detectedApiUrl && detectedApiUrl.startsWith('http')) {
+                    fetch(detectedApiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({ action: 'ping', sheetId: currentSheetId })
+                    }).catch(() => {});
+                }
+            }, 2000);
             // After load, rebuild caches
             if (vocabList.length > 0) {
                 buildFirstCharCache();
