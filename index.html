@@ -4787,7 +4787,18 @@ async function deleteMultipleVocab(rows) {
                     addSheetToHistory(sheetId);
                     safeSetItem('vocabMaster_LastSheetUrl', sheetId);
                     showToast(`📥 Loading sheet: ${currentSheetId}`);
-                    await loadSheetData(true);
+                    // 1. Reset stale API URL so the new sheet's API is fetched
+detectedApiUrl = '';
+try { localStorage.removeItem('vocabMaster_ApiUrl'); } catch (e) {}
+
+// 2. Fetch the new sheet's API URL + password from its row 1/2
+await loadApiAndPasswordFromSheet();
+
+// 3. Now load vocab (uses the fresh detectedApiUrl)
+await loadSheetData(true);
+
+// 4. Refresh the bottom-right counter with the new sheet
+try { window.refreshMmsCounter(true); } catch (e) {}
                     if (sheetName && sheetName.trim()) {
                         safeSetItem('sheetName_' + sheetId, sheetName);
                     }
